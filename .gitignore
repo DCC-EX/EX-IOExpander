@@ -1,0 +1,9 @@
+Release/*
+.ino.cpp
+.pioenvs
+.piolibdeps
+.clang_complete
+.gcc-flags.json
+.pio/
+.vscode/
+config.h

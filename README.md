@@ -1,2 +1,6 @@
 # EX-IOExpander
-MCP23017 and ADS111x emulator using Arduino AVR
+
+EX-IOExpander is an MCP23017 emulator using the Arduino AVR platform (Nano/Uno).
+
+All 12 digital I/O pins on Uno/Nano footprints are available as digital inputs or outputs (2 - 13).
+Analogue I/O pins A0 - A3 are also available as digital inputs or outputs for a total of 16 pins.
