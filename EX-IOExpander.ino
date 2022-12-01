@@ -36,14 +36,22 @@ If we haven't got a custom config.h, use the example.
   #include "config.example.h"
 #endif
 
-#include "version.h"
-
+/*
+* If for some reason the I2C address isn't defined, define our default here.
+*/
 #ifndef I2C_ADDRESS
 #define I2C_ADDRESS 0x90
 #endif
 
+/*
+* Include required files and libraries.
+*/
+#include "version.h"
 #include <Wire.h>
 
+/*
+* Main setup function here.
+*/
 void setup() {
   Serial.begin(115200);
   Serial.print(F("DCC-EX EX-IOExpander version "));
@@ -55,14 +63,54 @@ void setup() {
   Wire.onRequest(requestEvent);
 }
 
+/*
+* Main loop here.
+*/
 void loop() {
 
 }
 
-void receiveEvent(int numBytes) {
+/*
+* Function triggered when CommandStation is sending data to this device.
 
+Expectation that the bytes coming in will specify which ports are being set/reset.
+
+Function to set/reset should be something like:
+
+pinMode(port, OUTPUT);
+digitalWrite(port, HIGH/LOW);
+
+How to get port list from bytes received?
+
+Expectation this function also needs to perform the initial device setup for which
+ports are inputs vs. outputs?
+
+When MCP23017 device is created, there is nothing to define which ports are input vs. output.
+How to deal with this so input ports are polled?
+*/
+void receiveEvent(int numBytes) {
+  Serial.println(F("receiveEvent triggered"));
+  byte buffer[numBytes];
+  for (uint8_t byte = 0; byte < numBytes; byte++) {
+    buffer[byte] = Wire.read();
+    Serial.print(F("Byte "));
+    Serial.print(byte);
+    Serial.print(F(": "));
+    Serial.println(buffer[byte], HEX);
+  }
 }
 
-void requestEvent() {
+/*
+* Function triggered when CommandStation polls for inputs on this device.
 
+Expectation that the input ports are known already when this device initialises.
+
+Is this set during initilisation of registers etc. when device is first connected to?
+
+Will need to have some sort of global buffer setup to be updated during the main loop().
+
+This function will need to convert that buffer into bytes to be sent via Wire.write().
+*/
+void requestEvent() {
+  Serial.println(F("requestEvent triggered"));
 }
