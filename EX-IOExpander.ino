@@ -89,14 +89,21 @@ When MCP23017 device is created, there is nothing to define which ports are inpu
 How to deal with this so input ports are polled?
 */
 void receiveEvent(int numBytes) {
-  Serial.println(F("receiveEvent triggered"));
+  // Serial.println(F("receiveEvent triggered"));
   byte buffer[numBytes];
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();
-    Serial.print(F("Byte "));
-    Serial.print(byte);
-    Serial.print(F(": "));
-    Serial.println(buffer[byte], HEX);
+    if (numBytes != 1) {
+      Serial.print(F("Multi byte "));
+      Serial.print(byte);
+      Serial.print(F(": "));
+      Serial.println(buffer[byte]);
+    } else if (numBytes == 1 && buffer[byte] != 18) {
+      Serial.print(F("Single byte "));
+      Serial.print(byte);
+      Serial.print(F(": "));
+      Serial.println(buffer[byte]);
+    }
   }
 }
 
@@ -112,5 +119,104 @@ Will need to have some sort of global buffer setup to be updated during the main
 This function will need to convert that buffer into bytes to be sent via Wire.write().
 */
 void requestEvent() {
-  Serial.println(F("requestEvent triggered"));
+  // Serial.println(F("requestEvent triggered"));
 }
+
+
+/*
+18 to start with (continuous, only byte).
+
+Only single byte seems to be 18.
+
+When CS initialises, 3 events received:
+Byte 0: 10
+Byte 1: 68
+Byte 0: 8
+Byte 1: 0
+Byte 2: 0
+Byte 0: 12
+Byte 1: 0
+Byte 2: 0
+
+<Z 800 800 0>:
+Multi byte 0: 0
+Multi byte 1: 254
+Multi byte 2: 255
+Multi byte 0: 4
+Multi byte 1: 0
+Multi byte 2: 0
+
+<Z 800 0>:
+Multi byte 0: 18
+Multi byte 1: 34
+Multi byte 2: 243 <- this seems to change 243/247
+
+<Z 800 1>:
+Multi byte 0: 18
+Multi byte 1: 35
+Multi byte 2: 243 <- this seems to change 243/247
+
+<Z 815 815 0>:
+Multi byte 0: 0
+Multi byte 1: 254
+Multi byte 2: 127
+Multi byte 0: 4
+Multi byte 1: 0
+Multi byte 2: 0
+Multi byte 0: 18
+Multi byte 1: 35
+Multi byte 2: 115
+
+<Z 815 0>
+Multi byte 0: 18
+Multi byte 1: 35
+Multi byte 2: 115
+
+<Z 815 1>
+Multi byte 0: 18
+Multi byte 1: 35
+Multi byte 2: 243
+
+<Z 801 801 0>
+Multi byte 0: 0
+Multi byte 1: 252
+Multi byte 2: 127
+Multi byte 0: 4
+Multi byte 1: 0
+Multi byte 2: 0
+Multi byte 0: 18
+Multi byte 1: 33
+Multi byte 2: 243
+
+<Z 801 0>
+Multi byte 0: 18
+Multi byte 1: 33
+Multi byte 2: 243
+
+<Z 801 1>
+Multi byte 0: 18
+Multi byte 1: 35
+Multi byte 2: 243
+
+<S 802 802 1>
+Multi byte 0: 0
+Multi byte 1: 252
+Multi byte 2: 127
+Multi byte 0: 8
+Multi byte 1: 0
+Multi byte 2: 0
+Multi byte 0: 12
+Multi byte 1: 7
+Multi byte 2: 128
+
+<S 803 803 0>
+Multi byte 0: 0
+Multi byte 1: 252
+Multi byte 2: 127
+Multi byte 0: 8
+Multi byte 1: 0
+Multi byte 2: 0
+Multi byte 0: 12
+Multi byte 1: 7
+Multi byte 2: 128
+*/
