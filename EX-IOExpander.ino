@@ -97,12 +97,12 @@ void receiveEvent(int numBytes) {
       Serial.print(F("Multi byte "));
       Serial.print(byte);
       Serial.print(F(": "));
-      Serial.println(buffer[byte]);
-    } else if (numBytes == 1 && buffer[byte] != 18) {
+      Serial.println(buffer[byte], HEX);
+    } else if (numBytes == 1 && buffer[byte] != 0x12) {
       Serial.print(F("Single byte "));
       Serial.print(byte);
       Serial.print(F(": "));
-      Serial.println(buffer[byte]);
+      Serial.println(buffer[byte], HEX);
     }
   }
 }
