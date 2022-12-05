@@ -80,15 +80,85 @@ void receiveEvent(int numBytes) {
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();
     if (numBytes != 1) {
-      Serial.print(F("Multi byte "));
-      Serial.print(byte);
-      Serial.print(F(": "));
-      Serial.println(buffer[byte], HEX);
-    } else if (numBytes == 1 && buffer[byte] != 0x12) {
-      Serial.print(F("Single byte "));
-      Serial.print(byte);
-      Serial.print(F(": "));
-      Serial.println(buffer[byte], HEX);
+      // Serial.print(F("Multi byte "));
+      // Serial.print(byte);
+      // Serial.print(F(": "));
+      // Serial.println(buffer[byte], HEX);
+    }
+    // } else if (numBytes == 1 && buffer[byte] != 0x12) {
+    //   Serial.print(F("Single byte "));
+    //   Serial.print(byte);
+    //   Serial.print(F(": "));
+    //   Serial.println(buffer[byte], HEX);
+    // }
+  }
+  if (numBytes > 1) {
+    switch(buffer[0]) {
+      case REG_IODIRA:
+        Serial.print(F("REG_IODIRA with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_IODIRB:
+        Serial.print(F("REG_IODIRB with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_GPINTENA:
+        Serial.print(F("REG_INTENA with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_GPINTENB:
+        Serial.print(F("REG_INTENB with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_INTCONA:
+        Serial.print(F("REG_INTCONA with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_INTCONB:
+        Serial.print(F("REG_INTCONB with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_IOCON:
+        Serial.print(F("REG_IOCON with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_GPPUA:
+        Serial.print(F("REG_GPPUA with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_GPPUB:
+        Serial.print(F("REG_GPPUB with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      case REG_GPIOA:
+        if (numBytes == 3) {
+          Serial.print(F("REG_GPIOA received, outputState: "));
+          Serial.print(buffer[1]);
+          Serial.print(F(", outputState>>8: "));
+          Serial.println(buffer[2]);
+        } else {
+          Serial.print(F("REG_GPIOA with "));
+          Serial.print(numBytes);
+          Serial.println(F(" received, what to do?"));
+        }
+        break;
+      case REG_GPIOB:
+        Serial.print(F("REG_GPIOA with "));
+        Serial.print(numBytes);
+        Serial.println(F(" received, what to do?"));
+        break;
+      default:
+        Serial.println(F("Reached default, no case matched"));
+        break;
     }
   }
 }
