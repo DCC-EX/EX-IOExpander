@@ -38,6 +38,20 @@ If we haven't got a custom config.h, use the example.
 #endif
 
 /*
+* Struct to define the port parameters.
+*/
+typedef struct {
+  bool direction;       // 0 = output, 1 = input
+  bool pullup;          // 0 = no pullup, 1 = pullup (input only)
+  bool state;           // stores current state, 0 = LOW, 1 = HIGH
+} gpioConfig;
+
+/*
+* Create GPIO array using struct.
+*/
+gpioConfig portStates[NUMBER_OF_PINS];
+
+/*
 * If for some reason the I2C address isn't defined, define our default here.
 */
 #ifndef I2C_ADDRESS
@@ -68,103 +82,74 @@ void setup() {
 * Main loop here.
 */
 void loop() {
-
+/*  To read inputs, this should probably look something like:
+  for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
+    if (portStates[port].direction == 1) {
+      if (portStates[port].pullup == 0) {
+        pinMode(pinMap[port], INPUT);
+      } else {
+        pinMode(pinMap[port], INPUT_PULLUP);
+      }
+      portStates[port].state = digitalRead(pinMap[port]);
+    }
+  }
+*/
 }
 
 /*
 * Function triggered when CommandStation is sending data to this device.
+*
+* This function probably needs to:
+* - Configure ports as input or output
+* - For input ports, configure pullup flag
+* - For output ports, perform the digitalWrite
+* 
+* Step 1: how to know which port is being configured or written to?
 */
 void receiveEvent(int numBytes) {
   // Serial.println(F("receiveEvent triggered"));
   byte buffer[numBytes];
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();
-    if (numBytes != 1) {
-      // Serial.print(F("Multi byte "));
-      // Serial.print(byte);
-      // Serial.print(F(": "));
-      // Serial.println(buffer[byte], HEX);
-    }
-    // } else if (numBytes == 1 && buffer[byte] != 0x12) {
-    //   Serial.print(F("Single byte "));
-    //   Serial.print(byte);
-    //   Serial.print(F(": "));
-    //   Serial.println(buffer[byte], HEX);
-    // }
   }
   if (numBytes > 1) {
     switch(buffer[0]) {
       case REG_IODIRA:
-        Serial.print(F("REG_IODIRA with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
-        break;
-      case REG_IODIRB:
-        Serial.print(F("REG_IODIRB with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
+        Serial.println(F("REG_IODIRA:"));
         break;
       case REG_GPINTENA:
-        Serial.print(F("REG_INTENA with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
-        break;
-      case REG_GPINTENB:
-        Serial.print(F("REG_INTENB with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
+        Serial.println(F("REG_INTENA:"));
         break;
       case REG_INTCONA:
-        Serial.print(F("REG_INTCONA with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
-        break;
-      case REG_INTCONB:
-        Serial.print(F("REG_INTCONB with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
+        Serial.println(F("REG_INTCONA:"));
         break;
       case REG_IOCON:
-        Serial.print(F("REG_IOCON with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
+        Serial.println(F("REG_IOCON:"));
         break;
       case REG_GPPUA:
-        Serial.print(F("REG_GPPUA with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
-        break;
-      case REG_GPPUB:
-        Serial.print(F("REG_GPPUB with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
+        Serial.println(F("REG_GPPUA:"));
         break;
       case REG_GPIOA:
-        if (numBytes == 3) {
-          Serial.print(F("REG_GPIOA received, outputState: "));
-          Serial.print(buffer[1]);
-          Serial.print(F(", outputState>>8: "));
-          Serial.println(buffer[2]);
-        } else {
-          Serial.print(F("REG_GPIOA with "));
-          Serial.print(numBytes);
-          Serial.println(F(" received, what to do?"));
-        }
-        break;
-      case REG_GPIOB:
-        Serial.print(F("REG_GPIOA with "));
-        Serial.print(numBytes);
-        Serial.println(F(" received, what to do?"));
+        Serial.println(F("REG_GPIOA:"));
         break;
       default:
         Serial.println(F("Reached default, no case matched"));
         break;
+    }
+    for (uint8_t byte = 1; byte < numBytes; byte++) {
+      Serial.print(F("Byte "));
+      Serial.print(byte);
+      Serial.print(F(" contains: "));
+      Serial.println(buffer[byte]);
     }
   }
 }
 
 /*
 * Function triggered when CommandStation polls for inputs on this device.
+* This function probably needs to:
+* - Combine the appropriate input ports from portStates into one (or more?) bytes
+* - Perform a Wire.write() of those bytes
 */
 void requestEvent() {
   // Serial.println(F("requestEvent triggered"));

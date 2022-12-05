@@ -31,18 +31,14 @@ static uint8_t pinMap[NUMBER_OF_PINS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
 // static uint8_t pinMap[NUMBER_OF_PINS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, A0, A1, A2, A3, A6, A7}; //Nano
 
 /////////////////////////////////////////////////////////////////////////////////////
-//  Define the register hex values as used in IO_MCP23017
+//  Define the register hex values as used in IO_MCP23017.h
+//  Note only registers related to A are ever used by IO_MCP23017.h
 //
 #define REG_IODIRA 0x00
-#define REG_IODIRB 0x01
 #define REG_GPINTENA 0x04
-#define REG_GPINTENB 0x05
 #define REG_INTCONA 0x08
-#define REG_INTCONB 0x09
 #define REG_IOCON 0x0A
 #define REG_GPPUA 0x0C
-#define REG_GPPUB 0x0D
 #define REG_GPIOA 0x12
-#define REG_GPIOB 0x13
 
 #endif
