@@ -139,8 +139,8 @@ void receiveEvent(int numBytes) {
     for (uint8_t byte = 1; byte < numBytes; byte++) {
       Serial.print(F("Byte "));
       Serial.print(byte);
-      Serial.print(F(" contains: "));
-      Serial.println(buffer[byte]);
+      Serial.print(F(" contains: 0x"));
+      Serial.println(buffer[byte], HEX);
     }
   }
 }
