@@ -2,6 +2,10 @@
  *  © 2022 xxxxxxxxxx. All rights reserved.
  *
  *  This file is part of EX-IOExpander.
+ *  
+ *  This file contains the defines required and should not need to be edited.
+ * 
+ *  NOTE: Modifications to this file will be overwritten by future software updates.
  * 
  */
 #ifndef DEFINES_H

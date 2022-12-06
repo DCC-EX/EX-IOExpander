@@ -25,6 +25,7 @@
 */
 
 #include <Arduino.h>
+#include "defines.h"
 
 /*
 If we haven't got a custom config.h, use the example.
@@ -111,20 +112,25 @@ void loop() {
         Serial.print(F("/"));
         Serial.println(currentState);
         Serial.print(F("gpioA/B: "));
-        Serial.print(gpioA);
+        Serial.print(gpioA, HEX);
         Serial.print(F("/"));
-        Serial.println(gpioB);
+        Serial.println(gpioB, HEX);
       }
 #endif
       portStates[port].state = currentState;
     }
-// Assemble writeBuffer here
-    uint8_t temp = 0;
-    if (port < 8) {
-      temp = portStates[port].state & 1 << port;
-      gpioA = gpioA & temp;
+    if (portStates[port].state == 0) {
+      if (port < 8) {
+        bitClear(gpioA, port);
+      } else {
+        bitClear(gpioB, port);
+      }
     } else {
-      gpioB = portStates[port].state << (port - 8);
+      if (port < 8) {
+        bitSet(gpioA, port);
+      } else {
+        bitSet(gpioB, port);
+      }
     }
   }
 }
@@ -228,11 +234,9 @@ void receiveEvent(int numBytes) {
 
 /*
 * Function triggered when CommandStation polls for inputs on this device.
-* This function probably needs to:
-* - Combine the appropriate input ports from portStates into one (or more?) bytes
-* - Perform a Wire.write() of those bytes
+* Simply sends our current GPIO states back to the CommandStation.
 */
 void requestEvent() {
-  // Wire.write(gpioA);
-  // Wire.write(gpioB);
+  Wire.write(gpioA);
+  Wire.write(gpioB);
 }

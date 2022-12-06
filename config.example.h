@@ -25,12 +25,14 @@
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the pin map
 //  Defining a pin map should allow portability to other platforms
+// 
+//  You must define the correct number of ports as per NUMBER_OF_PINS above
 //
 static uint8_t pinMap[NUMBER_OF_PINS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, A0, A1, A2, A3};
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Uncomment to enable diag output
 // 
-#define DIAG
+// #define DIAG
 
 #endif
