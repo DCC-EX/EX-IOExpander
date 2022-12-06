@@ -51,6 +51,11 @@ typedef struct {
 gpioConfig portStates[NUMBER_OF_PINS];
 
 /*
+* Global variables here
+*/
+byte writeBuffer[2];   // Array to store port states to send to CommandStation
+
+/*
 * If for some reason the I2C address isn't defined, define our default here.
 */
 #ifndef I2C_ADDRESS
@@ -78,12 +83,11 @@ void setup() {
 }
 
 /*
-* Main loop here.
+* Main loop here, just processes our inputs and updates the writeBuffer.
 */
 void loop() {
-/*  To read inputs, this should probably look something like:
   for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-    if (portStates[port].mode == 1) {
+    if (portStates[port].direction == 1) {
       if (portStates[port].pullup == 0) {
         pinMode(pinMap[port], INPUT);
       } else {
@@ -91,8 +95,13 @@ void loop() {
       }
       portStates[port].state = digitalRead(pinMap[port]);
     }
+// Assemble writeBuffer here
+    if (port < 8) {
+
+    } else {
+
+    }
   }
-*/
 }
 
 /*
@@ -199,5 +208,6 @@ void receiveEvent(int numBytes) {
 * - Perform a Wire.write() of those bytes
 */
 void requestEvent() {
-  // Serial.println(F("requestEvent triggered"));
+  // Wire.write(writeBuffer[0]);
+  // Wire.write(writeBuffer[1]);
 }
