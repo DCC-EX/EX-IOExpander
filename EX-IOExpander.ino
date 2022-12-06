@@ -53,7 +53,8 @@ gpioConfig portStates[NUMBER_OF_PINS];
 /*
 * Global variables here
 */
-byte writeBuffer[2];   // Array to store port states to send to CommandStation
+byte gpioA = 0x00;   // Bytes to store banks A and B states to send to the CommandStation
+byte gpioB = 0x00;
 
 /*
 * If for some reason the I2C address isn't defined, define our default here.
@@ -78,6 +79,13 @@ void setup() {
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(I2C_ADDRESS, HEX);
   Wire.begin(I2C_ADDRESS);
+  // Start with each port in a known state, safest is input
+  for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
+    portStates[port].direction = 1;
+    portStates[port].pullup = 0;
+    portStates[port].state = 0;
+    pinMode(pinMap[port], INPUT);
+  }
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
 }
@@ -93,13 +101,30 @@ void loop() {
       } else {
         pinMode(pinMap[port], INPUT_PULLUP);
       }
-      portStates[port].state = digitalRead(pinMap[port]);
+      bool currentState = digitalRead(pinMap[port]);
+#ifdef DIAG
+      if (currentState != portStates[port].state) {
+        Serial.print(F("Input state change for "));
+        Serial.print(pinMap[port]);
+        Serial.print(F(" from/to "));
+        Serial.print(portStates[port].state);
+        Serial.print(F("/"));
+        Serial.println(currentState);
+        Serial.print(F("gpioA/B: "));
+        Serial.print(gpioA);
+        Serial.print(F("/"));
+        Serial.println(gpioB);
+      }
+#endif
+      portStates[port].state = currentState;
     }
 // Assemble writeBuffer here
+    uint8_t temp = 0;
     if (port < 8) {
-
+      temp = portStates[port].state & 1 << port;
+      gpioA = gpioA & temp;
     } else {
-
+      gpioB = portStates[port].state << (port - 8);
     }
   }
 }
@@ -208,6 +233,6 @@ void receiveEvent(int numBytes) {
 * - Perform a Wire.write() of those bytes
 */
 void requestEvent() {
-  // Wire.write(writeBuffer[0]);
-  // Wire.write(writeBuffer[1]);
+  // Wire.write(gpioA);
+  // Wire.write(gpioB);
 }
