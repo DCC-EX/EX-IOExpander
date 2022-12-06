@@ -40,7 +40,7 @@ If we haven't got a custom config.h, use the example.
 * Struct to define the port parameters.
 */
 typedef struct {
-  bool mode;            // 0 = output, 1 = input
+  bool direction;       // 0 = output, 1 = input
   bool pullup;          // 0 = no pullup, 1 = pullup (input only)
   bool state;           // stores current state, 0 = LOW, 1 = HIGH
 } gpioConfig;
@@ -97,76 +97,98 @@ void loop() {
 
 /*
 * Function triggered when CommandStation is sending data to this device.
-*
-* This function probably needs to:
-* - Configure ports as input or output
-* - For input ports, configure pullup flag
-* - For output ports, perform the digitalWrite
-* 
-* Step 1: how to know which port is being configured or written to?
-* For port registers, MSB is in byte two, LSB in byte 1
 */
 void receiveEvent(int numBytes) {
-  // Serial.println(F("receiveEvent triggered"));
   byte buffer[numBytes];
   uint16_t portBits;
   for (uint8_t byte = 0; byte < numBytes; byte++) {
-    buffer[byte] = Wire.read();
+    buffer[byte] = Wire.read();   // Read all received bytes into our buffer array
   }
   if (numBytes > 1) {
     if (numBytes == 3) {
-      portBits = (buffer[2] << 8) + buffer[1];
+      portBits = (buffer[2] << 8) + buffer[1];  // If 3 bytes, we know we got port info, bit shift them
     }
     switch(buffer[0]) {
       case REG_IODIRA:
-        Serial.println(F("REG_IODIRA:"));
+        // Register to set port direction, 0 = output, 1 = input
+#ifdef DIAG
+        Serial.print(F("REG_IODIRA (port/dir): "));
+#endif
+        for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
+          bool direction = portBits >> port & 1;
+          portStates[port].direction = direction;
+#ifdef DIAG
+          Serial.print(pinMap[port]);
+          Serial.print(F("/"));
+          if (port == NUMBER_OF_PINS - 1) {
+            Serial.println(portStates[port].direction);
+          } else {
+            Serial.print(portStates[port].direction);
+            Serial.print(F(","));
+          }
+#endif
+        }
         break;
       case REG_GPINTENA:
-        Serial.println(F("REG_INTENA:"));
+        // Register to enable interrupts per port
+        // Not enabling interrupts at the moment, disregard this
         break;
       case REG_INTCONA:
-        // Serial.println(F("REG_INTCONA:"));
+        // Register to set interrupt detection method per port
         // Not enabling interrupts at the moment, disregard this
         break;
       case REG_IOCON:
-        // Serial.println(F("REG_IOCON:"));
+        // Register to configure the I/O expander
         // We don't need to do anything with this, only relevant for actual MCP23017
         break;
       case REG_GPPUA:
-        // Serial.println(F("REG_GPPUA:"));
+        // Register to set pullups per port
+#ifdef DIAG
+        Serial.print(F("REG_GPPUA (port/pullup): "));
+#endif
         for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
           bool pullup = portBits >> port & 1;
           portStates[port].pullup = pullup;
-          Serial.print(F("Port "));
+#ifdef DIAG
           Serial.print(pinMap[port]);
-          Serial.print(F(" pullup set to "));
-          Serial.println(portStates[port].pullup);
+          Serial.print(F("/"));
+          if (port == NUMBER_OF_PINS - 1) {
+            Serial.println(portStates[port].pullup);
+          } else {
+            Serial.print(portStates[port].pullup);
+            Serial.print(F(","));
+          }
+#endif
         }
         break;
       case REG_GPIOA:
-        // Serial.println(F("REG_GPIOA:"));
+        // Register to reflect the logic level of each port
+        // We only deal with outputs here
+#ifdef DIAG
+        Serial.print(F("REG_GPIO (output port/logic): "));
+#endif
         for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-          if (portStates[port].mode == 0) {
+          if (portStates[port].direction == 0) {
             bool portState = portBits >> port & 1;
             pinMode(pinMap[port], OUTPUT);
-            Serial.print(F("Port "));
-            Serial.print(pinMap[port]);
-            Serial.print(F(" in output mode, set to "));
-            Serial.println(portState);
+            portStates[port].state = portState;
             digitalWrite(pinMap[port], portState);
+#ifdef DIAG
+            Serial.print(pinMap[port]);
+            Serial.print(F("/"));
+            Serial.print(portState);
+            Serial.print(F(","));
+#endif
           }
         }
+#ifdef DIAG
+        Serial.println(F(""));
+#endif
         break;
       default:
         Serial.println(F("Reached default, no case matched"));
         break;
     }
-    // for (uint8_t byte = 1; byte < numBytes; byte++) {
-    //   Serial.print(F("Byte "));
-    //   Serial.print(byte);
-    //   Serial.print(F(" contains: 0x"));
-    //   Serial.println(buffer[byte], HEX);
-    // }
   }
 }
 

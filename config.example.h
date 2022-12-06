@@ -29,6 +29,11 @@
 static uint8_t pinMap[NUMBER_OF_PINS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, A0, A1, A2, A3};
 
 /////////////////////////////////////////////////////////////////////////////////////
+//  Uncomment to enable diag output
+// 
+#define DIAG
+
+/////////////////////////////////////////////////////////////////////////////////////
 //  Define the register hex values as used in IO_MCP23017.h
 //  Note only registers related to A are ever used by IO_MCP23017.h
 //
