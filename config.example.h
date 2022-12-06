@@ -19,16 +19,14 @@
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the number of I/O pins to use
-//  16 pins is suitable for Uno, can use 18 for Nano by using A6/A7
-#define NUMBER_OF_PINS 16     // Uno
-// #define NUMBER_OF_PINS 18    // Nano
+//  16 pins is the maximum here
+#define NUMBER_OF_PINS 16
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the pin map
 //  Defining a pin map should allow portability to other platforms
 //
-static uint8_t pinMap[NUMBER_OF_PINS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, A0, A1, A2, A3}; // Uno
-// static uint8_t pinMap[NUMBER_OF_PINS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, A0, A1, A2, A3, A6, A7}; //Nano
+static uint8_t pinMap[NUMBER_OF_PINS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, A0, A1, A2, A3};
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the register hex values as used in IO_MCP23017.h

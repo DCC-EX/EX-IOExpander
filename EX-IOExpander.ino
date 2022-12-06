@@ -22,7 +22,6 @@
 *
 * All 12 digital I/O pins on Uno/Nano footprints are available as digital inputs or outputs (2 - 13).
 * Analogue I/O pins A0 - A3 are also available as digital inputs or outputs for a total of 16 pins.
-* (Nano can use A6/A7 for 18 pins)
 */
 
 #include <Arduino.h>
@@ -41,7 +40,7 @@ If we haven't got a custom config.h, use the example.
 * Struct to define the port parameters.
 */
 typedef struct {
-  bool direction;       // 0 = output, 1 = input
+  bool mode;            // 0 = output, 1 = input
   bool pullup;          // 0 = no pullup, 1 = pullup (input only)
   bool state;           // stores current state, 0 = LOW, 1 = HIGH
 } gpioConfig;
@@ -84,7 +83,7 @@ void setup() {
 void loop() {
 /*  To read inputs, this should probably look something like:
   for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-    if (portStates[port].direction == 1) {
+    if (portStates[port].mode == 1) {
       if (portStates[port].pullup == 0) {
         pinMode(pinMap[port], INPUT);
       } else {
@@ -105,14 +104,19 @@ void loop() {
 * - For output ports, perform the digitalWrite
 * 
 * Step 1: how to know which port is being configured or written to?
+* For port registers, MSB is in byte two, LSB in byte 1
 */
 void receiveEvent(int numBytes) {
   // Serial.println(F("receiveEvent triggered"));
   byte buffer[numBytes];
+  uint16_t portBits;
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();
   }
   if (numBytes > 1) {
+    if (numBytes == 3) {
+      portBits = (buffer[2] << 8) + buffer[1];
+    }
     switch(buffer[0]) {
       case REG_IODIRA:
         Serial.println(F("REG_IODIRA:"));
@@ -121,27 +125,48 @@ void receiveEvent(int numBytes) {
         Serial.println(F("REG_INTENA:"));
         break;
       case REG_INTCONA:
-        Serial.println(F("REG_INTCONA:"));
+        // Serial.println(F("REG_INTCONA:"));
+        // Not enabling interrupts at the moment, disregard this
         break;
       case REG_IOCON:
-        Serial.println(F("REG_IOCON:"));
+        // Serial.println(F("REG_IOCON:"));
+        // We don't need to do anything with this, only relevant for actual MCP23017
         break;
       case REG_GPPUA:
-        Serial.println(F("REG_GPPUA:"));
+        // Serial.println(F("REG_GPPUA:"));
+        for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
+          bool pullup = portBits >> port & 1;
+          portStates[port].pullup = pullup;
+          Serial.print(F("Port "));
+          Serial.print(pinMap[port]);
+          Serial.print(F(" pullup set to "));
+          Serial.println(portStates[port].pullup);
+        }
         break;
       case REG_GPIOA:
-        Serial.println(F("REG_GPIOA:"));
+        // Serial.println(F("REG_GPIOA:"));
+        for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
+          if (portStates[port].mode == 0) {
+            bool portState = portBits >> port & 1;
+            pinMode(pinMap[port], OUTPUT);
+            Serial.print(F("Port "));
+            Serial.print(pinMap[port]);
+            Serial.print(F(" in output mode, set to "));
+            Serial.println(portState);
+            digitalWrite(pinMap[port], portState);
+          }
+        }
         break;
       default:
         Serial.println(F("Reached default, no case matched"));
         break;
     }
-    for (uint8_t byte = 1; byte < numBytes; byte++) {
-      Serial.print(F("Byte "));
-      Serial.print(byte);
-      Serial.print(F(" contains: 0x"));
-      Serial.println(buffer[byte], HEX);
-    }
+    // for (uint8_t byte = 1; byte < numBytes; byte++) {
+    //   Serial.print(F("Byte "));
+    //   Serial.print(byte);
+    //   Serial.print(F(" contains: 0x"));
+    //   Serial.println(buffer[byte], HEX);
+    // }
   }
 }
 
