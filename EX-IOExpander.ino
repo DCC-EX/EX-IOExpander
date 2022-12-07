@@ -1,5 +1,5 @@
 /*
- *  © 2021, xxxxxxxxxx. All rights reserved.
+ *  © 2022, Peter Cole. All rights reserved.
  *  
  *  This file is part of EX-IOExpander.
  *
@@ -123,7 +123,7 @@ void loop() {
     }
   }
 #ifdef DIAG
-  displayInputs();
+  displayConfig();
 #endif
 }
 
@@ -144,14 +144,14 @@ void receiveEvent(int numBytes) {
       case REG_IODIRA:
         // Register to set port direction, 0 = output, 1 = input
 #ifdef DIAG
-        Serial.print(F("REG_IODIRA (port/dir): "));
+        Serial.print(F("REG_IODIRA (port|dir): "));
 #endif
         for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
           bool direction = portBits >> port & 1;
           portStates[port].direction = direction;
 #ifdef DIAG
           Serial.print(pinMap[port]);
-          Serial.print(F("/"));
+          Serial.print(F("|"));
           if (port == NUMBER_OF_PINS - 1) {
             Serial.println(portStates[port].direction);
           } else {
@@ -176,14 +176,14 @@ void receiveEvent(int numBytes) {
       case REG_GPPUA:
         // Register to set pullups per port
 #ifdef DIAG
-        Serial.print(F("REG_GPPUA (port/pullup): "));
+        Serial.print(F("REG_GPPUA (port|pullup): "));
 #endif
         for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
           bool pullup = portBits >> port & 1;
           portStates[port].pullup = pullup;
 #ifdef DIAG
           Serial.print(pinMap[port]);
-          Serial.print(F("/"));
+          Serial.print(F("|"));
           if (port == NUMBER_OF_PINS - 1) {
             Serial.println(portStates[port].pullup);
           } else {
@@ -197,7 +197,7 @@ void receiveEvent(int numBytes) {
         // Register to reflect the logic level of each port
         // We only deal with outputs here
 #ifdef DIAG
-        Serial.print(F("REG_GPIO (output port/logic): "));
+        Serial.print(F("REG_GPIO (port|state): "));
 #endif
         for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
           if (portStates[port].direction == 0) {
@@ -207,7 +207,7 @@ void receiveEvent(int numBytes) {
             digitalWrite(pinMap[port], portState);
 #ifdef DIAG
             Serial.print(pinMap[port]);
-            Serial.print(F("/"));
+            Serial.print(F("|"));
             Serial.print(portState);
             Serial.print(F(","));
 #endif
@@ -237,29 +237,24 @@ void requestEvent() {
 * Function to display current input port states when DIAG enabled
 */
 #ifdef DIAG
-void displayInputs() {
-  if (millis() > lastInputDisplay + DIAG_INPUT_DELAY) {
+void displayConfig() {
+  if (millis() > lastInputDisplay + DIAG_CONFIG_DELAY) {
     lastInputDisplay = millis();
-    Serial.print(F("Input port/state): "));
+    Serial.print(F("Pin|D|P|S: "));
     for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-      if (portStates[port].direction == 1) {
-        Serial.print(pinMap[port]);
-        Serial.print(F("/"));
+      Serial.print(pinMap[port]);
+      Serial.print(F("|"));
+      Serial.print(portStates[port].direction);
+      Serial.print(F("|"));
+      Serial.print(portStates[port].pullup);
+      Serial.print(F("|"));
+      if (port == NUMBER_OF_PINS - 1) {
+        Serial.println(portStates[port].state);
+      } else {
         Serial.print(portStates[port].state);
-        Serial.print(F(","));       
-        // Serial.print(F("Input state change for "));
-        // Serial.print(pinMap[port]);
-        // Serial.print(F(" from/to "));
-        // Serial.print(portStates[port].state);
-        // Serial.print(F("/"));
-        // Serial.println(currentState);
-        // Serial.print(F("gpioA/B: "));
-        // Serial.print(gpioA, HEX);
-        // Serial.print(F("/"));
-        // Serial.println(gpioB, HEX);
+        Serial.print(F(","));
       }
     }
-    Serial.println(F(""));
   }
 }
 #endif
