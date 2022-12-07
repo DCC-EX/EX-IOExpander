@@ -33,6 +33,11 @@ static uint8_t pinMap[NUMBER_OF_PINS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
 /////////////////////////////////////////////////////////////////////////////////////
 //  Uncomment to enable diag output
 // 
-// #define DIAG
+#define DIAG
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Delay between dumping the status of the input ports if DIAG enabled
+// 
+#define DIAG_INPUT_DELAY 3000
 
 #endif

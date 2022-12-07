@@ -56,6 +56,9 @@ gpioConfig portStates[NUMBER_OF_PINS];
 */
 byte gpioA = 0x00;   // Bytes to store banks A and B states to send to the CommandStation
 byte gpioB = 0x00;
+#ifdef DIAG
+unsigned long lastInputDisplay = 0;   // Last time in millis we displayed DIAG input states
+#endif
 
 /*
 * If for some reason the I2C address isn't defined, define our default here.
@@ -103,20 +106,6 @@ void loop() {
         pinMode(pinMap[port], INPUT_PULLUP);
       }
       bool currentState = digitalRead(pinMap[port]);
-#ifdef DIAG
-      if (currentState != portStates[port].state) {
-        Serial.print(F("Input state change for "));
-        Serial.print(pinMap[port]);
-        Serial.print(F(" from/to "));
-        Serial.print(portStates[port].state);
-        Serial.print(F("/"));
-        Serial.println(currentState);
-        Serial.print(F("gpioA/B: "));
-        Serial.print(gpioA, HEX);
-        Serial.print(F("/"));
-        Serial.println(gpioB, HEX);
-      }
-#endif
       portStates[port].state = currentState;
     }
     if (portStates[port].state == 0) {
@@ -133,6 +122,9 @@ void loop() {
       }
     }
   }
+#ifdef DIAG
+  displayInputs();
+#endif
 }
 
 /*
@@ -240,3 +232,34 @@ void requestEvent() {
   Wire.write(gpioA);
   Wire.write(gpioB);
 }
+
+/*
+* Function to display current input port states when DIAG enabled
+*/
+#ifdef DIAG
+void displayInputs() {
+  if (millis() > lastInputDisplay + DIAG_INPUT_DELAY) {
+    lastInputDisplay = millis();
+    Serial.print(F("Input port/state): "));
+    for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
+      if (portStates[port].direction == 1) {
+        Serial.print(pinMap[port]);
+        Serial.print(F("/"));
+        Serial.print(portStates[port].state);
+        Serial.print(F(","));       
+        // Serial.print(F("Input state change for "));
+        // Serial.print(pinMap[port]);
+        // Serial.print(F(" from/to "));
+        // Serial.print(portStates[port].state);
+        // Serial.print(F("/"));
+        // Serial.println(currentState);
+        // Serial.print(F("gpioA/B: "));
+        // Serial.print(gpioA, HEX);
+        // Serial.print(F("/"));
+        // Serial.println(gpioB, HEX);
+      }
+    }
+    Serial.println(F(""));
+  }
+}
+#endif
