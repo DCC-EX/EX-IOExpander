@@ -1,5 +1,5 @@
 /*
- *  © 2021, xxxxxxxxxx. All rights reserved.
+ *  © 2022, Peter Cole. All rights reserved.
  *  
  *  This file is part of EX-IOExpander.
  *
@@ -25,6 +25,7 @@
 */
 
 #include <Arduino.h>
+#include "defines.h"
 
 /*
 If we haven't got a custom config.h, use the example.
@@ -51,6 +52,15 @@ typedef struct {
 gpioConfig portStates[NUMBER_OF_PINS];
 
 /*
+* Global variables here
+*/
+byte gpioA = 0x00;   // Bytes to store banks A and B states to send to the CommandStation
+byte gpioB = 0x00;
+#ifdef DIAG
+unsigned long lastInputDisplay = 0;   // Last time in millis we displayed DIAG input states
+#endif
+
+/*
 * If for some reason the I2C address isn't defined, define our default here.
 */
 #ifndef I2C_ADDRESS
@@ -73,26 +83,48 @@ void setup() {
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(I2C_ADDRESS, HEX);
   Wire.begin(I2C_ADDRESS);
+  // Start with each port in a known state, safest is input
+  for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
+    portStates[port].direction = 1;
+    portStates[port].pullup = 0;
+    portStates[port].state = 0;
+    pinMode(pinMap[port], INPUT);
+  }
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
 }
 
 /*
-* Main loop here.
+* Main loop here, just processes our inputs and updates the writeBuffer.
 */
 void loop() {
-/*  To read inputs, this should probably look something like:
   for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-    if (portStates[port].mode == 1) {
+    if (portStates[port].direction == 1) {
       if (portStates[port].pullup == 0) {
         pinMode(pinMap[port], INPUT);
       } else {
         pinMode(pinMap[port], INPUT_PULLUP);
       }
-      portStates[port].state = digitalRead(pinMap[port]);
+      bool currentState = digitalRead(pinMap[port]);
+      portStates[port].state = currentState;
+    }
+    if (portStates[port].state == 0) {
+      if (port < 8) {
+        bitClear(gpioA, port);
+      } else {
+        bitClear(gpioB, port);
+      }
+    } else {
+      if (port < 8) {
+        bitSet(gpioA, port);
+      } else {
+        bitSet(gpioB, port);
+      }
     }
   }
-*/
+#ifdef DIAG
+  displayConfig();
+#endif
 }
 
 /*
@@ -112,14 +144,14 @@ void receiveEvent(int numBytes) {
       case REG_IODIRA:
         // Register to set port direction, 0 = output, 1 = input
 #ifdef DIAG
-        Serial.print(F("REG_IODIRA (port/dir): "));
+        Serial.print(F("REG_IODIRA (port|dir): "));
 #endif
         for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
           bool direction = portBits >> port & 1;
           portStates[port].direction = direction;
 #ifdef DIAG
           Serial.print(pinMap[port]);
-          Serial.print(F("/"));
+          Serial.print(F("|"));
           if (port == NUMBER_OF_PINS - 1) {
             Serial.println(portStates[port].direction);
           } else {
@@ -144,14 +176,14 @@ void receiveEvent(int numBytes) {
       case REG_GPPUA:
         // Register to set pullups per port
 #ifdef DIAG
-        Serial.print(F("REG_GPPUA (port/pullup): "));
+        Serial.print(F("REG_GPPUA (port|pullup): "));
 #endif
         for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
           bool pullup = portBits >> port & 1;
           portStates[port].pullup = pullup;
 #ifdef DIAG
           Serial.print(pinMap[port]);
-          Serial.print(F("/"));
+          Serial.print(F("|"));
           if (port == NUMBER_OF_PINS - 1) {
             Serial.println(portStates[port].pullup);
           } else {
@@ -165,7 +197,7 @@ void receiveEvent(int numBytes) {
         // Register to reflect the logic level of each port
         // We only deal with outputs here
 #ifdef DIAG
-        Serial.print(F("REG_GPIO (output port/logic): "));
+        Serial.print(F("REG_GPIO (port|state): "));
 #endif
         for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
           if (portStates[port].direction == 0) {
@@ -175,7 +207,7 @@ void receiveEvent(int numBytes) {
             digitalWrite(pinMap[port], portState);
 #ifdef DIAG
             Serial.print(pinMap[port]);
-            Serial.print(F("/"));
+            Serial.print(F("|"));
             Serial.print(portState);
             Serial.print(F(","));
 #endif
@@ -194,10 +226,35 @@ void receiveEvent(int numBytes) {
 
 /*
 * Function triggered when CommandStation polls for inputs on this device.
-* This function probably needs to:
-* - Combine the appropriate input ports from portStates into one (or more?) bytes
-* - Perform a Wire.write() of those bytes
+* Simply sends our current GPIO states back to the CommandStation.
 */
 void requestEvent() {
-  // Serial.println(F("requestEvent triggered"));
+  Wire.write(gpioA);
+  Wire.write(gpioB);
 }
+
+/*
+* Function to display current input port states when DIAG enabled
+*/
+#ifdef DIAG
+void displayConfig() {
+  if (millis() > lastInputDisplay + DIAG_CONFIG_DELAY) {
+    lastInputDisplay = millis();
+    Serial.print(F("Pin|D|P|S: "));
+    for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
+      Serial.print(pinMap[port]);
+      Serial.print(F("|"));
+      Serial.print(portStates[port].direction);
+      Serial.print(F("|"));
+      Serial.print(portStates[port].pullup);
+      Serial.print(F("|"));
+      if (port == NUMBER_OF_PINS - 1) {
+        Serial.println(portStates[port].state);
+      } else {
+        Serial.print(portStates[port].state);
+        Serial.print(F(","));
+      }
+    }
+  }
+}
+#endif
