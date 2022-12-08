@@ -44,12 +44,12 @@ typedef struct {
   bool direction;       // 0 = output, 1 = input
   bool pullup;          // 0 = no pullup, 1 = pullup (input only)
   bool state;           // stores current state, 0 = LOW, 1 = HIGH
-} gpioConfig;
+} digitalConfig;
 
 /*
 * Create GPIO array using struct.
 */
-gpioConfig portStates[NUMBER_OF_PINS];
+digitalConfig portStates[NUMBER_OF_PINS];
 
 /*
 * Global variables here
