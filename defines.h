@@ -31,8 +31,8 @@
 #define NUMBER_OF_DIGITAL_PINS 12   // D2 - D13
 #define NUMBER_OF_ANALOGUE_PINS 6     // A0 - A3, A6/A7, cannot use A4/A5
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
-#define NUMBER_OF_DIGITAL_PINS 12   // D2 - D13
-#define NUMBER_OF_ANALOGUE_PINS 4     // A0 - A3, cannot use A4/A5
+#define NUMBER_OF_DIGITAL_PINS 46   // D2 - D19, D22 - D49
+#define NUMBER_OF_ANALOGUE_PINS 16     // A0 - A15
 #else
 #define CPU_TYPE_ERROR
 #endif

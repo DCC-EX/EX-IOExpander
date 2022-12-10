@@ -81,7 +81,7 @@ uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will b
 uint8_t digitalPinBytes;  // Used for efficiency to flag how many bytes are needed for digital pins
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 #ifdef DIAG
-unsigned long lastDiagDisplay = 0;   // Last time in millis we displayed DIAG input states
+unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
 #endif
 
 /*
@@ -138,7 +138,7 @@ void loop() {
     }
   }
   #ifdef DIAG
-  displayConfig();
+  displayPins();
 #endif
 }
 
@@ -231,24 +231,37 @@ void requestEvent() {
 }
 
 /*
-* Function to display current input port states when DIAG enabled
+* Function to display pin configuratin and states when DIAG enabled
 */
 #ifdef DIAG
-void displayConfig() {
-  if (millis() > lastDiagDisplay + DIAG_CONFIG_DELAY) {
-    lastInputDisplay = millis();
-    Serial.print(F("Pin|D|P|S: "));
-    for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-      Serial.print(pinMap[port]);
+void displayPins() {
+  if (millis() > lastPinDisplay + DIAG_CONFIG_DELAY) {
+    lastPinDisplay = millis();
+    Serial.println(F("Digital Pin|Direction|Pullup|State:"));
+    for (uint8_t pin = 0; pin < numDigitalPins; pin++) {
+      Serial.print(digitalPins[pin].pin);
       Serial.print(F("|"));
-      Serial.print(portStates[port].direction);
+      Serial.print(digitalPins[pin].direction);
       Serial.print(F("|"));
-      Serial.print(portStates[port].pullup);
+      Serial.print(digitalPins[pin].pullup);
       Serial.print(F("|"));
-      if (port == NUMBER_OF_PINS - 1) {
-        Serial.println(portStates[port].state);
+      if (pin == numDigitalPins - 1 || (pin % 16 == 0 && pin > 0)) {
+        Serial.println(digitalPins[pin].state);
       } else {
-        Serial.print(portStates[port].state);
+        Serial.print(digitalPins[pin].state);
+        Serial.print(F(","));
+      }
+    }
+    Serial.println(F("Analogue Pin|LSB|MSB:"));
+    for (uint8_t pin = 0; pin < numAnaloguePins; pin++) {
+      Serial.print(analoguePins[pin].pin);
+      Serial.print(F("|"));
+      Serial.print(analoguePins[pin].valueLSB);
+      Serial.print(F("|"));
+      if (pin == numAnaloguePins - 1) {
+        Serial.println(analoguePins[pin].valueMSB);
+      } else {
+        Serial.print(analoguePins[pin].valueMSB);
         Serial.print(F(","));
       }
     }
