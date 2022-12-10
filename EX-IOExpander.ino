@@ -26,8 +26,7 @@
 */
 
 #include <Arduino.h>
-#include "defines.h"
-#include "DefaultPinMaps.h"
+#include "SupportedDevices.h"
 
 #ifdef CPU_TYPE_ERROR
 #error Unsupported microcontroller architecture detected, you need to use a type listed in defines.h
@@ -36,30 +35,30 @@
 /*
 If we haven't got a custom config.h, use the example.
 */
-#if __has_include ("config.h")
-  #include "config.h"
+#if __has_include ("myConfig.h")
+  #include "myConfig.h"
 #else
-  #warning config.h not found. Using defaults from config.example.h
-  #include "config.example.h"
+  #warning myConfig.h not found. Using defaults from myConfig.example.h
+  #include "myConfig.example.h"
 #endif
 
 /*
 * Struct to define the digital pin parameters and keep state.
 */
 typedef struct {
-  uint8_t pin;          // Pin assignment
   bool direction;       // 0 = output, 1 = input
   bool pullup;          // 0 = no pullup, 1 = pullup (input only)
   bool state;           // stores current state, 0 = LOW, 1 = HIGH
+  bool enable;          // Flag if it's enabled (1) or not (0)
 } digitalConfig;
 
 /*
 * Struct to define the analogue pin assignment and keep state
 */
 typedef struct {
-  uint8_t pin;          // Pin assignment
   byte valueLSB;        // Least significant byte of analogue value
   byte valueMSB;        // Most significant byte of analogue value
+  bool enable;          // Flag if it's enabled (1) or not (0)
 } analogueConfig;
 
 /*
@@ -78,7 +77,8 @@ analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 */
 uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
 uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
-uint8_t digitalPinBytes;  // Used for efficiency to flag how many bytes are needed for digital pins
+uint8_t digitalPinBytes;  // Used for configuring and sending/receiving digital pins
+uint8_t analoguePinBytes; // Used for enabling/disabling analogue pins
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 #ifdef DIAG
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
@@ -104,12 +104,17 @@ void setup() {
   Serial.begin(115200);
   Serial.print(F("DCC-EX EX-IOExpander version "));
   Serial.println(VERSION);
+  Serial.print(F("Detected device: "));
+  Serial.println(BOARD_TYPE);
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(I2C_ADDRESS, HEX);
   Wire.begin(I2C_ADDRESS);
   // Need to intialise every pin in INPUT mode (no pull ups) for safe start
-  for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-    pinMode(defaultPinMap[pin], INPUT);
+  for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
+    pinMode(digitalPinMap[pin], INPUT);
+  }
+  for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+    pinMode(analoguePinMap[pin], INPUT);
   }
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
@@ -121,20 +126,22 @@ void setup() {
 void loop() {
   if (setupComplete) {
     for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
-      if (digitalPins[dPin].direction == 1) {
+      if (digitalPins[dPin].direction == 1 && digitalPins[dPin].enable == 1) {
         if (digitalPins[dPin].pullup == 1) {
-          pinMode(digitalPins[dPin].pin, INPUT_PULLUP);
+          pinMode(digitalPinMap[dPin], INPUT_PULLUP);
         } else {
-          pinMode(digitalPins[dPin].pin, INPUT);
+          pinMode(digitalPinMap[dPin], INPUT);
         }
-        bool currentState = digitalRead(digitalPins[dPin].pin);
+        bool currentState = digitalRead(digitalPinMap[dPin]);
         digitalPins[dPin].state = currentState;
       }
     }
     for (uint8_t aPin = 0; aPin < numAnaloguePins; aPin++) {
-      uint16_t value = analogRead(analoguePins[aPin].pin);
-      analoguePins[aPin].valueLSB = value & 0xFF;
-      analoguePins[aPin].valueMSB = value >> 8;
+      if (analoguePins[aPin].enable == 1) {
+        uint16_t value = analogRead(analoguePinMap[aPin]);
+        analoguePins[aPin].valueLSB = value & 0xFF;
+        analoguePins[aPin].valueMSB = value >> 8;
+      }
     }
   }
   #ifdef DIAG
@@ -159,30 +166,33 @@ void receiveEvent(int numBytes) {
         numAnaloguePins = buffer[2];
         // Calculate number of bytes required to cover digital pins
         digitalPinBytes = (numDigitalPins + 7) / 8;
+        analoguePinBytes = (numAnaloguePins + 7) / 8;
       } else {
 #ifdef DIAG
         Serial.println(F("REG_EXIOINIT received with incorrect data"));
 #endif
       }
       break;
-    // Receive digital pin assignments, should be one byte per pin + flag
+    // Flag to enable digital pins
     case REG_EXIODPIN:
-      if (numBytes == numDigitalPins + 1) {
-        for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
-          digitalPins[pin].pin = buffer[pin + 1];
-        }
+      if (numBytes == digitalPinBytes + 1) {
+        // Need to determine which buffer byte has this pin, then bit shift to set
+        // for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
+        //   digitalPins[pin].enable = 1;
+        // }
     } else {
 #ifdef DIAG
         Serial.println(F("REG_EXIODPIN received with incorrect number of pins"));
 #endif
       }
       break;
-    // Receive analogue pin assignments, should be one byte per pin + flag
+    // Flag to enable analogue pins
     case REG_EXIOAPIN:
-      if (numBytes == numAnaloguePins + 1) {
-        for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
-          analoguePins[pin].pin = buffer[pin + 1];
-        }
+      if (numBytes == analoguePinBytes + 1) {
+        // Need to determine which buffer byte has this pin, then bit shift to set
+        // for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
+        //   analoguePins[pin].enable = 1;
+        // }
     } else {
 #ifdef DIAG
         Serial.println(F("REG_EXIOAPIN received with incorrect number of pins"));
@@ -237,9 +247,11 @@ void requestEvent() {
 void displayPins() {
   if (millis() > lastPinDisplay + DIAG_CONFIG_DELAY) {
     lastPinDisplay = millis();
-    Serial.println(F("Digital Pin|Direction|Pullup|State:"));
+    Serial.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < numDigitalPins; pin++) {
-      Serial.print(digitalPins[pin].pin);
+      Serial.print(digitalPinMap[pin]);
+      Serial.print(F("|"));
+      Serial.print(digitalPins[pin].enable);
       Serial.print(F("|"));
       Serial.print(digitalPins[pin].direction);
       Serial.print(F("|"));
@@ -252,9 +264,11 @@ void displayPins() {
         Serial.print(F(","));
       }
     }
-    Serial.println(F("Analogue Pin|LSB|MSB:"));
+    Serial.println(F("Analogue Pin|Enable|LSB|MSB:"));
     for (uint8_t pin = 0; pin < numAnaloguePins; pin++) {
-      Serial.print(analoguePins[pin].pin);
+      Serial.print(analoguePinMap[pin]);
+      Serial.print(F("|"));
+      Serial.print(analoguePins[pin].enable);
       Serial.print(F("|"));
       Serial.print(analoguePins[pin].valueLSB);
       Serial.print(F("|"));
