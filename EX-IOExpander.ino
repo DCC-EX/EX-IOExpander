@@ -77,8 +77,8 @@ analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 */
 uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
 uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
-uint8_t digitalPinBytes;  // Used for configuring and sending/receiving digital pins
-uint8_t analoguePinBytes; // Used for enabling/disabling analogue pins
+int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
+int analoguePinBytes; // Used for enabling/disabling analogue pins
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 #ifdef DIAG
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
@@ -176,10 +176,10 @@ void receiveEvent(int numBytes) {
     // Flag to enable digital pins
     case REG_EXIODPIN:
       if (numBytes == digitalPinBytes + 1) {
-        // Need to determine which buffer byte has this pin, then bit shift to set
-        // for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
-        //   digitalPins[pin].enable = 1;
-        // }
+        for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
+          int pinByte = ((pin + 7) / 8);
+          digitalPins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+        }
     } else {
 #ifdef DIAG
         Serial.println(F("REG_EXIODPIN received with incorrect number of pins"));
@@ -189,10 +189,10 @@ void receiveEvent(int numBytes) {
     // Flag to enable analogue pins
     case REG_EXIOAPIN:
       if (numBytes == analoguePinBytes + 1) {
-        // Need to determine which buffer byte has this pin, then bit shift to set
-        // for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
-        //   analoguePins[pin].enable = 1;
-        // }
+        for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
+          int pinByte = ((pin + 7) / 8);
+          analoguePins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+        }
     } else {
 #ifdef DIAG
         Serial.println(F("REG_EXIOAPIN received with incorrect number of pins"));
@@ -206,8 +206,9 @@ void receiveEvent(int numBytes) {
     // Flag to set digital pin direction, 0 output, 1 input
     case REG_EXIODDIR:
       if (numBytes == digitalPinBytes + 1) {
-        for (uint8_t pin = 0; pin < numDigitalPins; pin++) {
-          digitalPins[pin].direction = buffer[pin];
+        for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
+          int pinByte = ((pin + 7) / 8);
+          digitalPins[pin].direction = buffer[pinByte + 1] >> (pin - (pinByte * 8));
         }
       } else {
 #ifdef DIAG
@@ -218,8 +219,9 @@ void receiveEvent(int numBytes) {
     // Flag to set digital pin pullups, 0 disabled, 1 enabled
     case REG_EXIODPUP:
       if (numBytes == digitalPinBytes + 1) {
-        for (uint8_t pin = 0; pin < numDigitalPins; pin++) {
-          digitalPins[pin].pullup = buffer[pin];
+        for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
+          int pinByte = ((pin + 7) / 8);
+          digitalPins[pin].pullup = buffer[pinByte + 1] >> (pin - (pinByte * 8));
         }
       } else {
 #ifdef DIAG
