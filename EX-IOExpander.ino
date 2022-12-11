@@ -167,6 +167,12 @@ void receiveEvent(int numBytes) {
         // Calculate number of bytes required to cover digital pins
         digitalPinBytes = (numDigitalPins + 7) / 8;
         analoguePinBytes = (numAnaloguePins + 7) / 8;
+#ifdef DIAG
+        Serial.print(F("REG_EXIONIT Digital|Analogue: "));
+        Serial.print(numDigitalPins);
+        Serial.print(F("|"));
+        Serial.println(numAnaloguePins);
+#endif
       } else {
 #ifdef DIAG
         Serial.println(F("REG_EXIOINIT received with incorrect data"));
@@ -175,6 +181,9 @@ void receiveEvent(int numBytes) {
       break;
     // Flag to enable digital pins
     case REG_EXIODPIN:
+#ifdef DIAG
+      Serial.println(F("REG_EXIODPIN received"));
+#endif
       if (numBytes == digitalPinBytes + 1) {
         for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
           int pinByte = ((pin + 7) / 8);
@@ -188,6 +197,9 @@ void receiveEvent(int numBytes) {
       break;
     // Flag to enable analogue pins
     case REG_EXIOAPIN:
+#ifdef DIAG
+      Serial.println(F("REG_EXIOAPIN received"));
+#endif
       if (numBytes == analoguePinBytes + 1) {
         for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
           int pinByte = ((pin + 7) / 8);
