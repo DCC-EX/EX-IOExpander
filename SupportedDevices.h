@@ -17,12 +17,12 @@
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the register hex values we need to act on or respond with
 //
-#define REG_EXIOINIT 0x00     // Flag to start setup procedure
-#define REG_EXIODPIN 0x01     // Flag we're receiving digital pin assignments
-#define REG_EXIOAPIN 0x02     // Flag we're receiving analogue pin assignments
-#define REG_EXIORDY 0x03      // Flag setup procedure done, return to CS to ACK
-#define REG_EXIODDIR 0x04     // Flag we're receiving digital pin direction configuration
-#define REG_EXIODPUP 0x05     // Flag we're receiving digital pin pullup configuration
+#define REG_EXIOINIT 0xE0     // Flag to start setup procedure
+#define REG_EXIODPIN 0xE1     // Flag we're receiving digital pin assignments
+#define REG_EXIOAPIN 0xE2     // Flag we're receiving analogue pin assignments
+#define REG_EXIORDY 0xE3      // Flag setup procedure done, return to CS to ACK
+#define REG_EXIODDIR 0xE4     // Flag we're receiving digital pin direction configuration
+#define REG_EXIODPUP 0xE5     // Flag we're receiving digital pin pullup configuration
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Defines for the supported hardware architectures

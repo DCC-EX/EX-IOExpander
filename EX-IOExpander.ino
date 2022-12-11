@@ -153,10 +153,28 @@ void loop() {
 * Function triggered when CommandStation is sending data to this device.
 */
 void receiveEvent(int numBytes) {
+  if (numBytes == 0) {
+    return;
+  }
   byte buffer[numBytes];
   uint16_t portBits;
+#ifdef DIAG
+  Serial.print(F("Received "));
+  Serial.print(numBytes);
+  Serial.print(F(" buffer bytes: "));
+#endif
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();   // Read all received bytes into our buffer array
+#ifdef DIAG
+    Serial.print(byte);
+    Serial.print(F("|"));
+    if (byte == numBytes - 1) {
+      Serial.println(buffer[byte], HEX);
+    } else {
+      Serial.print(buffer[byte], HEX);
+      Serial.print(F(","));
+    }
+#endif
   }
   switch(buffer[0]) {
     // Initial configuration start, must be 3 bytes
