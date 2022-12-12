@@ -178,7 +178,7 @@ void receiveEvent(int numBytes) {
   }
   switch(buffer[0]) {
     // Initial configuration start, must be 3 bytes
-    case REG_EXIOINIT:
+    case EXIOINIT:
       if (numBytes == 3) {
         numDigitalPins = buffer[1];
         numAnaloguePins = buffer[2];
@@ -186,21 +186,21 @@ void receiveEvent(int numBytes) {
         digitalPinBytes = (numDigitalPins + 7) / 8;
         analoguePinBytes = (numAnaloguePins + 7) / 8;
 #ifdef DIAG
-        Serial.print(F("REG_EXIONIT Digital|Analogue: "));
+        Serial.print(F("EXIONIT Digital|Analogue: "));
         Serial.print(numDigitalPins);
         Serial.print(F("|"));
         Serial.println(numAnaloguePins);
 #endif
       } else {
 #ifdef DIAG
-        Serial.println(F("REG_EXIOINIT received with incorrect data"));
+        Serial.println(F("EXIOINIT received with incorrect data"));
 #endif
       }
       break;
     // Flag to enable digital pins
-    case REG_EXIODPIN:
+    case EXIODPIN:
 #ifdef DIAG
-      Serial.println(F("REG_EXIODPIN received"));
+      Serial.println(F("EXIODPIN received"));
 #endif
       if (numBytes == digitalPinBytes + 1) {
         for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
@@ -209,14 +209,14 @@ void receiveEvent(int numBytes) {
         }
     } else {
 #ifdef DIAG
-        Serial.println(F("REG_EXIODPIN received with incorrect number of pins"));
+        Serial.println(F("EXIODPIN received with incorrect number of pins"));
 #endif
       }
       break;
     // Flag to enable analogue pins
-    case REG_EXIOAPIN:
+    case EXIOAPIN:
 #ifdef DIAG
-      Serial.println(F("REG_EXIOAPIN received"));
+      Serial.println(F("EXIOAPIN received"));
 #endif
       if (numBytes == analoguePinBytes + 1) {
         for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
@@ -225,16 +225,16 @@ void receiveEvent(int numBytes) {
         }
     } else {
 #ifdef DIAG
-        Serial.println(F("REG_EXIOAPIN received with incorrect number of pins"));
+        Serial.println(F("EXIOAPIN received with incorrect number of pins"));
 #endif
       }
       break;
     // Received flag that setup should be complete
-    case REG_EXIORDY:
+    case EXIORDY:
       setupComplete = true;
       break;
     // Flag to set digital pin direction, 0 output, 1 input
-    case REG_EXIODDIR:
+    case EXIODDIR:
       if (numBytes == digitalPinBytes + 1) {
         for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
           int pinByte = ((pin + 7) / 8);
@@ -242,12 +242,12 @@ void receiveEvent(int numBytes) {
         }
       } else {
 #ifdef DIAG
-      Serial.println(F("REG_EXIODDIR received with incorrect number of bytes"));
+      Serial.println(F("EXIODDIR received with incorrect number of bytes"));
 #endif
       }
       break;
     // Flag to set digital pin pullups, 0 disabled, 1 enabled
-    case REG_EXIODPUP:
+    case EXIODPUP:
       if (numBytes == digitalPinBytes + 1) {
         for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
           int pinByte = ((pin + 7) / 8);
@@ -255,12 +255,14 @@ void receiveEvent(int numBytes) {
         }
       } else {
 #ifdef DIAG
-      Serial.println(F("REG_EXIODPUP received with incorrect number of bytes"));
+      Serial.println(F("EXIODPUP received with incorrect number of bytes"));
 #endif
       }
       break;
     default:
+#ifdef DIAG
       Serial.println(F("Reached default, no case matched"));
+#endif
       break;
   }
 }
