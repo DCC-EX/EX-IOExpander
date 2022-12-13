@@ -15,16 +15,6 @@
 #include <Arduino.h>
 
 /////////////////////////////////////////////////////////////////////////////////////
-//  Define the register hex values we need to act on or respond with
-//
-#define REG_EXIOINIT 0xE0     // Flag to start setup procedure
-#define REG_EXIODPIN 0xE1     // Flag we're receiving digital pin assignments
-#define REG_EXIOAPIN 0xE2     // Flag we're receiving analogue pin assignments
-#define REG_EXIORDY 0xE3      // Flag setup procedure done, return to CS to ACK
-#define REG_EXIODDIR 0xE4     // Flag we're receiving digital pin direction configuration
-#define REG_EXIODPUP 0xE5     // Flag we're receiving digital pin pullup configuration
-
-/////////////////////////////////////////////////////////////////////////////////////
 //  Defines for the supported hardware architectures
 //
 //  When adding new boards/architectures, the digital pin map must contain every pin
@@ -70,5 +60,15 @@ const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #else
 #define CPU_TYPE_ERROR
 #endif
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Define the register hex values we need to act on or respond with
+//
+#define EXIOINIT 0xE0     // Flag to start setup procedure
+#define EXIODPIN 0xE1     // Flag to enable digital pins
+#define EXIOAPIN 0xE2     // Flag to enable analogue pins
+#define EXIORDY 0xE3      // Flag setup procedure done, return to CS to ACK
+#define EXIODDIR 0xE4     // Flag we're receiving digital pin direction configuration
+#define EXIODPUP 0xE5     // Flag we're receiving digital pin pullup configuration
 
 #endif

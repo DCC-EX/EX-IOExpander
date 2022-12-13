@@ -15,7 +15,7 @@
 //  Define I2C address
 //  Default 0x90, can be any valid, available I2C address
 // 
-#define I2C_ADDRESS 0x90
+#define I2C_ADDRESS 0x65
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Uncomment to enable diag output
