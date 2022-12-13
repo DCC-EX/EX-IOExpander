@@ -64,7 +64,7 @@ unsigned long lastInputDisplay = 0;   // Last time in millis we displayed DIAG i
 * If for some reason the I2C address isn't defined, define our default here.
 */
 #ifndef I2C_ADDRESS
-#define I2C_ADDRESS 0x90
+#define I2C_ADDRESS 0x65
 #endif
 
 /*
