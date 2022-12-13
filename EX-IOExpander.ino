@@ -260,7 +260,9 @@ void receiveEvent(int numBytes) {
       }
       break;
     default:
+#ifdef DIAG
       Serial.println(F("Reached default, no case matched"));
+#endif
       break;
   }
 }
