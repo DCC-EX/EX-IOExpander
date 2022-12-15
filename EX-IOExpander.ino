@@ -186,25 +186,43 @@ void receiveEvent(int numBytes) {
         digitalPinBytes = (numDigitalPins + 7) / 8;
         analoguePinBytes = (numAnaloguePins + 7) / 8;
 #ifdef DIAG
-        Serial.print(F("EXIONIT Digital|Analogue: "));
+        Serial.print(F("Enabling "));
         Serial.print(numDigitalPins);
-        Serial.print(F("|"));
-        Serial.println(numAnaloguePins);
+        Serial.print(F(" digital pins: "));
 #endif
         // Cycle through and flag digital pins enabled
         for (uint8_t pin = 0; pin < numDigitalPins; pin++) {
           int pinByte = ((pin + 7) / 8);
           digitalPins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+#ifdef DIAG
+          if (pin == numDigitalPins - 1) {
+            Serial.println(digitalPinMap[pin]);
+            Serial.print(F("Enabling "));
+            Serial.print(numAnaloguePins);
+            Serial.print(F(" analogue pins: "));
+          } else {
+            Serial.print(digitalPinMap[pin]);
+            Serial.print(F(","));
+          }
+#endif
         }
+        uint8_t pinsToEnable = numAnaloguePins; // Number of analogue pins to enable
         // Cycle through analogue pins in reverse and enable from the top down
-        for (int pin = numAnaloguePins - 1; pin >= 0; --pin) {
-          int pinByte = ((pin + 7) / 8);
-          analoguePins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+        for (int pin = NUMBER_OF_ANALOGUE_PINS - 1; pin >= 0; --pin) {
+          if (pinsToEnable > 0) {
+            int pinByte = ((pin + 7) / 8);
+            analoguePins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+            --pinsToEnable;
+#ifdef DIAG
+            if (pinsToEnable == 0) {
+              Serial.println(analoguePinMap[pin]);
+            } else {
+              Serial.print(analoguePinMap[pin]);
+              Serial.print(F(","));
+            }
+#endif
+          }
         }
-        // for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
-        //   int pinByte = ((pin + 7) / 8);
-        //   analoguePins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
-        // }
       } else {
 #ifdef DIAG
         Serial.println(F("EXIOINIT received with incorrect data"));
@@ -264,7 +282,7 @@ void displayPins() {
   if (millis() > lastPinDisplay + DIAG_CONFIG_DELAY) {
     lastPinDisplay = millis();
     Serial.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
-    for (uint8_t pin = 0; pin < numDigitalPins; pin++) {
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       Serial.print(digitalPinMap[pin]);
       Serial.print(F("|"));
       Serial.print(digitalPins[pin].enable);
@@ -273,7 +291,7 @@ void displayPins() {
       Serial.print(F("|"));
       Serial.print(digitalPins[pin].pullup);
       Serial.print(F("|"));
-      if (pin == numDigitalPins - 1 || (pin % 16 == 0 && pin > 0)) {
+      if (pin == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS - 1 || (pin % 15 == 0 && pin > 0)) {
         Serial.println(digitalPins[pin].state);
       } else {
         Serial.print(digitalPins[pin].state);
@@ -281,14 +299,14 @@ void displayPins() {
       }
     }
     Serial.println(F("Analogue Pin|Enable|LSB|MSB:"));
-    for (uint8_t pin = 0; pin < numAnaloguePins; pin++) {
+    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
       Serial.print(analoguePinMap[pin]);
       Serial.print(F("|"));
       Serial.print(analoguePins[pin].enable);
       Serial.print(F("|"));
       Serial.print(analoguePins[pin].valueLSB);
       Serial.print(F("|"));
-      if (pin == numAnaloguePins - 1) {
+      if (pin == NUMBER_OF_ANALOGUE_PINS - 1) {
         Serial.println(analoguePins[pin].valueMSB);
       } else {
         Serial.print(analoguePins[pin].valueMSB);
