@@ -190,28 +190,32 @@ void receiveEvent(int numBytes) {
         Serial.print(numDigitalPins);
         Serial.print(F(" digital pins: "));
 #endif
+        uint8_t pinsToEnable = numDigitalPins;
         // Cycle through and flag digital pins enabled
-        for (uint8_t pin = 0; pin < numDigitalPins; pin++) {
-          int pinByte = ((pin + 7) / 8);
-          digitalPins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+        for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+          if (pinsToEnable > 0) {
+            digitalPins[pin].enable = 1;
+            --pinsToEnable;
 #ifdef DIAG
-          if (pin == numDigitalPins - 1) {
-            Serial.println(digitalPinMap[pin]);
-            Serial.print(F("Enabling "));
-            Serial.print(numAnaloguePins);
-            Serial.print(F(" analogue pins: "));
-          } else {
-            Serial.print(digitalPinMap[pin]);
-            Serial.print(F(","));
-          }
+            if (pinsToEnable == 0) {
+              Serial.println(digitalPinMap[pin]);
+              Serial.print(F("Enabling "));
+              Serial.print(numAnaloguePins);
+              Serial.print(F(" analogue pins: "));
+            } else {
+              Serial.print(digitalPinMap[pin]);
+              Serial.print(F(","));
+            }
 #endif
+          } else {
+            digitalPins[pin].enable = 0;
+          }
         }
-        uint8_t pinsToEnable = numAnaloguePins; // Number of analogue pins to enable
+        pinsToEnable = numAnaloguePins; // Number of analogue pins to enable
         // Cycle through analogue pins in reverse and enable from the top down
         for (int pin = NUMBER_OF_ANALOGUE_PINS - 1; pin >= 0; --pin) {
           if (pinsToEnable > 0) {
-            int pinByte = ((pin + 7) / 8);
-            analoguePins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+            analoguePins[pin].enable = 1;
             --pinsToEnable;
 #ifdef DIAG
             if (pinsToEnable == 0) {
@@ -221,6 +225,8 @@ void receiveEvent(int numBytes) {
               Serial.print(F(","));
             }
 #endif
+          } else {
+            analoguePins[pin].enable = 0;
           }
         }
       } else {
