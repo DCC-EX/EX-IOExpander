@@ -191,41 +191,23 @@ void receiveEvent(int numBytes) {
         Serial.print(F("|"));
         Serial.println(numAnaloguePins);
 #endif
-      } else {
-#ifdef DIAG
-        Serial.println(F("EXIOINIT received with incorrect data"));
-#endif
-      }
-      break;
-    // Flag to enable digital pins
-    case EXIODPIN:
-#ifdef DIAG
-      Serial.println(F("EXIODPIN received"));
-#endif
-      if (numBytes == digitalPinBytes + 1) {
-        for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
+        // Cycle through and flag digital pins enabled
+        for (uint8_t pin = 0; pin < numDigitalPins; pin++) {
           int pinByte = ((pin + 7) / 8);
           digitalPins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
         }
-    } else {
-#ifdef DIAG
-        Serial.println(F("EXIODPIN received with incorrect number of pins"));
-#endif
-      }
-      break;
-    // Flag to enable analogue pins
-    case EXIOAPIN:
-#ifdef DIAG
-      Serial.println(F("EXIOAPIN received"));
-#endif
-      if (numBytes == analoguePinBytes + 1) {
-        for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
+        // Cycle through analogue pins in reverse and enable from the top down
+        for (int pin = numAnaloguePins - 1; pin >= 0; --pin) {
           int pinByte = ((pin + 7) / 8);
           analoguePins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
         }
-    } else {
+        // for(uint8_t pin = 0; pin < numAnaloguePins; pin++) {
+        //   int pinByte = ((pin + 7) / 8);
+        //   analoguePins[pin].enable = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+        // }
+      } else {
 #ifdef DIAG
-        Serial.println(F("EXIOAPIN received with incorrect number of pins"));
+        Serial.println(F("EXIOINIT received with incorrect data"));
 #endif
       }
       break;

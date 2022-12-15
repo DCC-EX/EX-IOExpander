@@ -65,10 +65,8 @@ const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 //  Define the register hex values we need to act on or respond with
 //
 #define EXIOINIT 0xE0     // Flag to start setup procedure
-#define EXIODPIN 0xE1     // Flag to enable digital pins
-#define EXIOAPIN 0xE2     // Flag to enable analogue pins
-#define EXIORDY 0xE3      // Flag setup procedure done, return to CS to ACK
-#define EXIODDIR 0xE4     // Flag we're receiving digital pin direction configuration
-#define EXIODPUP 0xE5     // Flag we're receiving digital pin pullup configuration
+#define EXIORDY 0xE1      // Flag setup procedure done, return to CS to ACK
+#define EXIODDIR 0xE2     // Flag we're receiving digital pin direction configuration
+#define EXIODPUP 0xE3     // Flag we're receiving digital pin pullup configuration
 
 #endif
