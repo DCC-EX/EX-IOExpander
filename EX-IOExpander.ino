@@ -80,6 +80,8 @@ uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will b
 int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
 int analoguePinBytes; // Used for enabling/disabling analogue pins
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
+uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
+byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
 #ifdef DIAG
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
 #endif
@@ -158,23 +160,23 @@ void receiveEvent(int numBytes) {
   }
   byte buffer[numBytes];
   uint16_t portBits;
-#ifdef DIAG
-  Serial.print(F("Received "));
-  Serial.print(numBytes);
-  Serial.print(F(" buffer bytes: "));
-#endif
+// #ifdef DIAG
+//   Serial.print(F("Received "));
+//   Serial.print(numBytes);
+//   Serial.print(F(" buffer bytes: "));
+// #endif
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();   // Read all received bytes into our buffer array
-#ifdef DIAG
-    Serial.print(byte);
-    Serial.print(F("|"));
-    if (byte == numBytes - 1) {
-      Serial.println(buffer[byte], HEX);
-    } else {
-      Serial.print(buffer[byte], HEX);
-      Serial.print(F(","));
-    }
-#endif
+// #ifdef DIAG
+//     Serial.print(byte);
+//     Serial.print(F("|"));
+//     if (byte == numBytes - 1) {
+//       Serial.println(buffer[byte], HEX);
+//     } else {
+//       Serial.print(buffer[byte], HEX);
+//       Serial.print(F(","));
+//     }
+// #endif
   }
   switch(buffer[0]) {
     // Initial configuration start, must be 3 bytes
@@ -229,6 +231,7 @@ void receiveEvent(int numBytes) {
             analoguePins[pin].enable = 0;
           }
         }
+        setupComplete = true;
       } else {
 #ifdef DIAG
         Serial.println(F("EXIOINIT received with incorrect data"));
@@ -265,10 +268,13 @@ void receiveEvent(int numBytes) {
 #endif
       }
       break;
+    case EXIORDAN:
+      if (numBytes == 2) {
+        outboundFlag = EXIORDAN;
+        analogueOutBuffer[0] = analoguePins[buffer[1]].valueLSB;
+        analogueOutBuffer[1] = analoguePins[buffer[1]].valueMSB;
+      }
     default:
-#ifdef DIAG
-      Serial.println(F("Reached default, no case matched"));
-#endif
       break;
   }
 }
@@ -277,7 +283,13 @@ void receiveEvent(int numBytes) {
 * Function triggered when CommandStation polls for inputs on this device.
 */
 void requestEvent() {
-
+  switch(outboundFlag) {
+    case EXIORDAN:
+      Wire.write(analogueOutBuffer, 2);
+      break;
+    default:
+      break;
+  }
 }
 
 /*
@@ -304,11 +316,13 @@ void displayPins() {
         Serial.print(F(","));
       }
     }
-    Serial.println(F("Analogue Pin|Enable|LSB|MSB:"));
+    Serial.println(F("Analogue Pin|Enable|Value|LSB|MSB:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
       Serial.print(analoguePinMap[pin]);
       Serial.print(F("|"));
       Serial.print(analoguePins[pin].enable);
+      Serial.print(F("|"));
+      Serial.print((analoguePins[pin].valueMSB << 8) + analoguePins[pin].valueLSB);
       Serial.print(F("|"));
       Serial.print(analoguePins[pin].valueLSB);
       Serial.print(F("|"));

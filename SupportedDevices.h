@@ -68,5 +68,7 @@ const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #define EXIORDY 0xE1      // Flag setup procedure done, return to CS to ACK
 #define EXIODDIR 0xE2     // Flag we're receiving digital pin direction configuration
 #define EXIODPUP 0xE3     // Flag we're receiving digital pin pullup configuration
+#define EXIOOP 0xE4       // Flag we're operating normally
+#define EXIORDAN 0xE5     // Flag an analogue input is being read
 
 #endif
