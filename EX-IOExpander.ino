@@ -274,6 +274,22 @@ void receiveEvent(int numBytes) {
         analogueOutBuffer[0] = analoguePins[buffer[1]].valueLSB;
         analogueOutBuffer[1] = analoguePins[buffer[1]].valueMSB;
       }
+      break;
+    case EXIOWRD:
+      if (numBytes == 3) {
+        uint8_t dPin = buffer[1];
+        bool state = buffer[2];
+        digitalPins[dPin].direction = 0;
+        digitalPins[dPin].state = state;
+        digitalWrite(digitalPinMap[dPin], state);
+#ifdef DIAG
+        Serial.print(F("Digital Write: "));
+        Serial.print(dPin);
+        Serial.print(F("|"));
+        Serial.println(state);
+#endif
+      }
+      break;
     default:
       break;
   }

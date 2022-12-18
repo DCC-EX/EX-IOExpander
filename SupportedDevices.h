@@ -70,5 +70,6 @@ const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #define EXIODPUP 0xE3     // Flag we're receiving digital pin pullup configuration
 #define EXIOOP 0xE4       // Flag we're operating normally
 #define EXIORDAN 0xE5     // Flag an analogue input is being read
+#define EXIOWRD 0xE6      // Flag for digital write
 
 #endif
