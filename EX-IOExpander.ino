@@ -82,6 +82,7 @@ int analoguePinBytes; // Used for enabling/disabling analogue pins
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
 byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
+byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 #ifdef DIAG
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
 #endif
@@ -242,26 +243,26 @@ void receiveEvent(int numBytes) {
     case EXIORDY:
       setupComplete = true;
       break;
-    // Flag to set digital pin direction, 0 output, 1 input
-    case EXIODDIR:
-      if (numBytes == digitalPinBytes + 1) {
-        for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
-          int pinByte = ((pin + 7) / 8);
-          digitalPins[pin].direction = buffer[pinByte + 1] >> (pin - (pinByte * 8));
-        }
-      } else {
-#ifdef DIAG
-      Serial.println(F("EXIODDIR received with incorrect number of bytes"));
-#endif
-      }
-      break;
     // Flag to set digital pin pullups, 0 disabled, 1 enabled
     case EXIODPUP:
-      if (numBytes == digitalPinBytes + 1) {
-        for(uint8_t pin = 0; pin < numDigitalPins; pin++) {
-          int pinByte = ((pin + 7) / 8);
-          digitalPins[pin].pullup = buffer[pinByte + 1] >> (pin - (pinByte * 8));
+      Serial.println(F("EXIODPUP received"));
+      if (numBytes == 3) {
+        uint8_t pin = buffer[1];
+        digitalPins[pin].direction = 1;   // Must be an input if we got a pullup config
+        digitalPins[pin].pullup = buffer[2];
+        if (digitalPins[pin].pullup == 1) {
+          pinMode(digitalPinMap[pin], INPUT_PULLUP);
+        } else {
+          pinMode(digitalPinMap[pin], INPUT);
         }
+        digitalPins[pin].state = digitalRead(digitalPinMap[pin]);
+#ifdef DIAG
+        Serial.print(F("Pin "));
+        Serial.print(digitalPinMap[pin]);
+        Serial.print(F(" configured for input with pullup: "));
+        Serial.println(digitalPins[pin].pullup);
+#endif
+        // }
       } else {
 #ifdef DIAG
       Serial.println(F("EXIODPUP received with incorrect number of bytes"));
@@ -282,12 +283,13 @@ void receiveEvent(int numBytes) {
         digitalPins[dPin].direction = 0;
         digitalPins[dPin].state = state;
         digitalWrite(digitalPinMap[dPin], state);
-#ifdef DIAG
-        Serial.print(F("Digital Write: "));
-        Serial.print(dPin);
-        Serial.print(F("|"));
-        Serial.println(state);
-#endif
+      }
+      break;
+    case EXIORDD:
+      if (numBytes == 3) {
+        uint8_t dPin = buffer[1];
+        outboundFlag = EXIORDD;
+        digitalOutBuffer[0] = digitalPins[dPin].state;
       }
       break;
     default:
@@ -302,6 +304,10 @@ void requestEvent() {
   switch(outboundFlag) {
     case EXIORDAN:
       Wire.write(analogueOutBuffer, 2);
+      break;
+    case EXIORDD:
+      Serial.print(F("Send digital: "));
+      Wire.write(digitalOutBuffer, 1);
       break;
     default:
       break;
