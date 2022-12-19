@@ -256,12 +256,6 @@ void receiveEvent(int numBytes) {
           pinMode(digitalPinMap[pin], INPUT);
         }
         digitalPins[pin].state = digitalRead(digitalPinMap[pin]);
-#ifdef DIAG
-        Serial.print(F("Pin "));
-        Serial.print(digitalPinMap[pin]);
-        Serial.print(F(" configured for input with pullup: "));
-        Serial.println(digitalPins[pin].pullup);
-#endif
         // }
       } else {
 #ifdef DIAG
@@ -306,7 +300,6 @@ void requestEvent() {
       Wire.write(analogueOutBuffer, 2);
       break;
     case EXIORDD:
-      Serial.print(F("Send digital: "));
       Wire.write(digitalOutBuffer, 1);
       break;
     default:
