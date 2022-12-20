@@ -173,6 +173,16 @@ void receiveEvent(int numBytes) {
           // Calculate number of bytes required to cover pins
           digitalPinBytes = (numDigitalPins + 7) / 8;
           analoguePinBytes = (numAnaloguePins + 7) / 8;
+          for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+            digitalPins[pin].direction = 0;
+            digitalPins[pin].pullup = 0;
+            digitalPins[pin].state = 0;
+          }
+          for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+            analoguePins[pin].enable = 0;
+            analoguePins[pin].valueLSB = 0;
+            analoguePins[pin].valueMSB = 0;
+          }
 #ifdef DIAG
           Serial.print(F("Configured pins (digital|analogue): "));
           Serial.print(numDigitalPins);
@@ -185,6 +195,7 @@ void receiveEvent(int numBytes) {
           Serial.print(numDigitalPins);
           Serial.print(F("|"));
           Serial.println(numAnaloguePins);
+          setupComplete = false;
         }
         outboundFlag = EXIOINIT;
       } else {
@@ -215,7 +226,7 @@ void receiveEvent(int numBytes) {
     case EXIORDAN:
       if (numBytes == 2) {
         outboundFlag = EXIORDAN;
-        uint8_t aPin = buffer[1];
+        uint8_t aPin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
         if (analoguePins[aPin].enable == 0) {
           analoguePins[aPin].enable = 1;
           uint16_t value = analogRead(analoguePinMap[aPin]);
