@@ -18,46 +18,72 @@
  */
 
 /*
-* EX-IOExpander is designed to emulate the digital I/O capability of an MCP23017 I/O expander.
+* EX-IOExpander is a native DCC-EX I/O expander utilising a microcontroller's digital and analogue I/O pins
+* to expand the I/O capability of an EX-CommandStation.
 *
-* All 12 digital I/O pins on Uno/Nano footprints are available as digital inputs or outputs (2 - 13).
-* Analogue I/O pins A0 - A3 are also available as digital inputs or outputs for a total of 16 pins.
+* All digital I/O pins are available as digital inputs or outputs.
+* Analogue I/O pins are available as digital inputs or outputs or analogue inputs (depending on architecture).
 */
 
 #include <Arduino.h>
-#include "defines.h"
+#include "SupportedDevices.h"
+
+#ifdef CPU_TYPE_ERROR
+#error Unsupported microcontroller architecture detected, you need to use a type listed in defines.h
+#endif
 
 /*
 If we haven't got a custom config.h, use the example.
 */
-#if __has_include ("config.h")
-  #include "config.h"
+#if __has_include ("myConfig.h")
+  #include "myConfig.h"
 #else
-  #warning config.h not found. Using defaults from config.example.h
-  #include "config.example.h"
+  #warning myConfig.h not found. Using defaults from myConfig.example.h
+  #include "myConfig.example.h"
 #endif
 
 /*
-* Struct to define the port parameters.
+* Struct to define the digital pin parameters and keep state.
 */
 typedef struct {
   bool direction;       // 0 = output, 1 = input
   bool pullup;          // 0 = no pullup, 1 = pullup (input only)
   bool state;           // stores current state, 0 = LOW, 1 = HIGH
-} gpioConfig;
+} digitalConfig;
 
 /*
-* Create GPIO array using struct.
+* Struct to define the analogue pin assignment and keep state
 */
-gpioConfig portStates[NUMBER_OF_PINS];
+typedef struct {
+  byte valueLSB;        // Least significant byte of analogue value
+  byte valueMSB;        // Most significant byte of analogue value
+  bool enable;          // Flag if it's enabled (1) or not (0)
+} analogueConfig;
+
+/*
+* Create digitalConfig array using struct.
+* Size of the array needs to be able to include analogue pins as well.
+*/
+digitalConfig digitalPins[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS];
+
+/*
+* Create array for analogue pin assignments.
+*/
+analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 
 /*
 * Global variables here
 */
-byte gpioA = 0x00;   // Bytes to store banks A and B states to send to the CommandStation
-byte gpioB = 0x00;
+uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
+uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
+int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
+int analoguePinBytes; // Used for enabling/disabling analogue pins
+bool setupComplete = false;   // Flag when initial configuration/setup has been received
+uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
+byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
+byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 #ifdef DIAG
-unsigned long lastInputDisplay = 0;   // Last time in millis we displayed DIAG input states
+unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
 #endif
 
 /*
@@ -80,15 +106,17 @@ void setup() {
   Serial.begin(115200);
   Serial.print(F("DCC-EX EX-IOExpander version "));
   Serial.println(VERSION);
+  Serial.print(F("Detected device: "));
+  Serial.println(BOARD_TYPE);
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(I2C_ADDRESS, HEX);
   Wire.begin(I2C_ADDRESS);
-  // Start with each port in a known state, safest is input
-  for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-    portStates[port].direction = 1;
-    portStates[port].pullup = 0;
-    portStates[port].state = 0;
-    pinMode(pinMap[port], INPUT);
+  // Need to intialise every pin in INPUT mode (no pull ups) for safe start
+  for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
+    pinMode(digitalPinMap[pin], INPUT);
+  }
+  for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+    pinMode(analoguePinMap[pin], INPUT);
   }
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
@@ -98,32 +126,29 @@ void setup() {
 * Main loop here, just processes our inputs and updates the writeBuffer.
 */
 void loop() {
-  for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-    if (portStates[port].direction == 1) {
-      if (portStates[port].pullup == 0) {
-        pinMode(pinMap[port], INPUT);
-      } else {
-        pinMode(pinMap[port], INPUT_PULLUP);
+  if (setupComplete) {
+    for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
+      if (digitalPins[dPin].direction == 1) {
+        if (digitalPins[dPin].pullup == 1) {
+          pinMode(digitalPinMap[dPin], INPUT_PULLUP);
+        } else {
+          pinMode(digitalPinMap[dPin], INPUT);
+        }
+        bool currentState = digitalRead(digitalPinMap[dPin]);
+        if (digitalPins[dPin].pullup) currentState = !currentState;
+        digitalPins[dPin].state = currentState;
       }
-      bool currentState = digitalRead(pinMap[port]);
-      portStates[port].state = currentState;
     }
-    if (portStates[port].state == 0) {
-      if (port < 8) {
-        bitClear(gpioA, port);
-      } else {
-        bitClear(gpioB, port);
-      }
-    } else {
-      if (port < 8) {
-        bitSet(gpioA, port);
-      } else {
-        bitSet(gpioB, port);
+    for (uint8_t aPin = 0; aPin < numAnaloguePins; aPin++) {
+      if (analoguePins[aPin].enable == 1) {
+        uint16_t value = analogRead(analoguePinMap[aPin]);
+        analoguePins[aPin].valueLSB = value & 0xFF;
+        analoguePins[aPin].valueMSB = value >> 8;
       }
     }
   }
-#ifdef DIAG
-  displayConfig();
+  #ifdef DIAG
+  displayPins();
 #endif
 }
 
@@ -131,127 +156,156 @@ void loop() {
 * Function triggered when CommandStation is sending data to this device.
 */
 void receiveEvent(int numBytes) {
+  if (numBytes == 0) {
+    return;
+  }
   byte buffer[numBytes];
-  uint16_t portBits;
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();   // Read all received bytes into our buffer array
   }
-  if (numBytes > 1) {
-    if (numBytes == 3) {
-      portBits = (buffer[2] << 8) + buffer[1];  // If 3 bytes, we know we got port info, bit shift them
-    }
-    switch(buffer[0]) {
-      case REG_IODIRA:
-        // Register to set port direction, 0 = output, 1 = input
+  switch(buffer[0]) {
+    // Initial configuration start, must be 3 bytes
+    case EXIOINIT:
+      if (numBytes == 3) {
+        numDigitalPins = buffer[1];
+        numAnaloguePins = buffer[2];
+        if (numDigitalPins + numAnaloguePins == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) {
+          // Calculate number of bytes required to cover pins
+          digitalPinBytes = (numDigitalPins + 7) / 8;
+          analoguePinBytes = (numAnaloguePins + 7) / 8;
 #ifdef DIAG
-        Serial.print(F("REG_IODIRA (port|dir): "));
-#endif
-        for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-          bool direction = portBits >> port & 1;
-          portStates[port].direction = direction;
-#ifdef DIAG
-          Serial.print(pinMap[port]);
+          Serial.print(F("Configured pins (digital|analogue): "));
+          Serial.print(numDigitalPins);
           Serial.print(F("|"));
-          if (port == NUMBER_OF_PINS - 1) {
-            Serial.println(portStates[port].direction);
-          } else {
-            Serial.print(portStates[port].direction);
-            Serial.print(F(","));
-          }
+          Serial.println(numAnaloguePins);
 #endif
-        }
-        break;
-      case REG_GPINTENA:
-        // Register to enable interrupts per port
-        // Not enabling interrupts at the moment, disregard this
-        break;
-      case REG_INTCONA:
-        // Register to set interrupt detection method per port
-        // Not enabling interrupts at the moment, disregard this
-        break;
-      case REG_IOCON:
-        // Register to configure the I/O expander
-        // We don't need to do anything with this, only relevant for actual MCP23017
-        break;
-      case REG_GPPUA:
-        // Register to set pullups per port
-#ifdef DIAG
-        Serial.print(F("REG_GPPUA (port|pullup): "));
-#endif
-        for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-          bool pullup = portBits >> port & 1;
-          portStates[port].pullup = pullup;
-#ifdef DIAG
-          Serial.print(pinMap[port]);
+          setupComplete = true;
+        } else {
+          Serial.print(F("ERROR: Invalid pins sent by device driver! (Digital|Analogue): "));
+          Serial.print(numDigitalPins);
           Serial.print(F("|"));
-          if (port == NUMBER_OF_PINS - 1) {
-            Serial.println(portStates[port].pullup);
-          } else {
-            Serial.print(portStates[port].pullup);
-            Serial.print(F(","));
-          }
-#endif
+          Serial.println(numAnaloguePins);
         }
-        break;
-      case REG_GPIOA:
-        // Register to reflect the logic level of each port
-        // We only deal with outputs here
+        outboundFlag = EXIOINIT;
+      } else {
 #ifdef DIAG
-        Serial.print(F("REG_GPIO (port|state): "));
+        Serial.println(F("EXIOINIT received with incorrect data"));
 #endif
-        for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-          if (portStates[port].direction == 0) {
-            bool portState = portBits >> port & 1;
-            pinMode(pinMap[port], OUTPUT);
-            portStates[port].state = portState;
-            digitalWrite(pinMap[port], portState);
-#ifdef DIAG
-            Serial.print(pinMap[port]);
-            Serial.print(F("|"));
-            Serial.print(portState);
-            Serial.print(F(","));
-#endif
-          }
+      }
+      break;
+    // Flag to set digital pin pullups, 0 disabled, 1 enabled
+    case EXIODPUP:
+      if (numBytes == 3) {
+        uint8_t pin = buffer[1];
+        digitalPins[pin].direction = 1;   // Must be an input if we got a pullup config
+        digitalPins[pin].pullup = buffer[2];
+        if (digitalPins[pin].pullup == 1) {
+          pinMode(digitalPinMap[pin], INPUT_PULLUP);
+        } else {
+          pinMode(digitalPinMap[pin], INPUT);
         }
+        digitalPins[pin].state = digitalRead(digitalPinMap[pin]);
+        // }
+      } else {
 #ifdef DIAG
-        Serial.println(F(""));
+      Serial.println(F("EXIODPUP received with incorrect number of bytes"));
 #endif
-        break;
-      default:
-        Serial.println(F("Reached default, no case matched"));
-        break;
-    }
+      }
+      break;
+    case EXIORDAN:
+      if (numBytes == 2) {
+        outboundFlag = EXIORDAN;
+        uint8_t aPin = buffer[1];
+        if (analoguePins[aPin].enable == 0) {
+          analoguePins[aPin].enable = 1;
+          uint16_t value = analogRead(analoguePinMap[aPin]);
+          analoguePins[aPin].valueLSB = value & 0xFF;
+          analoguePins[aPin].valueMSB = value >> 8;
+        }
+        analogueOutBuffer[0] = analoguePins[aPin].valueLSB;
+        analogueOutBuffer[1] = analoguePins[aPin].valueMSB;
+      }
+      break;
+    case EXIOWRD:
+      if (numBytes == 3) {
+        uint8_t dPin = buffer[1];
+        bool state = buffer[2];
+        digitalPins[dPin].direction = 0;
+        digitalPins[dPin].state = state;
+        digitalWrite(digitalPinMap[dPin], state);
+      }
+      break;
+    case EXIORDD:
+      if (numBytes == 3) {
+        uint8_t dPin = buffer[1];
+        outboundFlag = EXIORDD;
+        digitalOutBuffer[0] = digitalPins[dPin].state;
+      }
+      break;
+    default:
+      break;
   }
 }
 
 /*
 * Function triggered when CommandStation polls for inputs on this device.
-* Simply sends our current GPIO states back to the CommandStation.
 */
 void requestEvent() {
-  Wire.write(gpioA);
-  Wire.write(gpioB);
+  switch(outboundFlag) {
+    case EXIOINIT:
+      if (setupComplete) {
+        Wire.write(EXIORDY);
+      } else {
+        Wire.write(0);
+      }
+      break;
+    case EXIORDAN:
+      Wire.write(analogueOutBuffer, 2);
+      break;
+    case EXIORDD:
+      Wire.write(digitalOutBuffer, 1);
+      break;
+    default:
+      break;
+  }
 }
 
 /*
-* Function to display current input port states when DIAG enabled
+* Function to display pin configuratin and states when DIAG enabled
 */
 #ifdef DIAG
-void displayConfig() {
-  if (millis() > lastInputDisplay + DIAG_CONFIG_DELAY) {
-    lastInputDisplay = millis();
-    Serial.print(F("Pin|D|P|S: "));
-    for (uint8_t port = 0; port < NUMBER_OF_PINS; port++) {
-      Serial.print(pinMap[port]);
+void displayPins() {
+  if (millis() > lastPinDisplay + DIAG_CONFIG_DELAY) {
+    lastPinDisplay = millis();
+    Serial.println(F("Digital Pin|Direction|Pullup|State:"));
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      Serial.print(digitalPinMap[pin]);
       Serial.print(F("|"));
-      Serial.print(portStates[port].direction);
+      Serial.print(digitalPins[pin].direction);
       Serial.print(F("|"));
-      Serial.print(portStates[port].pullup);
+      Serial.print(digitalPins[pin].pullup);
       Serial.print(F("|"));
-      if (port == NUMBER_OF_PINS - 1) {
-        Serial.println(portStates[port].state);
+      if (pin == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS - 1 || (pin % 15 == 0 && pin > 0)) {
+        Serial.println(digitalPins[pin].state);
       } else {
-        Serial.print(portStates[port].state);
+        Serial.print(digitalPins[pin].state);
+        Serial.print(F(","));
+      }
+    }
+    Serial.println(F("Analogue Pin|Enable|Value|LSB|MSB:"));
+    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+      Serial.print(analoguePinMap[pin]);
+      Serial.print(F("|"));
+      Serial.print(analoguePins[pin].enable);
+      Serial.print(F("|"));
+      Serial.print((analoguePins[pin].valueMSB << 8) + analoguePins[pin].valueLSB);
+      Serial.print(F("|"));
+      Serial.print(analoguePins[pin].valueLSB);
+      Serial.print(F("|"));
+      if (pin == NUMBER_OF_ANALOGUE_PINS - 1) {
+        Serial.println(analoguePins[pin].valueMSB);
+      } else {
+        Serial.print(analoguePins[pin].valueMSB);
         Serial.print(F(","));
       }
     }
