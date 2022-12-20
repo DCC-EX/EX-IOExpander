@@ -8,8 +8,8 @@
  * 
  *  NOTE: Modifications to this file will be overwritten by future software updates.
  */
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef MYCONFIG_H
+#define MYCONFIG_H
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define I2C address
