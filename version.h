@@ -1,8 +1,10 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define VERSION "0.0.2-Alpha"
+#define VERSION "0.0.3-Alpha"
 
+// 0.0.3-Alpha includes:
+//  - Bug fix for compilation on Mega
 // 0.0.2-Alpha includes:
 //  - Change from MCP23017 emulation to native DCC-EX device driver.
 //  - Digital input/output.
