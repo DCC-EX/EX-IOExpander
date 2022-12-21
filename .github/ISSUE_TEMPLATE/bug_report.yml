@@ -1,0 +1,82 @@
+# Bug report GitHub issue form
+# 
+# This file needs to reside in the https://github.com/DCC-EX/.github repository in the ".github/ISSUE_TEMPLATE/" folder.
+
+name: Bug Report
+description: Submit a bug report
+labels:
+  - Bug
+title: "Bug Report: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to submit a bug report to the DCC-EX team!
+
+        In order to help us to validate the bug and ascertain what's causing it, please provide as much information as possible in this form.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Please provide the version of EX-IOExpander and EX-CommandStation in use.
+      placeholder: |
+        EX-CommandStation v4.2.7pre1
+        EX-IOExpander v0.0.2alpha
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: Please provide a clear and concise description of what the symptoms of the bug are.
+      placeholder: |
+        When configuring a digital output pin, activating it using SET(vpin) in EX-RAIL deactivates the pin instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce the bug
+      description: Please provide the steps to reproduce the behaviour.
+      placeholder: |
+        1. Create myAutomation.h with a sequence using SET(vpin).
+        2. The vpin output will already be activated.
+        3. When SET(vpin) is executed, it will deactivate instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expectation
+    attributes:
+      label: Expected behaviour
+      description: Please provide a clear and concise description of what you expected to happen.
+      placeholder: |
+        The output should be deactivated until the SET(vpin) in the sequence is executed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, upload any screenshots here.
+
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Hardware in use
+      description: Please provide details of hardware in use.
+      placeholder: |
+        EX-CommandStation - Elegoo Mega2560 + Arduino motor shield R3
+        EX-IOExpander - Arduino Nano
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra-context
+    attributes:
+      label: Additional context
+      description: Please provide any other relevant information that could help us resolve this issue, for example a customised config.h file, myAutomation.h file, etc.

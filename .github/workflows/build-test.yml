@@ -1,0 +1,19 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Python Wheel
+      run: pip install wheel
+    - name: Install PlatformIO Core
+      run: pip install -U platformio
+    - name: Copy generic config over
+      run: cp myConfig.example.h myConfig.h
+    - name: Compile Command Station (AVR)
+      run: python -m platformio run
