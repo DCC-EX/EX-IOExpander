@@ -56,7 +56,7 @@ const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = 
 };
 const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15
-}
+};
 #else
 #define CPU_TYPE_ERROR
 #endif
