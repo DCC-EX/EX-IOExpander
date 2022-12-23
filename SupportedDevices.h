@@ -25,6 +25,7 @@
 // Arduino Uno
 #if defined(ARDUINO_AVR_UNO)
 #define BOARD_TYPE F("Uno")
+#define HAS_EEPROM
 #define NUMBER_OF_DIGITAL_PINS 12   // D2 - D13
 #define NUMBER_OF_ANALOGUE_PINS 4     // A0 - A3, cannot use A4/A5
 static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
@@ -36,6 +37,7 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 // Arduino Nano
 #elif defined(ARDUINO_AVR_NANO)
 #define BOARD_TYPE F("Nano")
+#define HAS_EEPROM
 #define NUMBER_OF_DIGITAL_PINS 12   // D2 - D13
 #define NUMBER_OF_ANALOGUE_PINS 6     // A0 - A3, A6/A7, cannot use A4/A5
 static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
@@ -47,6 +49,7 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 // Arduino Mega/Mega2560
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
 #define BOARD_TYPE F("Mega")
+#define HAS_EEPROM
 #define NUMBER_OF_DIGITAL_PINS 46   // D2 - D19, D22 - D49
 #define NUMBER_OF_ANALOGUE_PINS 16     // A0 - A15
 const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
@@ -71,5 +74,13 @@ const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #define EXIORDAN 0xE4     // Flag an analogue input is being read
 #define EXIOWRD 0xE5      // Flag for digital write
 #define EXIORDD 0xE6      // Flag a digital input is being read
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Define version to store in EEPROM/FLASH in case this needs to change later
+//  This needs to be defined in order to invalidate contents if the structure changes
+//  in future releases.
+//
+#define EEPROM_VERSION 1
+#define FLASH_VERSION 1
 
 #endif
