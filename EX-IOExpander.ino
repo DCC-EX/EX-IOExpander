@@ -74,6 +74,13 @@ analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 /*
 * Global variables here
 */
+/*
+* If for some reason the I2C address isn't defined, define our default here.
+*/
+#ifndef I2C_ADDRESS
+#define I2C_ADDRESS 0x65
+#endif
+uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
 uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
 uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
 int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
@@ -84,13 +91,6 @@ byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue v
 byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 #ifdef DIAG
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
-#endif
-
-/*
-* If for some reason the I2C address isn't defined, define our default here.
-*/
-#ifndef I2C_ADDRESS
-#define I2C_ADDRESS 0x65
 #endif
 
 /*
@@ -108,9 +108,14 @@ void setup() {
   Serial.println(VERSION);
   Serial.print(F("Detected device: "));
   Serial.println(BOARD_TYPE);
+  if (i2cAddress < 0x08 || i2cAddress > 0x77) {
+    Serial.print(F("ERROR: Invalid I2C address configured: 0x"));
+    Serial.println(i2cAddress, HEX);
+    i2cAddress = 0x65;
+  }
   Serial.print(F("Available at I2C address 0x"));
-  Serial.println(I2C_ADDRESS, HEX);
-  Wire.begin(I2C_ADDRESS);
+  Serial.println(i2cAddress, HEX);
+  Wire.begin(i2cAddress);
   // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
     pinMode(digitalPinMap[pin], INPUT);
