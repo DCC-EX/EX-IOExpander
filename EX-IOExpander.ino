@@ -442,7 +442,7 @@ uint8_t getI2CAddress() {
     }
   }
   if (addressSet) {
-    eepromAddress = EEPROM.read(6);
+    eepromAddress = EEPROM.read(5);
 #ifdef DIAG
       Serial.print(F("I2C address defined in EEPROM: 0x"));
       Serial.println(eepromAddress, HEX);
@@ -464,14 +464,14 @@ void writeI2CAddress(int16_t eepromAddress) {
   for (uint8_t i = 0; i < 5; i++) {
     EEPROM.write(i, eepromData[i]);
   }
-  EEPROM.write(6, eepromAddress);
+  EEPROM.write(5, eepromAddress);
 }
 
 /*
 * Function to erase EEPROM contents
 */
 void eraseEEPROM() {
-  for (uint8_t i = 0; i < 7; i++) {
+  for (uint8_t i = 0; i < 6; i++) {
     EEPROM.write(i, 0);
   }
 }

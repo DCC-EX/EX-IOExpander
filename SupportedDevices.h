@@ -67,13 +67,17 @@ const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #elif defined(ARDUINO_NUCLEO_F411RE)
 #define BOARD_TYPE F("NUCLEO-F411RE")
 #define SECTOR_FLASH
-#define NUMBER_OF_DIGITAL_PINS 2
-#define NUMBER_OF_ANALOGUE_PINS 2
+#define NUMBER_OF_DIGITAL_PINS 34
+#define NUMBER_OF_ANALOGUE_PINS 14
 const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
-  PC_10,PC_12,PC_2,PC_3
+  PC_10,PC_11,PC_12,PD_2,PA_13,PA_14,PA_15,PB_7,PC_13,PC_14,PC_15,PH_0,PH_1,    // CN7 digital
+  PC_9,PC_8,PC_6,PA_12,PA_11,PB_12,PB_6,PC_7,PA_9,PB_2,PA_8,PB_10,PB_15,PB_10,PB_15,PB_4,PB_14,PB_5,PB_13,PB_3,PA_10, // CN10 digital
+  PA_0,PA_1,PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
+  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
 };
 const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
-  PC_2,PC_3
+  PA_0,PA_1,PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
+  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
 };
 
 #else
