@@ -27,6 +27,9 @@
 
 #include <Arduino.h>
 #include "SupportedDevices.h"
+#ifdef HAS_EEPROM
+#include <EEPROM.h>
+#endif
 
 #ifdef CPU_TYPE_ERROR
 #error Unsupported microcontroller architecture detected, you need to use a type listed in defines.h
@@ -74,6 +77,13 @@ analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 /*
 * Global variables here
 */
+/*
+* If for some reason the I2C address isn't defined, define our default here.
+*/
+#ifndef I2C_ADDRESS
+#define I2C_ADDRESS 0x65
+#endif
+uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
 uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
 uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
 int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
@@ -82,15 +92,11 @@ bool setupComplete = false;   // Flag when initial configuration/setup has been 
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
 byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
 byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
+bool newSerialData = false;   // Flag for new serial data being received
+const byte numSerialChars = 10;   // Max number of chars for serial input
+char serialInputChars[numSerialChars];  // Char array for serial input
 #ifdef DIAG
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
-#endif
-
-/*
-* If for some reason the I2C address isn't defined, define our default here.
-*/
-#ifndef I2C_ADDRESS
-#define I2C_ADDRESS 0x65
 #endif
 
 /*
@@ -98,6 +104,11 @@ unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG inp
 */
 #include "version.h"
 #include <Wire.h>
+
+/*
+* Code to reset via software
+*/
+void(* reset) (void) = 0;
 
 /*
 * Main setup function here.
@@ -108,10 +119,19 @@ void setup() {
   Serial.println(VERSION);
   Serial.print(F("Detected device: "));
   Serial.println(BOARD_TYPE);
+  if (getI2CAddress() != 0) {
+    i2cAddress = getI2CAddress();
+  }
+  if (i2cAddress < 0x08 || i2cAddress > 0x77) {
+    Serial.print(F("ERROR: Invalid I2C address configured: 0x"));
+    Serial.print(i2cAddress, HEX);
+    Serial.println(F(", using myConfig.h instead"));
+    i2cAddress = I2C_ADDRESS;
+  }
   Serial.print(F("Available at I2C address 0x"));
-  Serial.println(I2C_ADDRESS, HEX);
-  Wire.begin(I2C_ADDRESS);
-  // Need to intialise every pin in INPUT mode (no pull ups) for safe start
+  Serial.println(i2cAddress, HEX);
+  Wire.begin(i2cAddress);
+// Need to intialise every pin in INPUT mode (no pull ups) for safe start
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
     pinMode(digitalPinMap[pin], INPUT);
   }
@@ -147,9 +167,10 @@ void loop() {
       }
     }
   }
-  #ifdef DIAG
+#ifdef DIAG
   displayPins();
 #endif
+  processSerialInput();
 }
 
 /*
@@ -282,7 +303,7 @@ void requestEvent() {
 }
 
 /*
-* Function to display pin configuratin and states when DIAG enabled
+* Function to display pin configuration and states when DIAG enabled
 */
 #ifdef DIAG
 void displayPins() {
@@ -322,4 +343,147 @@ void displayPins() {
     }
   }
 }
+#endif
+
+/*
+* Function to read and process serial input for I2C address config
+*/
+void processSerialInput() {
+  static bool serialInProgress = false;
+  static byte serialIndex = 0;
+  char startMarker = '<';
+  char endMarker = '>';
+  char serialChar;
+  while (Serial.available() > 0 && newSerialData == false) {
+    serialChar = Serial.read();
+    if (serialInProgress == true) {
+      if (serialChar != endMarker) {
+        serialInputChars[serialIndex] = serialChar;
+        serialIndex++;
+        if (serialIndex >= numSerialChars) {
+          serialIndex = numSerialChars - 1;
+        }
+      } else {
+        serialInputChars[serialIndex] = '\0';
+        serialInProgress = false;
+        serialIndex = 0;
+        newSerialData = true;
+      }
+    } else if (serialChar == startMarker) {
+      serialInProgress = true;
+    }
+  }
+  if (newSerialData == true) {
+    newSerialData = false;
+    char * strtokIndex;
+    strtokIndex = strtok(serialInputChars," ");
+    char activity = strtokIndex[0];    // activity is our first parameter
+    strtokIndex = strtok(NULL," ");       // space is null, separator
+    unsigned long newAddress = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
+#ifdef DIAG
+    Serial.print(F("Perform activity "));
+    Serial.print(activity);
+    Serial.print(F(" for I2C address 0x"));
+    Serial.println(newAddress, HEX);
+#endif
+    switch (activity) {
+      case 'W':
+        if (newAddress > 0x07 && newAddress < 0x78) {
+          writeI2CAddress(newAddress);
+        } else {
+          Serial.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
+        }
+        break;
+      case 'E':
+        eraseI2CAddress();
+        break;
+      case 'R':
+        if (getI2CAddress() == 0) {
+          Serial.println(F("I2C address not stored, using myConfig.h"));
+        } else {
+          Serial.print(F("I2C address stored is 0x"));
+          Serial.println(getI2CAddress(), HEX);
+        }
+        break;
+      case 'Z':
+        reset();
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+// EEPROM functions here, only for uCs with EEPROM support
+#ifdef HAS_EEPROM
+/*
+* Function to read I2C address from EEPROM
+* Look for "EXIO" and the version EEPROM_VERSION at 0 to 5, address at 6
+*/
+uint8_t getI2CAddress() {
+  char data[5];
+  char eepromData[5] = {'E', 'X', 'I', 'O', EEPROM_VERSION};
+  uint8_t eepromAddress;
+  bool addressSet = true;
+  for (uint8_t i = 0; i < 5; i ++) {
+    data[i] = EEPROM.read(i);
+    if (data[i] != eepromData[i]) {
+      addressSet = false;
+      break;
+    }
+  }
+  if (addressSet) {
+    eepromAddress = EEPROM.read(5);
+#ifdef DIAG
+      Serial.print(F("I2C address defined in EEPROM: 0x"));
+      Serial.println(eepromAddress, HEX);
+#endif
+    return eepromAddress;
+  } else {
+#ifdef DIAG
+    Serial.println(F("I2C address not defined in EEPROM"));
+#endif
+    return 0;
+  }
+}
+
+/*
+* Function to store I2C address in EEPROM
+*/
+void writeI2CAddress(int16_t eepromAddress) {
+  char eepromData[5] = {'E', 'X', 'I', 'O', EEPROM_VERSION};
+  for (uint8_t i = 0; i < 5; i++) {
+    EEPROM.write(i, eepromData[i]);
+  }
+  Serial.print(F("Saving address 0x"));
+  Serial.print(eepromAddress, HEX);
+  Serial.println(F(" to EEPROM, reboot to activate"));
+  EEPROM.write(5, eepromAddress);
+}
+
+/*
+* Function to erase EEPROM contents
+*/
+void eraseI2CAddress() {
+  for (uint8_t i = 0; i < 6; i++) {
+    EEPROM.write(i, 0);
+  }
+  Serial.println(F("Erased EEPROM, reboot to revert to myConfig.h"));
+}
+
+#else
+// Placeholders for no EEPROM/Flash support
+uint8_t getI2CAddress() {
+  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+  return 0;
+}
+
+void writeI2CAddress(int16_t notRequired) {
+  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+}
+
+void eraseI2CAddress() {
+  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+}
+
 #endif
