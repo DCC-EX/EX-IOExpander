@@ -5,6 +5,7 @@
 
 // 0.0.4 includes:
 //  - Add support for configuring I2C address via serial, save to EEPROM
+//  - Add support for NUCLEO-F411RE
 // 0.0.3 includes:
 //  - Bug fix for compilation on Mega
 // 0.0.2 includes:

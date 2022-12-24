@@ -398,16 +398,24 @@ void processSerialInput() {
         }
         break;
       case 'E':
+#ifdef HAS_EEPROM
         eraseEEPROM();
         Serial.println(F("Erased EEPROM, reboot to revert to default"));
+#else
+          Serial.println(F("No EEPROM support, ignoring"));
+#endif
         break;
       case 'R':
+#ifdef HAS_EEPROM
         if (getI2CAddress() == 0) {
           Serial.println(F("I2C address not stored in EEPROM"));
         } else {
           Serial.print(F("I2C address stored in EEPROM is 0x"));
           Serial.println(getI2CAddress(), HEX);
         }
+#else
+          Serial.println(F("No EEPROM support, ignoring"));
+#endif
         break;
       default:
         break;

@@ -34,6 +34,7 @@ static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_P
 static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3
 };
+
 // Arduino Nano
 #elif defined(ARDUINO_AVR_NANO)
 #define BOARD_TYPE F("Nano")
@@ -46,6 +47,7 @@ static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_P
 static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3,A6,A7
 };
+
 // Arduino Mega/Mega2560
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
 #define BOARD_TYPE F("Mega")
@@ -60,6 +62,20 @@ const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = 
 const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15
 };
+
+// NUCLEO F411RE
+#elif defined(ARDUINO_NUCLEO_F411RE)
+#define BOARD_TYPE F("NUCLEO-F411RE")
+#define SECTOR_FLASH
+#define NUMBER_OF_DIGITAL_PINS 2
+#define NUMBER_OF_ANALOGUE_PINS 2
+const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
+  PC_10,PC_12,PC_2,PC_3
+};
+const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
+  PC_2,PC_3
+};
+
 #else
 #define CPU_TYPE_ERROR
 #endif
