@@ -54,30 +54,40 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #define HAS_EEPROM
 #define NUMBER_OF_DIGITAL_PINS 46   // D2 - D19, D22 - D49
 #define NUMBER_OF_ANALOGUE_PINS 16     // A0 - A15
-const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
+static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
   2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,22,23,24,25,26,27,28,29,
   30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,
   A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15
 };
-const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
+static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15
 };
 
 // NUCLEO F411RE
+// The current pin map has pin conflicts which prevents normal operation, preparing to support only
 #elif defined(ARDUINO_NUCLEO_F411RE)
 #define BOARD_TYPE F("NUCLEO-F411RE")
 #define SECTOR_FLASH
-#define NUMBER_OF_DIGITAL_PINS 34
-#define NUMBER_OF_ANALOGUE_PINS 14
-const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
-  PC_10,PC_11,PC_12,PD_2,PA_13,PA_14,PA_15,PB_7,PC_13,PC_14,PC_15,PH_0,PH_1,    // CN7 digital
-  PC_9,PC_8,PC_6,PA_12,PA_11,PB_12,PB_6,PC_7,PA_9,PB_2,PA_8,PB_10,PB_15,PB_10,PB_15,PB_4,PB_14,PB_5,PB_13,PB_3,PA_10, // CN10 digital
-  PA_0,PA_1,PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
-  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+// #define NUMBER_OF_DIGITAL_PINS 32
+// #define NUMBER_OF_ANALOGUE_PINS 14
+// static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
+//   PC_10,PC_11,PC_12,PD_2,PA_15,PB_7,PC_13,PC_14,PC_15,PH_0,PH_1,    // CN7 digital
+//   PC_9,PC_8,PC_6,PA_12,PA_11,PB_12,PB_6,PC_7,PA_9,PB_2,PA_8,PB_10,PB_15,PB_10,PB_15,PB_4,PB_14,PB_5,PB_13,PB_3,PA_10, // CN10 digital
+//   PA_0,PA_1,PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
+//   PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+// };
+// static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
+//   PA_0,PA_1,PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
+//   PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+// };
+#define NUMBER_OF_DIGITAL_PINS 2
+#define NUMBER_OF_ANALOGUE_PINS 2
+static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
+  PC_10,PC_11,
+  PC_5,PA_5
 };
-const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
-  PA_0,PA_1,PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
-  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
+  PC_5,PA_5
 };
 
 #else

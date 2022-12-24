@@ -106,6 +106,11 @@ unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG inp
 #include <Wire.h>
 
 /*
+* Code to reset via software
+*/
+void(* reset) (void) = 0;
+
+/*
 * Main setup function here.
 */
 void setup() {
@@ -114,20 +119,19 @@ void setup() {
   Serial.println(VERSION);
   Serial.print(F("Detected device: "));
   Serial.println(BOARD_TYPE);
-#ifdef HAS_EEPROM
   if (getI2CAddress() != 0) {
     i2cAddress = getI2CAddress();
   }
-#endif
   if (i2cAddress < 0x08 || i2cAddress > 0x77) {
     Serial.print(F("ERROR: Invalid I2C address configured: 0x"));
-    Serial.println(i2cAddress, HEX);
-    i2cAddress = 0x65;
+    Serial.print(i2cAddress, HEX);
+    Serial.println(F(", using myConfig.h instead"));
+    i2cAddress = I2C_ADDRESS;
   }
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(i2cAddress, HEX);
   Wire.begin(i2cAddress);
-  // Need to intialise every pin in INPUT mode (no pull ups) for safe start
+// Need to intialise every pin in INPUT mode (no pull ups) for safe start
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
     pinMode(digitalPinMap[pin], INPUT);
   }
@@ -385,37 +389,24 @@ void processSerialInput() {
     switch (activity) {
       case 'W':
         if (newAddress > 0x07 && newAddress < 0x78) {
-#ifdef HAS_EEPROM
-          Serial.print(F("Saving address 0x"));
-          Serial.print(newAddress, HEX);
-          Serial.println(F(" to EEPROM, reboot to activate"));
           writeI2CAddress(newAddress);
-#else
-          Serial.println(F("No EEPROM support, ignoring"));
-#endif
         } else {
           Serial.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
         }
         break;
       case 'E':
-#ifdef HAS_EEPROM
-        eraseEEPROM();
-        Serial.println(F("Erased EEPROM, reboot to revert to default"));
-#else
-          Serial.println(F("No EEPROM support, ignoring"));
-#endif
+        eraseI2CAddress();
         break;
       case 'R':
-#ifdef HAS_EEPROM
         if (getI2CAddress() == 0) {
-          Serial.println(F("I2C address not stored in EEPROM"));
+          Serial.println(F("I2C address not stored, using myConfig.h"));
         } else {
-          Serial.print(F("I2C address stored in EEPROM is 0x"));
+          Serial.print(F("I2C address stored is 0x"));
           Serial.println(getI2CAddress(), HEX);
         }
-#else
-          Serial.println(F("No EEPROM support, ignoring"));
-#endif
+        break;
+      case 'Z':
+        reset();
         break;
       default:
         break;
@@ -464,15 +455,35 @@ void writeI2CAddress(int16_t eepromAddress) {
   for (uint8_t i = 0; i < 5; i++) {
     EEPROM.write(i, eepromData[i]);
   }
+  Serial.print(F("Saving address 0x"));
+  Serial.print(eepromAddress, HEX);
+  Serial.println(F(" to EEPROM, reboot to activate"));
   EEPROM.write(5, eepromAddress);
 }
 
 /*
 * Function to erase EEPROM contents
 */
-void eraseEEPROM() {
+void eraseI2CAddress() {
   for (uint8_t i = 0; i < 6; i++) {
     EEPROM.write(i, 0);
   }
+  Serial.println(F("Erased EEPROM, reboot to revert to myConfig.h"));
 }
+
+#else
+// Placeholders for no EEPROM/Flash support
+uint8_t getI2CAddress() {
+  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+  return 0;
+}
+
+void writeI2CAddress(int16_t notRequired) {
+  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+}
+
+void eraseI2CAddress() {
+  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+}
+
 #endif
