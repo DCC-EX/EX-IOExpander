@@ -115,7 +115,7 @@ void(* reset) (void) = 0;
 */
 void setup() {
   Serial.begin(115200);
-  Serial.print(F("DCC-EX EX-IOExpander version "));
+  Serial.print(F("DCC-EX EX-IOExpander v"));
   Serial.println(VERSION);
   Serial.print(F("Detected device: "));
   Serial.println(BOARD_TYPE);
@@ -274,6 +274,11 @@ void receiveEvent(int numBytes) {
         digitalOutBuffer[0] = digitalPins[dPin].state;
       }
       break;
+    case EXIOVER:
+      if (numBytes == 1) {
+        outboundFlag = EXIOVER;
+      }
+      break;
     default:
       break;
   }
@@ -296,6 +301,17 @@ void requestEvent() {
       break;
     case EXIORDD:
       Wire.write(digitalOutBuffer, 1);
+      break;
+    case EXIOVER:
+      char * version;
+      uint8_t versionBuffer[3];
+      version = strtok(VERSION, "."); // Split version on .
+      versionBuffer[0] = version[0] - '0';  // Major first
+      version = strtok(NULL, ".");
+      versionBuffer[1] = version[0] - '0';  // Minor next
+      version = strtok(NULL, ".");
+      versionBuffer[2] = version[0] - '0';  // Patch last
+      Wire.write(versionBuffer, 3);
       break;
     default:
       break;
