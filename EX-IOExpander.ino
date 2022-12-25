@@ -95,6 +95,8 @@ byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 bool newSerialData = false;   // Flag for new serial data being received
 const byte numSerialChars = 10;   // Max number of chars for serial input
 char serialInputChars[numSerialChars];  // Char array for serial input
+char * version;
+uint8_t versionBuffer[3];
 #ifdef DIAG
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
 #endif
@@ -130,6 +132,13 @@ void setup() {
   }
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(i2cAddress, HEX);
+  // Put version into our array for the query later
+  version = strtok(VERSION, "."); // Split version on .
+  versionBuffer[0] = version[0] - '0';  // Major first
+  version = strtok(NULL, ".");
+  versionBuffer[1] = version[0] - '0';  // Minor next
+  version = strtok(NULL, ".");
+  versionBuffer[2] = version[0] - '0';  // Patch last
   Wire.begin(i2cAddress);
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
@@ -303,14 +312,6 @@ void requestEvent() {
       Wire.write(digitalOutBuffer, 1);
       break;
     case EXIOVER:
-      char * version;
-      uint8_t versionBuffer[3];
-      version = strtok(VERSION, "."); // Split version on .
-      versionBuffer[0] = version[0] - '0';  // Major first
-      version = strtok(NULL, ".");
-      versionBuffer[1] = version[0] - '0';  // Minor next
-      version = strtok(NULL, ".");
-      versionBuffer[2] = version[0] - '0';  // Patch last
       Wire.write(versionBuffer, 3);
       break;
     default:
