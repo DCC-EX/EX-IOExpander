@@ -1,8 +1,11 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define VERSION "0.0.4"
+// Version must only ever be numeric in order to be able to send it to the CommandStation
+#define VERSION "0.0.5"
 
+// 0.0.5 includes:
+//  - Send device version to CommandStation device driver
 // 0.0.4 includes:
 //  - Add support for configuring I2C address via serial, save to EEPROM
 //  - Serial commands <R>, <W address>, <E>, <Z> - see doco

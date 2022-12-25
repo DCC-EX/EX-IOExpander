@@ -100,7 +100,7 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #define EXIOINIT 0xE0     // Flag to start setup procedure
 #define EXIORDY 0xE1      // Flag setup procedure done, return to CS to ACK
 #define EXIODPUP 0xE2     // Flag we're receiving digital pin pullup configuration
-#define EXIOOP 0xE3       // Flag we're operating normally
+#define EXIOVER 0xE3      // Flag to send version
 #define EXIORDAN 0xE4     // Flag an analogue input is being read
 #define EXIOWRD 0xE5      // Flag for digital write
 #define EXIORDD 0xE6      // Flag a digital input is being read
