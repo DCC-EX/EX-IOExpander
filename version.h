@@ -2,8 +2,10 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.5"
+#define VERSION "0.0.6"
 
+// 0.0.6 includes:
+//  - Support for NUCLEO-F411RE
 // 0.0.5 includes:
 //  - Send device version to CommandStation device driver
 // 0.0.4 includes:
