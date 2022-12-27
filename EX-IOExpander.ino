@@ -27,6 +27,9 @@
 
 #include <Arduino.h>
 #include "SupportedDevices.h"
+#if defined(ARDUINO_ARCH_AVR)
+#include <avr/wdt.h>
+#endif
 #ifdef HAS_EEPROM
 #include <EEPROM.h>
 #endif
@@ -106,11 +109,6 @@ unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG inp
 */
 #include "version.h"
 #include <Wire.h>
-
-/*
-* Code to reset via software
-*/
-void(* reset) (void) = 0;
 
 /*
 * Main setup function here.
@@ -432,7 +430,7 @@ void processSerialInput() {
 }
 
 // EEPROM functions here, only for uCs with EEPROM support
-#ifdef HAS_EEPROM
+#if defined(HAS_EEPROM)
 /*
 * Function to read I2C address from EEPROM
 * Look for "EXIO" and the version EEPROM_VERSION at 0 to 5, address at 6
@@ -491,16 +489,30 @@ void eraseI2CAddress() {
 #else
 // Placeholders for no EEPROM/Flash support
 uint8_t getI2CAddress() {
-  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+  Serial.println(F("No EEPROM support, use myConfig.h"));
   return 0;
 }
 
 void writeI2CAddress(int16_t notRequired) {
-  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+  Serial.println(F("No EEPROM support, use myConfig.h"));
 }
 
 void eraseI2CAddress() {
-  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+  Serial.println(F("No EEPROM support, use myConfig.h"));
 }
 
 #endif
+
+/*
+* Code to reset via software
+*/
+void reset() {
+#if defined(ARDUINO_ARCH_AVR)
+  wdt_enable(WDTO_15MS);
+  delay(50);
+#elif defined(ARDUINO_ARCH_STM32)
+  __disable_irq();
+  NVIC_SystemReset();
+  while(true) {};
+#endif
+}
