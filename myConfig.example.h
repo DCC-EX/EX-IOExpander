@@ -25,6 +25,6 @@
 /////////////////////////////////////////////////////////////////////////////////////
 //  Delay between dumping the status of the port config if DIAG enabled
 // 
-#define DIAG_CONFIG_DELAY 3000
+#define DIAG_CONFIG_DELAY 5000
 
 #endif

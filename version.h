@@ -5,7 +5,7 @@
 #define VERSION "0.0.6"
 
 // 0.0.6 includes:
-//  - Support for NUCLEO-F411RE
+//  - Add experimental support for NUCLEO-F411RE
 // 0.0.5 includes:
 //  - Send device version to CommandStation device driver
 // 0.0.4 includes:

@@ -486,44 +486,19 @@ void eraseI2CAddress() {
   Serial.println(F("Erased EEPROM, reboot to revert to myConfig.h"));
 }
 
-#elif defined(SECTOR_FLASH)
-/*
-* Function to get I2C address from sector based flash
-*/
-uint8_t getI2CAddress() {
-  Serial.println(F("Get from flash"));
-  return 0;
-}
-
-/*
-* Function to write I2C address to sector based flash
-*/
-void writeI2CAddress(int16_t flashAddress) {
-  Serial.print(F("Write 0x"));
-  Serial.print(flashAddress, HEX);
-  Serial.println(F(" to flash"));
-}
-
-/*
-* Function to erase I2C address in sector flash
-*/
-void eraseI2CAddress() {
-  Serial.println(F("Erase from flash"));
-}
-
 #else
 // Placeholders for no EEPROM/Flash support
 uint8_t getI2CAddress() {
-  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+  Serial.println(F("No EEPROM support, use myConfig.h"));
   return 0;
 }
 
 void writeI2CAddress(int16_t notRequired) {
-  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+  Serial.println(F("No EEPROM support, use myConfig.h"));
 }
 
 void eraseI2CAddress() {
-  Serial.println(F("No EEPROM/Flash support, use myConfig.h"));
+  Serial.println(F("No EEPROM support, use myConfig.h"));
 }
 
 #endif
