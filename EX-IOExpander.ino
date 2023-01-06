@@ -78,6 +78,12 @@ digitalConfig digitalPins[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS];
 analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 
 /*
+* Include required files and libraries.
+*/
+#include "version.h"
+#include <Wire.h>
+
+/*
 * Global variables here
 */
 /*
@@ -105,12 +111,6 @@ unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG inp
 #endif
 
 /*
-* Include required files and libraries.
-*/
-#include "version.h"
-#include <Wire.h>
-
-/*
 * Main setup function here.
 */
 void setup() {
@@ -130,13 +130,7 @@ void setup() {
   }
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(i2cAddress, HEX);
-  // Put version into our array for the query later
-  version = strtok(VERSION, "."); // Split version on .
-  versionBuffer[0] = version[0] - '0';  // Major first
-  version = strtok(NULL, ".");
-  versionBuffer[1] = version[0] - '0';  // Minor next
-  version = strtok(NULL, ".");
-  versionBuffer[2] = version[0] - '0';  // Patch last
+  setVersion();
   Wire.begin(i2cAddress);
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
@@ -359,6 +353,24 @@ void displayPins() {
   }
 }
 #endif
+
+/*
+* Function to get the version from version.h char array to bytes nicely
+*/
+void setVersion() {
+  const String versionString = VERSION;
+  char versionArray[versionString.length() + 1];
+  versionString.toCharArray(versionArray, versionString.length() + 1);
+  version = strtok(versionArray, "."); // Split version on .
+  versionBuffer[0] = atoi(version);  // Major first
+  Serial.println(versionBuffer[0]);
+  version = strtok(NULL, ".");
+  versionBuffer[1] = atoi(version);  // Minor next
+  Serial.println(versionBuffer[1]);
+  version = strtok(NULL, ".");
+  versionBuffer[2] = atoi(version);  // Patch last
+  Serial.println(versionBuffer[2]);
+}
 
 /*
 * Function to read and process serial input for I2C address config
