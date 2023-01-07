@@ -109,6 +109,10 @@ uint8_t versionBuffer[3];   // Array to hold version info to send to device driv
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
 bool diag = false;    // Enable/disable diag outputs
 unsigned long displayDelay = DIAG_CONFIG_DELAY * 1000;    // Delay in ms between diag display updates
+bool analogueTesting = false;   // Flag that analogue input testing is enabled/disabled
+bool inputTesting = false;    // Flag that digital input testing without pullups is enabled/disabled
+bool outputTesting = false;   // Flag that digital output testing is enabled/disabled
+bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
 #ifdef DIAG
 diag = true;
 #endif
@@ -152,15 +156,17 @@ void setup() {
 void loop() {
   if (setupComplete) {
     for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
-      if (digitalPins[dPin].direction == 1) {
-        if (digitalPins[dPin].pullup == 1) {
-          pinMode(digitalPinMap[dPin], INPUT_PULLUP);
-        } else {
-          pinMode(digitalPinMap[dPin], INPUT);
+      if (digitalPinMap[dPin]) {
+        if (digitalPins[dPin].direction == 1) {
+          if (digitalPins[dPin].pullup == 1) {
+            pinMode(digitalPinMap[dPin], INPUT_PULLUP);
+          } else {
+            pinMode(digitalPinMap[dPin], INPUT);
+          }
+          bool currentState = digitalRead(digitalPinMap[dPin]);
+          if (digitalPins[dPin].pullup) currentState = !currentState;
+          digitalPins[dPin].state = currentState;
         }
-        bool currentState = digitalRead(digitalPinMap[dPin]);
-        if (digitalPins[dPin].pullup) currentState = !currentState;
-        digitalPins[dPin].state = currentState;
       }
     }
     for (uint8_t aPin = 0; aPin < numAnaloguePins; aPin++) {
@@ -423,6 +429,11 @@ void processSerialInput() {
     }
     switch (activity) {
       case 'A': // Enable/disable analogue input testing
+        if (analogueTesting) {
+          testAnalogue(false);
+        } else {
+          testAnalogue(true);
+        }
         break;
       case 'D': // Enable/disable diagnostic output
         if (diag && parameter) {
@@ -443,10 +454,25 @@ void processSerialInput() {
         eraseI2CAddress();
         break;
       case 'I': // Enable/disable digital input testing
+        if (inputTesting) {
+          testInput(false);
+        } else {
+          testInput(true);
+        }
         break;
       case 'O': // Enable/disable digital output testing
+        if (outputTesting) {
+          testOutput(false);
+        } else {
+          testOutput(true);
+        }
         break;
       case 'P': // Enable/disable digital input testing with pullups
+        if (pullupTesting) {
+          testPullup(false);
+        } else {
+          testPullup(true);
+        }
         break;
       case 'R': // Read address from EEPROM
         if (getI2CAddress() == 0) {
@@ -555,5 +581,116 @@ void reset() {
   __disable_irq();
   NVIC_SystemReset();
   while(true) {};
+#endif
+}
+
+/*
+* Testing functions below, just pass true/false to enable/disable the appropriate testing
+* Note enabling any of these will disable Wire() (providing the library supports it) so the
+* device will need to be rebooted once testing is completed to enable it again.
+*/
+void testAnalogue(bool enable) {
+  if (enable) {
+    Serial.println(F("Analogue input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    diag = true;
+    setupComplete = true;
+    disableWire();
+    testInput(false);
+    testOutput(false);
+    testPullup(false);
+    analogueTesting = true;
+    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+      analoguePins[pin].enable = 1;
+    }
+  } else {
+    Serial.println(F("Analogue testing disabled"));
+    analogueTesting = false;
+    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+      analoguePins[pin].enable = 0;
+    }
+  }
+}
+
+void testInput(bool enable) {
+  if (enable) {
+    Serial.println(F("Input testing (no pullups) enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    diag = true;
+    setupComplete = true;
+    disableWire();
+    testAnalogue(false);
+    testOutput(false);
+    testPullup(false);
+    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
+    inputTesting = true;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 1;
+        digitalPins[pin].pullup = 0;
+      }
+    }
+  } else {
+    Serial.println(F("Input testing (no pullups) disabled"));
+    inputTesting = false;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 0;
+      }
+    }
+  }
+}
+
+void testOutput(bool enable) {
+  if (enable) {
+    Serial.println(F("Output testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    diag = true;
+    setupComplete = true;
+    disableWire();
+    testAnalogue(false);
+    testInput(false);
+    testPullup(false);
+    outputTesting = true;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 0;
+      }
+    }
+  } else {
+    Serial.println(F("Output testing disabled"));
+    outputTesting = false;
+  }
+}
+
+void testPullup(bool enable) {
+  if (enable) {
+    Serial.println(F("Pullup input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    diag = true;
+    setupComplete = true;
+    disableWire();
+    testAnalogue(false);
+    testOutput(false);
+    testInput(false);
+    pullupTesting = true;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 1;
+        digitalPins[pin].pullup = 1;
+      }
+    }
+  } else {
+    Serial.println(F("Pullup input testing disabled"));
+    pullupTesting = false;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 0;
+      }
+    }
+  }
+}
+
+void disableWire() {
+#ifdef WIRE_HAS_END
+  Wire.end();
+#else
+  Serial.println(F("WARNING! The Wire.h library has no end() function, ensure EX-IOExpander is disconnected from your CommandStation"));
 #endif
 }
