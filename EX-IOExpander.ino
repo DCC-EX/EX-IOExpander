@@ -363,13 +363,10 @@ void setVersion() {
   versionString.toCharArray(versionArray, versionString.length() + 1);
   version = strtok(versionArray, "."); // Split version on .
   versionBuffer[0] = atoi(version);  // Major first
-  Serial.println(versionBuffer[0]);
   version = strtok(NULL, ".");
   versionBuffer[1] = atoi(version);  // Minor next
-  Serial.println(versionBuffer[1]);
   version = strtok(NULL, ".");
   versionBuffer[2] = atoi(version);  // Patch last
-  Serial.println(versionBuffer[2]);
 }
 
 /*
@@ -515,9 +512,6 @@ void eraseI2CAddress() {
 
 #endif
 
-/*
-* Code to reset via software
-*/
 void reset() {
 #if defined(ARDUINO_ARCH_AVR)
   wdt_enable(WDTO_15MS);
