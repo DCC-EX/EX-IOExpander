@@ -8,6 +8,7 @@
 //  - Optimise sending version to device driver to remove compiler warnings
 //  - Diagnostics enabled/disabled via serial console
 //  - Diagnostic display delay configured via serial console
+//  - Added test modes for digital input with/without pullups, analogue input, digital output
 // 0.0.6 includes:
 //  - Add experimental support for NUCLEO-F411RE
 // 0.0.5 includes:

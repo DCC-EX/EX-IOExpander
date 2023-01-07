@@ -113,6 +113,8 @@ bool analogueTesting = false;   // Flag that analogue input testing is enabled/d
 bool inputTesting = false;    // Flag that digital input testing without pullups is enabled/disabled
 bool outputTesting = false;   // Flag that digital output testing is enabled/disabled
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
+unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
+bool outputTestState = LOW;   // Flag to set outputs high or low for testing
 #ifdef DIAG
 diag = true;
 #endif
@@ -174,6 +176,18 @@ void loop() {
         uint16_t value = analogRead(analoguePinMap[aPin]);
         analoguePins[aPin].valueLSB = value & 0xFF;
         analoguePins[aPin].valueMSB = value >> 8;
+      }
+    }
+    if (outputTesting) {
+      if (millis() > lastOutputTest + 500) {
+        outputTestState = !outputTestState;
+        lastOutputTest = millis();
+        for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
+          if (digitalPinMap[dPin]) {
+            pinMode(digitalPinMap[dPin], OUTPUT);
+            digitalWrite(digitalPinMap[dPin], outputTestState);
+          }
+        }
       }
     }
   }
@@ -482,6 +496,19 @@ void processSerialInput() {
           Serial.println(getI2CAddress(), HEX);
         }
         break;
+      case 'T': // Display current state of test modes
+        if (analogueTesting) {
+          Serial.println(F("Analogue testing enabled"));
+        } else if (inputTesting) {
+          Serial.println(F("Input testing (no pullups) enabled"));
+        } else if (outputTesting) {
+          Serial.println(F("Output testing enabled"));
+        } else if (pullupTesting) {
+          Serial.println(F("Pullup input testing enabled"));
+        } else {
+          Serial.println(F("No testing in progress"));
+        }
+        break;
       case 'W': // Write address to EEPROM
         if (parameter > 0x07 && parameter < 0x78) {
           writeI2CAddress(parameter);
@@ -648,6 +675,7 @@ void testOutput(bool enable) {
     testAnalogue(false);
     testInput(false);
     testPullup(false);
+    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
     outputTesting = true;
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       if (digitalPinMap[pin]) {
@@ -669,6 +697,7 @@ void testPullup(bool enable) {
     testAnalogue(false);
     testOutput(false);
     testInput(false);
+    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
     pullupTesting = true;
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       if (digitalPinMap[pin]) {
