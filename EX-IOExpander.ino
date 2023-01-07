@@ -78,6 +78,12 @@ digitalConfig digitalPins[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS];
 analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 
 /*
+* Include required files and libraries.
+*/
+#include "version.h"
+#include <Wire.h>
+
+/*
 * Global variables here
 */
 /*
@@ -98,17 +104,20 @@ byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 bool newSerialData = false;   // Flag for new serial data being received
 const byte numSerialChars = 10;   // Max number of chars for serial input
 char serialInputChars[numSerialChars];  // Char array for serial input
-char * version;
-uint8_t versionBuffer[3];
-#ifdef DIAG
+char * version;   // Pointer for getting version
+uint8_t versionBuffer[3];   // Array to hold version info to send to device driver
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
+bool diag = false;    // Enable/disable diag outputs
+unsigned long displayDelay = DIAG_CONFIG_DELAY * 1000;    // Delay in ms between diag display updates
+bool analogueTesting = false;   // Flag that analogue input testing is enabled/disabled
+bool inputTesting = false;    // Flag that digital input testing without pullups is enabled/disabled
+bool outputTesting = false;   // Flag that digital output testing is enabled/disabled
+bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
+unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
+bool outputTestState = LOW;   // Flag to set outputs high or low for testing
+#ifdef DIAG
+diag = true;
 #endif
-
-/*
-* Include required files and libraries.
-*/
-#include "version.h"
-#include <Wire.h>
 
 /*
 * Main setup function here.
@@ -130,13 +139,7 @@ void setup() {
   }
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(i2cAddress, HEX);
-  // Put version into our array for the query later
-  version = strtok(VERSION, "."); // Split version on .
-  versionBuffer[0] = version[0] - '0';  // Major first
-  version = strtok(NULL, ".");
-  versionBuffer[1] = version[0] - '0';  // Minor next
-  version = strtok(NULL, ".");
-  versionBuffer[2] = version[0] - '0';  // Patch last
+  setVersion();
   Wire.begin(i2cAddress);
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
@@ -155,15 +158,17 @@ void setup() {
 void loop() {
   if (setupComplete) {
     for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
-      if (digitalPins[dPin].direction == 1) {
-        if (digitalPins[dPin].pullup == 1) {
-          pinMode(digitalPinMap[dPin], INPUT_PULLUP);
-        } else {
-          pinMode(digitalPinMap[dPin], INPUT);
+      if (digitalPinMap[dPin]) {
+        if (digitalPins[dPin].direction == 1) {
+          if (digitalPins[dPin].pullup == 1) {
+            pinMode(digitalPinMap[dPin], INPUT_PULLUP);
+          } else {
+            pinMode(digitalPinMap[dPin], INPUT);
+          }
+          bool currentState = digitalRead(digitalPinMap[dPin]);
+          if (digitalPins[dPin].pullup) currentState = !currentState;
+          digitalPins[dPin].state = currentState;
         }
-        bool currentState = digitalRead(digitalPinMap[dPin]);
-        if (digitalPins[dPin].pullup) currentState = !currentState;
-        digitalPins[dPin].state = currentState;
       }
     }
     for (uint8_t aPin = 0; aPin < numAnaloguePins; aPin++) {
@@ -173,10 +178,22 @@ void loop() {
         analoguePins[aPin].valueMSB = value >> 8;
       }
     }
+    if (outputTesting) {
+      if (millis() > lastOutputTest + 500) {
+        outputTestState = !outputTestState;
+        lastOutputTest = millis();
+        for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
+          if (digitalPinMap[dPin]) {
+            pinMode(digitalPinMap[dPin], OUTPUT);
+            digitalWrite(digitalPinMap[dPin], outputTestState);
+          }
+        }
+      }
+    }
   }
-#ifdef DIAG
-  displayPins();
-#endif
+  if (diag) {
+    displayPins();
+  }
   processSerialInput();
 }
 
@@ -320,9 +337,8 @@ void requestEvent() {
 /*
 * Function to display pin configuration and states when DIAG enabled
 */
-#ifdef DIAG
 void displayPins() {
-  if (millis() > lastPinDisplay + DIAG_CONFIG_DELAY) {
+  if (millis() > lastPinDisplay + displayDelay) {
     lastPinDisplay = millis();
     Serial.println(F("Digital Pin|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
@@ -358,7 +374,21 @@ void displayPins() {
     }
   }
 }
-#endif
+
+/*
+* Function to get the version from version.h char array to bytes nicely
+*/
+void setVersion() {
+  const String versionString = VERSION;
+  char versionArray[versionString.length() + 1];
+  versionString.toCharArray(versionArray, versionString.length() + 1);
+  version = strtok(versionArray, "."); // Split version on .
+  versionBuffer[0] = atoi(version);  // Major first
+  version = strtok(NULL, ".");
+  versionBuffer[1] = atoi(version);  // Minor next
+  version = strtok(NULL, ".");
+  versionBuffer[2] = atoi(version);  // Patch last
+}
 
 /*
 * Function to read and process serial input for I2C address config
@@ -394,25 +424,71 @@ void processSerialInput() {
     strtokIndex = strtok(serialInputChars," ");
     char activity = strtokIndex[0];    // activity is our first parameter
     strtokIndex = strtok(NULL," ");       // space is null, separator
-    unsigned long newAddress = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
-#ifdef DIAG
-    Serial.print(F("Perform activity "));
-    Serial.print(activity);
-    Serial.print(F(" for I2C address 0x"));
-    Serial.println(newAddress, HEX);
-#endif
+    unsigned long parameter;
+    if (activity == 'W') {
+      parameter = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
+    } else {
+      parameter = strtol(strtokIndex, NULL, 10);
+    }
+    if (diag) {
+      Serial.print(F("Perform activity "));
+      Serial.print(activity);
+      if (activity == 'W') {
+        Serial.print(F(" for I2C address 0x"));
+        Serial.println(parameter, HEX);
+      } else {
+        Serial.print(F(" with parameter "));
+        Serial.println(parameter);
+      }
+    }
     switch (activity) {
-      case 'W':
-        if (newAddress > 0x07 && newAddress < 0x78) {
-          writeI2CAddress(newAddress);
+      case 'A': // Enable/disable analogue input testing
+        if (analogueTesting) {
+          testAnalogue(false);
         } else {
-          Serial.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
+          testAnalogue(true);
         }
         break;
-      case 'E':
+      case 'D': // Enable/disable diagnostic output
+        if (diag && parameter) {
+          displayDelay = parameter * 1000;
+          Serial.print(F("Diagnostics enabled, delay set to "));
+          Serial.println(displayDelay);
+          diag = true;
+        } else if (diag && !parameter) {
+          Serial.println(F("Diagnostics disabled"));
+          diag = false;
+        } else {
+          Serial.print(F("Diagnostics enabled, delay set to "));
+          Serial.println(displayDelay);
+          diag = true;
+        }
+        break;
+      case 'E': // Erase EEPROM
         eraseI2CAddress();
         break;
-      case 'R':
+      case 'I': // Enable/disable digital input testing
+        if (inputTesting) {
+          testInput(false);
+        } else {
+          testInput(true);
+        }
+        break;
+      case 'O': // Enable/disable digital output testing
+        if (outputTesting) {
+          testOutput(false);
+        } else {
+          testOutput(true);
+        }
+        break;
+      case 'P': // Enable/disable digital input testing with pullups
+        if (pullupTesting) {
+          testPullup(false);
+        } else {
+          testPullup(true);
+        }
+        break;
+      case 'R': // Read address from EEPROM
         if (getI2CAddress() == 0) {
           Serial.println(F("I2C address not stored, using myConfig.h"));
         } else {
@@ -420,9 +496,30 @@ void processSerialInput() {
           Serial.println(getI2CAddress(), HEX);
         }
         break;
-      case 'Z':
+      case 'T': // Display current state of test modes
+        if (analogueTesting) {
+          Serial.println(F("Analogue testing enabled"));
+        } else if (inputTesting) {
+          Serial.println(F("Input testing (no pullups) enabled"));
+        } else if (outputTesting) {
+          Serial.println(F("Output testing enabled"));
+        } else if (pullupTesting) {
+          Serial.println(F("Pullup input testing enabled"));
+        } else {
+          Serial.println(F("No testing in progress"));
+        }
+        break;
+      case 'W': // Write address to EEPROM
+        if (parameter > 0x07 && parameter < 0x78) {
+          writeI2CAddress(parameter);
+        } else {
+          Serial.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
+        }
+        break;
+      case 'Z': // Software reboot
         reset();
         break;
+      
       default:
         break;
     }
@@ -503,9 +600,6 @@ void eraseI2CAddress() {
 
 #endif
 
-/*
-* Code to reset via software
-*/
 void reset() {
 #if defined(ARDUINO_ARCH_AVR)
   wdt_enable(WDTO_15MS);
@@ -514,5 +608,118 @@ void reset() {
   __disable_irq();
   NVIC_SystemReset();
   while(true) {};
+#endif
+}
+
+/*
+* Testing functions below, just pass true/false to enable/disable the appropriate testing
+* Note enabling any of these will disable Wire() (providing the library supports it) so the
+* device will need to be rebooted once testing is completed to enable it again.
+*/
+void testAnalogue(bool enable) {
+  if (enable) {
+    Serial.println(F("Analogue input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    diag = true;
+    setupComplete = true;
+    disableWire();
+    testInput(false);
+    testOutput(false);
+    testPullup(false);
+    analogueTesting = true;
+    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+      analoguePins[pin].enable = 1;
+    }
+  } else {
+    Serial.println(F("Analogue testing disabled"));
+    analogueTesting = false;
+    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+      analoguePins[pin].enable = 0;
+    }
+  }
+}
+
+void testInput(bool enable) {
+  if (enable) {
+    Serial.println(F("Input testing (no pullups) enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    diag = true;
+    setupComplete = true;
+    disableWire();
+    testAnalogue(false);
+    testOutput(false);
+    testPullup(false);
+    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
+    inputTesting = true;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 1;
+        digitalPins[pin].pullup = 0;
+      }
+    }
+  } else {
+    Serial.println(F("Input testing (no pullups) disabled"));
+    inputTesting = false;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 0;
+      }
+    }
+  }
+}
+
+void testOutput(bool enable) {
+  if (enable) {
+    Serial.println(F("Output testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    diag = true;
+    setupComplete = true;
+    disableWire();
+    testAnalogue(false);
+    testInput(false);
+    testPullup(false);
+    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
+    outputTesting = true;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 0;
+      }
+    }
+  } else {
+    Serial.println(F("Output testing disabled"));
+    outputTesting = false;
+  }
+}
+
+void testPullup(bool enable) {
+  if (enable) {
+    Serial.println(F("Pullup input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    diag = true;
+    setupComplete = true;
+    disableWire();
+    testAnalogue(false);
+    testOutput(false);
+    testInput(false);
+    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
+    pullupTesting = true;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 1;
+        digitalPins[pin].pullup = 1;
+      }
+    }
+  } else {
+    Serial.println(F("Pullup input testing disabled"));
+    pullupTesting = false;
+    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      if (digitalPinMap[pin]) {
+        digitalPins[pin].direction = 0;
+      }
+    }
+  }
+}
+
+void disableWire() {
+#ifdef WIRE_HAS_END
+  Wire.end();
+#else
+  Serial.println(F("WARNING! The Wire.h library has no end() function, ensure EX-IOExpander is disconnected from your CommandStation"));
 #endif
 }
