@@ -104,10 +104,13 @@ byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 bool newSerialData = false;   // Flag for new serial data being received
 const byte numSerialChars = 10;   // Max number of chars for serial input
 char serialInputChars[numSerialChars];  // Char array for serial input
-char * version;
-uint8_t versionBuffer[3];
-#ifdef DIAG
+char * version;   // Pointer for getting version
+uint8_t versionBuffer[3];   // Array to hold version info to send to device driver
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
+bool diag = false;    // Enable/disable diag outputs
+unsigned long displayDelay = DIAG_CONFIG_DELAY * 1000;    // Delay in ms between diag display updates
+#ifdef DIAG
+diag = true;
 #endif
 
 /*
@@ -168,9 +171,9 @@ void loop() {
       }
     }
   }
-#ifdef DIAG
-  displayPins();
-#endif
+  if (diag) {
+    displayPins();
+  }
   processSerialInput();
 }
 
@@ -314,9 +317,8 @@ void requestEvent() {
 /*
 * Function to display pin configuration and states when DIAG enabled
 */
-#ifdef DIAG
 void displayPins() {
-  if (millis() > lastPinDisplay + DIAG_CONFIG_DELAY) {
+  if (millis() > lastPinDisplay + displayDelay) {
     lastPinDisplay = millis();
     Serial.println(F("Digital Pin|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
@@ -352,7 +354,6 @@ void displayPins() {
     }
   }
 }
-#endif
 
 /*
 * Function to get the version from version.h char array to bytes nicely
@@ -403,25 +404,51 @@ void processSerialInput() {
     strtokIndex = strtok(serialInputChars," ");
     char activity = strtokIndex[0];    // activity is our first parameter
     strtokIndex = strtok(NULL," ");       // space is null, separator
-    unsigned long newAddress = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
-#ifdef DIAG
-    Serial.print(F("Perform activity "));
-    Serial.print(activity);
-    Serial.print(F(" for I2C address 0x"));
-    Serial.println(newAddress, HEX);
-#endif
+    unsigned long parameter;
+    if (activity == 'W') {
+      parameter = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
+    } else {
+      parameter = strtol(strtokIndex, NULL, 10);
+    }
+    if (diag) {
+      Serial.print(F("Perform activity "));
+      Serial.print(activity);
+      if (activity == 'W') {
+        Serial.print(F(" for I2C address 0x"));
+        Serial.println(parameter, HEX);
+      } else {
+        Serial.print(F(" with parameter "));
+        Serial.println(parameter);
+      }
+    }
     switch (activity) {
-      case 'W':
-        if (newAddress > 0x07 && newAddress < 0x78) {
-          writeI2CAddress(newAddress);
+      case 'A': // Enable/disable analogue input testing
+        break;
+      case 'D': // Enable/disable diagnostic output
+        if (diag && parameter) {
+          displayDelay = parameter * 1000;
+          Serial.print(F("Diagnostics enabled, delay set to "));
+          Serial.println(displayDelay);
+          diag = true;
+        } else if (diag && !parameter) {
+          Serial.println(F("Diagnostics disabled"));
+          diag = false;
         } else {
-          Serial.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
+          Serial.print(F("Diagnostics enabled, delay set to "));
+          Serial.println(displayDelay);
+          diag = true;
         }
         break;
-      case 'E':
+      case 'E': // Erase EEPROM
         eraseI2CAddress();
         break;
-      case 'R':
+      case 'I': // Enable/disable digital input testing
+        break;
+      case 'O': // Enable/disable digital output testing
+        break;
+      case 'P': // Enable/disable digital input testing with pullups
+        break;
+      case 'R': // Read address from EEPROM
         if (getI2CAddress() == 0) {
           Serial.println(F("I2C address not stored, using myConfig.h"));
         } else {
@@ -429,9 +456,17 @@ void processSerialInput() {
           Serial.println(getI2CAddress(), HEX);
         }
         break;
-      case 'Z':
+      case 'W': // Write address to EEPROM
+        if (parameter > 0x07 && parameter < 0x78) {
+          writeI2CAddress(parameter);
+        } else {
+          Serial.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
+        }
+        break;
+      case 'Z': // Software reboot
         reset();
         break;
+      
       default:
         break;
     }
