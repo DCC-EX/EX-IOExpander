@@ -2,8 +2,10 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.7"
+#define VERSION "0.0.8"
 
+// 0.0.8 includes:
+//  - Experimental support for SAMD21 Arduino Zero clones using native USB serial comms
 // 0.0.7 includes:
 //  - Optimise sending version to device driver to remove compiler warnings
 //  - Diagnostics enabled/disabled via serial console
