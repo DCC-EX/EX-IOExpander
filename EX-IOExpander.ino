@@ -55,6 +55,7 @@ typedef struct {
   bool direction;       // 0 = output, 1 = input
   bool pullup;          // 0 = no pullup, 1 = pullup (input only)
   bool state;           // stores current state, 0 = LOW, 1 = HIGH
+  bool enable;          // 0 = disabled (default), set to 1 = enabled
 } digitalConfig;
 
 /*
@@ -115,9 +116,6 @@ bool outputTesting = false;   // Flag that digital output testing is enabled/dis
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
-#ifdef DIAG
-diag = true;
-#endif
 
 /*
 * Main setup function here.
@@ -140,14 +138,12 @@ void setup() {
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(i2cAddress, HEX);
   setVersion();
+#ifdef DIAG
+  diag = true;
+#endif
   Wire.begin(i2cAddress);
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
-  for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
-    pinMode(digitalPinMap[pin], INPUT);
-  }
-  for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
-    pinMode(analoguePinMap[pin], INPUT);
-  }
+  initialisePins();
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
 }
@@ -212,6 +208,7 @@ void receiveEvent(int numBytes) {
     // Initial configuration start, must be 3 bytes
     case EXIOINIT:
       if (numBytes == 3) {
+        initialisePins();
         numDigitalPins = buffer[1];
         numAnaloguePins = buffer[2];
         if (numDigitalPins + numAnaloguePins == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) {
@@ -228,12 +225,10 @@ void receiveEvent(int numBytes) {
             analoguePins[pin].valueLSB = 0;
             analoguePins[pin].valueMSB = 0;
           }
-#ifdef DIAG
-          Serial.print(F("Configured pins (digital|analogue): "));
+          Serial.print(F("Received pin configuration (digital|analogue): "));
           Serial.print(numDigitalPins);
           Serial.print(F("|"));
           Serial.println(numAnaloguePins);
-#endif
           setupComplete = true;
         } else {
           Serial.print(F("ERROR: Invalid pins sent by device driver! (Digital|Analogue): "));
@@ -619,12 +614,12 @@ void reset() {
 void testAnalogue(bool enable) {
   if (enable) {
     Serial.println(F("Analogue input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
-    diag = true;
     setupComplete = true;
     disableWire();
     testInput(false);
     testOutput(false);
     testPullup(false);
+    diag = true;
     analogueTesting = true;
     for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
       analoguePins[pin].enable = 1;
@@ -632,21 +627,20 @@ void testAnalogue(bool enable) {
   } else {
     Serial.println(F("Analogue testing disabled"));
     analogueTesting = false;
-    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
-      analoguePins[pin].enable = 0;
-    }
+    diag = false;
+    initialisePins();
   }
 }
 
 void testInput(bool enable) {
   if (enable) {
     Serial.println(F("Input testing (no pullups) enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
-    diag = true;
     setupComplete = true;
     disableWire();
     testAnalogue(false);
     testOutput(false);
     testPullup(false);
+    diag = true;
     numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
     inputTesting = true;
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
@@ -658,23 +652,20 @@ void testInput(bool enable) {
   } else {
     Serial.println(F("Input testing (no pullups) disabled"));
     inputTesting = false;
-    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-      if (digitalPinMap[pin]) {
-        digitalPins[pin].direction = 0;
-      }
-    }
+    diag = false;
+    initialisePins();
   }
 }
 
 void testOutput(bool enable) {
   if (enable) {
     Serial.println(F("Output testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
-    diag = true;
     setupComplete = true;
     disableWire();
     testAnalogue(false);
     testInput(false);
     testPullup(false);
+    diag = true;
     numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
     outputTesting = true;
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
@@ -685,18 +676,20 @@ void testOutput(bool enable) {
   } else {
     Serial.println(F("Output testing disabled"));
     outputTesting = false;
+    diag = false;
+    initialisePins();
   }
 }
 
 void testPullup(bool enable) {
   if (enable) {
     Serial.println(F("Pullup input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
-    diag = true;
     setupComplete = true;
     disableWire();
     testAnalogue(false);
     testOutput(false);
     testInput(false);
+    diag = true;
     numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
     pullupTesting = true;
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
@@ -708,11 +701,8 @@ void testPullup(bool enable) {
   } else {
     Serial.println(F("Pullup input testing disabled"));
     pullupTesting = false;
-    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-      if (digitalPinMap[pin]) {
-        digitalPins[pin].direction = 0;
-      }
-    }
+    diag = false;
+    initialisePins();
   }
 }
 
@@ -722,4 +712,28 @@ void disableWire() {
 #else
   Serial.println(F("WARNING! The Wire.h library has no end() function, ensure EX-IOExpander is disconnected from your CommandStation"));
 #endif
+}
+
+/*
+* Function to initialise all pins as input and initialise pin struct
+*/
+void initialisePins() {
+  Serial.println(F("Initialising pins"));
+  for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
+    pinMode(digitalPinMap[pin], INPUT);
+  }
+  for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+    if (digitalPinMap[pin]) {
+      digitalPins[pin].direction = 1;
+      digitalPins[pin].enable = 0;
+      digitalPins[pin].pullup = 0;
+      digitalPins[pin].state = 0;
+    }
+  }
+  for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+    pinMode(analoguePinMap[pin], INPUT);
+    analoguePins[pin].enable = 0;
+    analoguePins[pin].valueLSB = 0;
+    analoguePins[pin].valueMSB = 0;
+  }
 }
