@@ -155,7 +155,7 @@ void loop() {
   if (setupComplete) {
     for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
       if (digitalPinMap[dPin]) {
-        if (digitalPins[dPin].direction == 1) {
+        if (digitalPins[dPin].direction == 1 && digitalPins[dPin].enable == 1) {
           if (digitalPins[dPin].pullup == 1) {
             pinMode(digitalPinMap[dPin], INPUT_PULLUP);
           } else {
@@ -204,6 +204,8 @@ void receiveEvent(int numBytes) {
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();   // Read all received bytes into our buffer array
   }
+  Serial.print(F("Received: "));
+  Serial.println(buffer[0], HEX);
   switch(buffer[0]) {
     // Initial configuration start, must be 3 bytes
     case EXIOINIT:
@@ -215,16 +217,17 @@ void receiveEvent(int numBytes) {
           // Calculate number of bytes required to cover pins
           digitalPinBytes = (numDigitalPins + 7) / 8;
           analoguePinBytes = (numAnaloguePins + 7) / 8;
-          for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-            digitalPins[pin].direction = 0;
-            digitalPins[pin].pullup = 0;
-            digitalPins[pin].state = 0;
-          }
-          for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
-            analoguePins[pin].enable = 0;
-            analoguePins[pin].valueLSB = 0;
-            analoguePins[pin].valueMSB = 0;
-          }
+          // for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+          //   digitalPins[pin].direction = 0;
+          //   digitalPins[pin].pullup = 0;
+          //   digitalPins[pin].state = 0;
+          //   digitalPins[pin].enable = 0;
+          // }
+          // for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+          //   analoguePins[pin].enable = 0;
+          //   analoguePins[pin].valueLSB = 0;
+          //   analoguePins[pin].valueMSB = 0;
+          // }
           Serial.print(F("Received pin configuration (digital|analogue): "));
           Serial.print(numDigitalPins);
           Serial.print(F("|"));
@@ -248,12 +251,20 @@ void receiveEvent(int numBytes) {
     case EXIODPUP:
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
-        digitalPins[pin].direction = 1;   // Must be an input if we got a pullup config
-        digitalPins[pin].pullup = buffer[2];
-        if (digitalPins[pin].pullup == 1) {
-          pinMode(digitalPinMap[pin], INPUT_PULLUP);
-        } else {
-          pinMode(digitalPinMap[pin], INPUT);
+        if (digitalPins[pin].enable == 1 && digitalPins[pin].direction == 0) {
+          Serial.print(pin);
+          Serial.println(F(" already defined as output pin, cannot use as input"));
+          break;
+        }
+        if (digitalPins[pin].enable == 0) {
+          digitalPins[pin].direction = 1;   // Must be an input if we got a pullup config
+          digitalPins[pin].pullup = buffer[2];
+          digitalPins[pin].enable = 1;
+          if (digitalPins[pin].pullup == 1) {
+            pinMode(digitalPinMap[pin], INPUT_PULLUP);
+          } else {
+            pinMode(digitalPinMap[pin], INPUT);
+          }
         }
         digitalPins[pin].state = digitalRead(digitalPinMap[pin]);
         // }
@@ -264,10 +275,12 @@ void receiveEvent(int numBytes) {
       }
       break;
     case EXIORDAN:
+      Serial.println(F("Enable analogue pin"));
       if (numBytes == 2) {
         outboundFlag = EXIORDAN;
         uint8_t aPin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
         if (analoguePins[aPin].enable == 0) {
+          Serial.println(F("Enable analogue pin"));
           analoguePins[aPin].enable = 1;
           uint16_t value = analogRead(analoguePinMap[aPin]);
           analoguePins[aPin].valueLSB = value & 0xFF;
@@ -281,7 +294,16 @@ void receiveEvent(int numBytes) {
       if (numBytes == 3) {
         uint8_t dPin = buffer[1];
         bool state = buffer[2];
-        digitalPins[dPin].direction = 0;
+        if (digitalPins[dPin].enable == 1 && digitalPins[dPin].direction == 1) {
+          Serial.print(dPin);
+          Serial.println(F(" already defined as input pin, cannot use as output"));
+          break;
+        }
+        if (digitalPins[dPin].enable == 0) {
+          digitalPins[dPin].enable = 1;
+          pinMode(digitalPinMap[dPin], OUTPUT);
+          digitalPins[dPin].direction = 0;
+        }
         digitalPins[dPin].state = state;
         digitalWrite(digitalPinMap[dPin], state);
       }
@@ -335,9 +357,11 @@ void requestEvent() {
 void displayPins() {
   if (millis() > lastPinDisplay + displayDelay) {
     lastPinDisplay = millis();
-    Serial.println(F("Digital Pin|Direction|Pullup|State:"));
+    Serial.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       Serial.print(digitalPinMap[pin]);
+      Serial.print(F("|"));
+      Serial.print(digitalPins[pin].enable);
       Serial.print(F("|"));
       Serial.print(digitalPins[pin].direction);
       Serial.print(F("|"));
