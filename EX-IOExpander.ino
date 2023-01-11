@@ -239,7 +239,8 @@ void receiveEvent(int numBytes) {
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
         if (digitalPins[pin].enable == 1 && digitalPins[pin].direction == 0) {
-          Serial.print(pin);
+          Serial.print(F("ERROR! pin *"));
+          Serial.print(digitalPinMap[pin]);
           Serial.println(F(" already defined as output pin, cannot use as input"));
           break;
         }
@@ -254,7 +255,6 @@ void receiveEvent(int numBytes) {
           }
         }
         digitalPins[pin].state = digitalRead(digitalPinMap[pin]);
-        // }
       } else {
 #ifdef DIAG
       Serial.println(F("EXIODPUP received with incorrect number of bytes"));
@@ -280,7 +280,8 @@ void receiveEvent(int numBytes) {
         uint8_t dPin = buffer[1];
         bool state = buffer[2];
         if (digitalPins[dPin].enable == 1 && digitalPins[dPin].direction == 1) {
-          Serial.print(dPin);
+          Serial.print(F("ERROR! pin "));
+          Serial.print(digitalPinMap[dPin]);
           Serial.println(F(" already defined as input pin, cannot use as output"));
           break;
         }
