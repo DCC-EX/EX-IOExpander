@@ -2,8 +2,15 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.7"
+#define VERSION "0.0.8"
 
+// 0.0.8 includes:
+//  - Add pin initialisation function to tests and when receiving pin config
+//  - Always display when receiving pin config
+//  - Disable diag output when disabling tests
+//  - Fix bug where setting pinMode for output pins was missing
+//  - Update display delay comparison to prevent hangs
+//  - Prevent input being used as output and vice versa
 // 0.0.7 includes:
 //  - Optimise sending version to device driver to remove compiler warnings
 //  - Diagnostics enabled/disabled via serial console
