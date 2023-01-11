@@ -203,8 +203,6 @@ void receiveEvent(int numBytes) {
   byte buffer[numBytes];
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();   // Read all received bytes into our buffer array
-    Serial.print(F("Received: "));
-    Serial.println(buffer[byte], HEX);
   }
   switch(buffer[0]) {
     // Initial configuration start, must be 3 bytes
@@ -316,32 +314,22 @@ void receiveEvent(int numBytes) {
 * Function triggered when CommandStation polls for inputs on this device.
 */
 void requestEvent() {
-  Serial.print(F("Something requested, outbound flag "));
-  Serial.println(outboundFlag, HEX);
   switch(outboundFlag) {
     case EXIOINIT:
       if (setupComplete) {
         Wire.write(EXIORDY);
-        Serial.print(F("Sending "));
-        Serial.println(EXIORDY, HEX);
       } else {
         Wire.write(0);
       }
       break;
     case EXIORDAN:
       Wire.write(analogueOutBuffer, 2);
-      Serial.print(F("Sending "));
-      Serial.println(EXIORDAN, HEX);
       break;
     case EXIORDD:
       Wire.write(digitalOutBuffer, 1);
-      Serial.print(F("Sending "));
-      Serial.println(EXIORDD, HEX);
       break;
     case EXIOVER:
       Wire.write(versionBuffer, 3);
-      Serial.print(F("Sending "));
-      Serial.println(EXIOVER, HEX);
       break;
     default:
       break;
