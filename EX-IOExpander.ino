@@ -217,17 +217,6 @@ void receiveEvent(int numBytes) {
           // Calculate number of bytes required to cover pins
           digitalPinBytes = (numDigitalPins + 7) / 8;
           analoguePinBytes = (numAnaloguePins + 7) / 8;
-          // for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-          //   digitalPins[pin].direction = 0;
-          //   digitalPins[pin].pullup = 0;
-          //   digitalPins[pin].state = 0;
-          //   digitalPins[pin].enable = 0;
-          // }
-          // for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
-          //   analoguePins[pin].enable = 0;
-          //   analoguePins[pin].valueLSB = 0;
-          //   analoguePins[pin].valueMSB = 0;
-          // }
           Serial.print(F("Received pin configuration (digital|analogue): "));
           Serial.print(numDigitalPins);
           Serial.print(F("|"));
@@ -275,12 +264,10 @@ void receiveEvent(int numBytes) {
       }
       break;
     case EXIORDAN:
-      Serial.println(F("Enable analogue pin"));
       if (numBytes == 2) {
         outboundFlag = EXIORDAN;
         uint8_t aPin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
         if (analoguePins[aPin].enable == 0) {
-          Serial.println(F("Enable analogue pin"));
           analoguePins[aPin].enable = 1;
           uint16_t value = analogRead(analoguePinMap[aPin]);
           analoguePins[aPin].valueLSB = value & 0xFF;
@@ -329,22 +316,32 @@ void receiveEvent(int numBytes) {
 * Function triggered when CommandStation polls for inputs on this device.
 */
 void requestEvent() {
+  Serial.print(F("Something requested, outbound flag "));
+  Serial.println(outboundFlag, HEX);
   switch(outboundFlag) {
     case EXIOINIT:
       if (setupComplete) {
         Wire.write(EXIORDY);
+        Serial.print(F("Sending "));
+        Serial.println(EXIORDY, HEX);
       } else {
         Wire.write(0);
       }
       break;
     case EXIORDAN:
       Wire.write(analogueOutBuffer, 2);
+      Serial.print(F("Sending "));
+      Serial.println(EXIORDAN, HEX);
       break;
     case EXIORDD:
       Wire.write(digitalOutBuffer, 1);
+      Serial.print(F("Sending "));
+      Serial.println(EXIORDD, HEX);
       break;
     case EXIOVER:
       Wire.write(versionBuffer, 3);
+      Serial.print(F("Sending "));
+      Serial.println(EXIOVER, HEX);
       break;
     default:
       break;
