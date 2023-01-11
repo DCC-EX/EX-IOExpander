@@ -203,9 +203,9 @@ void receiveEvent(int numBytes) {
   byte buffer[numBytes];
   for (uint8_t byte = 0; byte < numBytes; byte++) {
     buffer[byte] = Wire.read();   // Read all received bytes into our buffer array
+    Serial.print(F("Received: "));
+    Serial.println(buffer[byte], HEX);
   }
-  Serial.print(F("Received: "));
-  Serial.println(buffer[0], HEX);
   switch(buffer[0]) {
     // Initial configuration start, must be 3 bytes
     case EXIOINIT:
