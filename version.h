@@ -8,6 +8,8 @@
 //  - Add pin initialisation function to tests and when receiving pin config
 //  - Always display when receiving pin config
 //  - Disable diag output when disabling tests
+//  - Fix bug where setting pinMode for output pins was missing
+//  - Update display delay comparison to prevent hangs
 // 0.0.7 includes:
 //  - Optimise sending version to device driver to remove compiler warnings
 //  - Diagnostics enabled/disabled via serial console

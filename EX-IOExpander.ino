@@ -175,7 +175,7 @@ void loop() {
       }
     }
     if (outputTesting) {
-      if (millis() > lastOutputTest + 500) {
+      if (millis() - lastOutputTest > 500) {
         outputTestState = !outputTestState;
         lastOutputTest = millis();
         for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
@@ -340,7 +340,7 @@ void requestEvent() {
 * Function to display pin configuration and states when DIAG enabled
 */
 void displayPins() {
-  if (millis() > lastPinDisplay + displayDelay) {
+  if (millis() - lastPinDisplay > displayDelay) {
     lastPinDisplay = millis();
     Serial.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
