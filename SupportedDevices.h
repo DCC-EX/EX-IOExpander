@@ -93,14 +93,19 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #define NUMBER_OF_DIGITAL_PINS 25
 #define NUMBER_OF_ANALOGUE_PINS 12
 static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
-  PC_10,PC_11,PC_12,PD_2,PC_13,PC_14,PC_15,PH_0,PH_1,    // CN7 digital
-  PC_9,PC_8,PC_6,PA_12,PA_11,PB_12,PC_7,PA_9,PB_2,PA_8,PB_10,PB_15,PB_14,PB_5,PB_13,PA_10, // CN10 digital
-  PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
-  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+  PC_10,PC_11,PC_12,PD_2,PF_6,PF_7,PA_13,PA_14,PA_15,PB_7,PC_13,PA_0,PA_1,PH_1,PA_4,PB_0,
+  PC_2,PC_1,PC_3,PC_0,PD_4,PD_3,PD_5,PG_2,PD_6,PG_3,PD_7,PE_2,PE_3,PE_4,PE_5,PF_1,PF_2,PF_0,
+  PF_8,PD_1,PF_9,PD_0,PG_1,PG_0,PE_1,PE_6,PG_9,PG_15,PG_12,PG_10,PH_2,PG_13,PD_9,PG_11,    // CN11 digital
+  PC_9,PC_8,PB_8,PC_6,PB_9,PC_5,PD_8,PA_5,PA_12,PA_6,PA_11,PA_7,PB_12,PB_6,PB_11,PC_7,PA_9,
+  PB_2,PA_8,PB_1,PB_10,PB_15,PB_4,PB_15,PB_5,PB_13,PB_3,PA_10,PC_4,PA_2,PF_5,PA_3,PF_4,PE_8,
+  PD_13,PF_10,PD_12,PE_7,PD_11,PD_14,PE_10,PD_15,PE_12,PF_14,PE_14,PE_9,PE_15,PE_13,PE_11,
+  PF_13,PF_3,PF_12,PF_15,PG_14,PF_11,PE_0,PD_10,PG_8,PG_7,PG_5,PG_4,PG_6, // CN12 digital
+  ,   // CN11 analogue
+     // CN12 analogue
 };
 static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
-  PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
-  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+  ,   // CN11 analogue
+     // CN12 analogue
 };
 
 #else
