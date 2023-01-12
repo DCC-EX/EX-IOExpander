@@ -83,6 +83,26 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
 };
 
+// NUCLEO F412ZG - EXPERIMENTAL, in need of testing
+// Pins not available for use:
+// CN7 (digital) - PA_13|14 used for debugger, PB_7 - used for I2C, PA_15 conflict
+// CN10 (digital) - PB_4|3 seem to have conflicts as inputs, PB_8|9|6 - used for I2C
+// CN7 (analogue) - PA_0|1 seem to have conflicts as inputs
+#elif defined(ARDUINO_NUCLEO_F412ZG)
+#define BOARD_TYPE F("NUCLEO-F412ZG")
+#define NUMBER_OF_DIGITAL_PINS 25
+#define NUMBER_OF_ANALOGUE_PINS 12
+static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
+  PC_10,PC_11,PC_12,PD_2,PC_13,PC_14,PC_15,PH_0,PH_1,    // CN7 digital
+  PC_9,PC_8,PC_6,PA_12,PA_11,PB_12,PC_7,PA_9,PB_2,PA_8,PB_10,PB_15,PB_14,PB_5,PB_13,PA_10, // CN10 digital
+  PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
+  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+};
+static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
+  PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
+  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+};
+
 #else
 #define CPU_TYPE_ERROR
 #endif
