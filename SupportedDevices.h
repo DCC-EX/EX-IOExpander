@@ -35,9 +35,13 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3
 };
 
-// Arduino Nano
-#elif defined(ARDUINO_AVR_NANO)
+// Arduino Nano or Pro Mini
+#elif defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
+#if defined(ARDUINO_AVR_NANO)
 #define BOARD_TYPE F("Nano")
+#elif defined(ARDUINO_AVR_PRO)
+#define BOARD_TYPE F("Pro Mini")
+#endif
 #define HAS_EEPROM
 #define NUMBER_OF_DIGITAL_PINS 12   // D2 - D13
 #define NUMBER_OF_ANALOGUE_PINS 6     // A0 - A3, A6/A7, cannot use A4/A5
