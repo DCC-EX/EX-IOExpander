@@ -85,18 +85,19 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 
 // NUCLEO F412ZG - EXPERIMENTAL, in need of testing
 // Pins not available for use:
-// CN7 (digital) - PA_13|14 used for debugger, PB_7 - used for I2C, PA_15 conflict
-// CN10 (digital) - PB_4|3 seem to have conflicts as inputs, PB_8|9|6 - used for I2C
-// CN7 (analogue) - PA_0|1 seem to have conflicts as inputs
+// CN11 (digital) - PB_8|PB_9 - used for I2C
+// CN12 (digital) - 
+// CN11 (analogue) - 
+// CN12 (analogue) - 
 #elif defined(ARDUINO_NUCLEO_F412ZG)
 #define BOARD_TYPE F("NUCLEO-F412ZG")
-#define NUMBER_OF_DIGITAL_PINS 25
-#define NUMBER_OF_ANALOGUE_PINS 12
+#define NUMBER_OF_DIGITAL_PINS 94
+#define NUMBER_OF_ANALOGUE_PINS 16
 static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
   PC_10,PC_11,PC_12,PD_2,PF_6,PF_7,PA_13,PA_14,PA_15,PB_7,PC_13,PH_1,
   PD_4,PD_3,PD_5,PG_2,PD_6,PG_3,PD_7,PE_2,PE_3,PE_4,PE_5,PF_1,PF_2,PF_0,
   PF_8,PD_1,PF_9,PD_0,PG_1,PG_0,PE_1,PE_6,PG_9,PG_15,PG_12,PG_10,PH_2,PG_13,PD_9,PG_11,    // CN11 digital
-  PC_9,PC_8,PB_8,PC_6,PB_9,PD_8,PA_12,PA_11,PB_12,PB_6,PB_11,PC_7,PA_9,
+  PC_9,PC_8,PC_6,PD_8,PA_12,PA_11,PB_12,PB_6,PB_11,PC_7,PA_9,
   PB_2,PA_8,PB_10,PB_15,PB_4,PB_15,PB_5,PB_13,PB_3,PA_10,PF_5,PF_4,PE_8,
   PD_13,PF_10,PD_12,PE_7,PD_11,PD_14,PE_10,PD_15,PE_12,PF_14,PE_14,PE_9,PE_15,PE_13,PE_11,
   PF_13,PF_3,PF_12,PF_15,PG_14,PF_11,PE_0,PD_10,PG_8,PG_7,PG_5,PG_4,PG_6, // CN12 digital
