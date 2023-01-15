@@ -116,6 +116,11 @@ bool outputTesting = false;   // Flag that digital output testing is enabled/dis
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
+// Ensure test modes defined in myConfig.h have values
+#define ANALOGUE_TEST 1
+#define INPUT_TEST 2
+#define OUTPUT_TEST 3
+#define PULLUP_TEST 4
 
 /*
 * Main setup function here.
@@ -146,6 +151,15 @@ void setup() {
   initialisePins();
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
+#if (TEST_MODE == ANALOGUE_TEST)
+  testAnalogue(true);
+#elif (TEST_MODE == INPUT_TEST)
+  testInput(true);
+#elif (TEST_MODE == OUTPUT_TEST)
+  testOutput(true);
+#elif (TEST_MODE == PULLUP_TEST)
+  testPullup(true);
+#endif
 }
 
 /*
@@ -657,6 +671,7 @@ void testInput(bool enable) {
       if (digitalPinMap[pin]) {
         digitalPins[pin].direction = 1;
         digitalPins[pin].pullup = 0;
+        digitalPins[pin].enable = 1;
       }
     }
   } else {
@@ -706,6 +721,7 @@ void testPullup(bool enable) {
       if (digitalPinMap[pin]) {
         digitalPins[pin].direction = 1;
         digitalPins[pin].pullup = 1;
+        digitalPins[pin].enable = 1;
       }
     }
   } else {

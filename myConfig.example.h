@@ -27,4 +27,18 @@
 // 
 #define DIAG_CONFIG_DELAY 5
 
+/////////////////////////////////////////////////////////////////////////////////////
+//  Enable test mode - ensure only one test mode is active at one time.
+//  This is handy if serial input doesn't work for commands for some reason. 
+// 
+//  ANALOGUE - equivalent of <A>
+//  INPUT - equivalent of <I>
+//  OUTPUT - equivalent of <O>
+//  PULLUP - equivalent of <P>
+// 
+// #define TEST_MODE ANALOGUE_TEST
+// #define TEST_MODE INPUT_TEST
+// #define TEST_MODE OUTPUT_TEST
+// #define TEST_MODE PULLUP_TEST
+
 #endif

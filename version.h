@@ -6,6 +6,7 @@
 
 // 0.0.9 includes:
 //  - Add support for Arduino Pro Mini
+//  - Add option to enable tests via myConfig.h
 // 0.0.8 includes:
 //  - Add pin initialisation function to tests and when receiving pin config
 //  - Always display when receiving pin config
