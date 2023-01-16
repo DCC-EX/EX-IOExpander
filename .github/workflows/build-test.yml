@@ -21,9 +21,9 @@ jobs:
       run: |
         mkdir -p ~/.platformio/platforms/ststm32/boards
         mkdir -p ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z\(E-G\)\(J-T\)
-        cp f412zg_variant_files/nucleo_f412zg.json ~/.platformio/platforms/ststm32/boards/nucleo_f412zg.json
-        cp f412zg_variant_files/ldscript.ld ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z\(E-G\)\(J-T\)/ldscript.ld
-        cp f412zg_variant_files/variant_NUCLEO_F412ZG.h ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z\(E-G\)\(J-T\)/variant_NUCLEO_F412ZG.h
-        cp f412zg_variant_files/variant_NUCLEO_F412ZG.cpp ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z\(E-G\)\(J-T\)/variant_NUCLEO_F412ZG.cpp
+        cp -rv f412zg_variant_files/nucleo_f412zg.json ~/.platformio/platforms/ststm32/boards/nucleo_f412zg.json
+        cp -rv f412zg_variant_files/ldscript.ld ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z\(E-G\)\(J-T\)/ldscript.ld
+        cp -rv f412zg_variant_files/variant_NUCLEO_F412ZG.h ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z\(E-G\)\(J-T\)/variant_NUCLEO_F412ZG.h
+        cp -rv f412zg_variant_files/variant_NUCLEO_F412ZG.cpp ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z\(E-G\)\(J-T\)/variant_NUCLEO_F412ZG.cpp
     - name: Compile EX-IOExpander (all default platforms)
       run: python -m platformio run
