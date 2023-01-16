@@ -17,6 +17,7 @@ jobs:
       run: cp myConfig.example.h myConfig.h
     - name: Copy F412ZG variant files
       run: |
+        pio system info
         cp f412zg_variant_files/nucleo_f412zg.json ~/.platformio/platforms/ststm32/boards/nucleo_f412zg.json
         cp f412zg_variant_files/ldscript.ld ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z(E-G)(J-T)/ldscript.ld
         cp f412zg_variant_files/variant_NUCLEO_F412ZG.h ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z(E-G)(J-T)/variant_NUCLEO_F412ZG.h
