@@ -17,6 +17,7 @@ jobs:
       run: cp myConfig.example.h myConfig.h
     - name: Copy F412ZG variant files
       run: |
+        pio pkg install
         mkdir -p ~/.platformio/platforms/ststm32/boards
         mkdir -p ~/.platformio/packages/framework-arduinoststm32/variants/STM32F4xx/F412Z\(E-G\)\(J-T\)
         cp f412zg_variant_files/nucleo_f412zg.json ~/.platformio/platforms/ststm32/boards/nucleo_f412zg.json
