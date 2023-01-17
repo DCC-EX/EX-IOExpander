@@ -1,0 +1,46 @@
+{
+  "build": {
+    "core": "stm32",
+    "cpu": "cortex-m4",
+    "extra_flags": "-DSTM32F412Zx",
+    "f_cpu": "100000000L",
+    "mcu": "stm32f412zgt6",
+    "product_line": "STM32F412Zx",
+    "variant": "STM32F4xx/F412Z(E-G)(J-T)"
+  },
+  "debug": {
+    "default_tools": [
+      "stlink"
+    ],
+    "jlink_device": "STM32F412ZG",
+    "onboard_tools": [
+      "stlink"
+    ],
+    "openocd_board": "st_nucleo_f4",
+    "openocd_target": "stm32f4x",
+    "svd_path": "STM32F412xG.svd"
+  },
+  "frameworks": [
+    "arduino",
+    "cmsis",
+    "mbed",
+    "stm32cube",
+    "libopencm3",
+    "zephyr"
+  ],
+  "name": "ST Nucleo F412ZG",
+  "upload": {
+    "maximum_ram_size": 262144,
+    "maximum_size": 1048576,
+    "protocol": "stlink",
+    "protocols": [
+      "jlink",
+      "cmsis-dap",
+      "stlink",
+      "blackmagic",
+      "mbed"
+    ]
+  },
+  "url": "https://developer.mbed.org/platforms/ST-Nucleo-F412ZG/",
+  "vendor": "ST"
+}
