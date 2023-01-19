@@ -149,6 +149,7 @@ void setup() {
   Wire.begin(i2cAddress);
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   initialisePins();
+  Serial.println(F("Initialised all pins as input only"));
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
 #if (TEST_MODE == ANALOGUE_TEST)
@@ -449,21 +450,11 @@ void processSerialInput() {
     } else {
       parameter = strtol(strtokIndex, NULL, 10);
     }
-    if (diag) {
-      Serial.print(F("Perform activity "));
-      Serial.print(activity);
-      if (activity == 'W') {
-        Serial.print(F(" for I2C address 0x"));
-        Serial.println(parameter, HEX);
-      } else {
-        Serial.print(F(" with parameter "));
-        Serial.println(parameter);
-      }
-    }
     switch (activity) {
       case 'A': // Enable/disable analogue input testing
         if (analogueTesting) {
           testAnalogue(false);
+          Serial.println(F("Analogue testing disabled"));
         } else {
           testAnalogue(true);
         }
@@ -489,6 +480,7 @@ void processSerialInput() {
       case 'I': // Enable/disable digital input testing
         if (inputTesting) {
           testInput(false);
+          Serial.println(F("Input testing (no pullups) disabled"));
         } else {
           testInput(true);
         }
@@ -496,6 +488,7 @@ void processSerialInput() {
       case 'O': // Enable/disable digital output testing
         if (outputTesting) {
           testOutput(false);
+          Serial.println(F("Output testing disabled"));
         } else {
           testOutput(true);
         }
@@ -503,6 +496,7 @@ void processSerialInput() {
       case 'P': // Enable/disable digital input testing with pullups
         if (pullupTesting) {
           testPullup(false);
+          Serial.println(F("Pullup input testing disabled"));
         } else {
           testPullup(true);
         }
@@ -603,7 +597,7 @@ void eraseI2CAddress() {
 }
 
 #else
-// Placeholders for no EEPROM/Flash support
+// Placeholders for no EEPROM support
 uint8_t getI2CAddress() {
   Serial.println(F("No EEPROM support, use myConfig.h"));
   return 0;
@@ -649,7 +643,6 @@ void testAnalogue(bool enable) {
       analoguePins[pin].enable = 1;
     }
   } else {
-    Serial.println(F("Analogue testing disabled"));
     analogueTesting = false;
     diag = false;
     initialisePins();
@@ -675,7 +668,6 @@ void testInput(bool enable) {
       }
     }
   } else {
-    Serial.println(F("Input testing (no pullups) disabled"));
     inputTesting = false;
     diag = false;
     initialisePins();
@@ -699,7 +691,6 @@ void testOutput(bool enable) {
       }
     }
   } else {
-    Serial.println(F("Output testing disabled"));
     outputTesting = false;
     diag = false;
     initialisePins();
@@ -725,7 +716,6 @@ void testPullup(bool enable) {
       }
     }
   } else {
-    Serial.println(F("Pullup input testing disabled"));
     pullupTesting = false;
     diag = false;
     initialisePins();
@@ -755,12 +745,10 @@ void initialisePins() {
       digitalPins[pin].state = 0;
     }
   }
-  Serial.println(F("Initialised digital input pins"));
   for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
     pinMode(analoguePinMap[pin], INPUT);
     analoguePins[pin].enable = 0;
     analoguePins[pin].valueLSB = 0;
     analoguePins[pin].valueMSB = 0;
   }
-  Serial.println(F("Initialised analogue input pins"));
 }
