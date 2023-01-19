@@ -143,9 +143,9 @@ void setup() {
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(i2cAddress, HEX);
   setVersion();
-#ifdef DIAG
+// #ifdef DIAG
   diag = true;
-#endif
+// #endif
   Wire.begin(i2cAddress);
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   initialisePins();
@@ -756,10 +756,12 @@ void initialisePins() {
       digitalPins[pin].state = 0;
     }
   }
+  Serial.println(F("Done initialising pins to input"));
   for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
     pinMode(analoguePinMap[pin], INPUT);
     analoguePins[pin].enable = 0;
     analoguePins[pin].valueLSB = 0;
     analoguePins[pin].valueMSB = 0;
   }
+  Serial.println(F("Done initialising analog pins"));
 }
