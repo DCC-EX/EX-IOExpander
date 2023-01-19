@@ -744,7 +744,6 @@ void disableWire() {
 * Function to initialise all pins as input and initialise pin struct
 */
 void initialisePins() {
-  Serial.println(F("Initialising pins"));
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
     pinMode(digitalPinMap[pin], INPUT);
   }
@@ -756,12 +755,12 @@ void initialisePins() {
       digitalPins[pin].state = 0;
     }
   }
-  Serial.println(F("Done initialising pins to input"));
+  Serial.println(F("Initialised digital input pins"));
   for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
     pinMode(analoguePinMap[pin], INPUT);
     analoguePins[pin].enable = 0;
     analoguePins[pin].valueLSB = 0;
     analoguePins[pin].valueMSB = 0;
   }
-  Serial.println(F("Done initialising analog pins"));
+  Serial.println(F("Initialised analogue input pins"));
 }
