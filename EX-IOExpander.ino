@@ -143,9 +143,9 @@ void setup() {
   Serial.print(F("Available at I2C address 0x"));
   Serial.println(i2cAddress, HEX);
   setVersion();
-// #ifdef DIAG
+#ifdef DIAG
   diag = true;
-// #endif
+#endif
   Wire.begin(i2cAddress);
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   initialisePins();
