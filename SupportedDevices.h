@@ -89,7 +89,7 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 
 // NUCLEO F412ZG - EXPERIMENTAL, in need of testing
 // Pins not available for use:
-// CN11 (digital) - PB_8|PB_9 (I2C),PD_9|PD_8 (serial),PH_0|1,PA_13|14,PC_14|15,PG_13|11|0
+// CN11 (digital) - PB_8|9 (I2C),PD_9|8 (serial),PH_0|1,PA_13|14,PC_14|15,PG_13|11|0
 // CN12 (digital) - PA_8|9|10|11|12 (USB OTG),PG_6|7 (USB OTG),PB_3,PE_13|11|8|12,PF_15
 // CN11 (analogue) - 
 // CN12 (analogue) - 
