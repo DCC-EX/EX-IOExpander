@@ -2,8 +2,11 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.9"
+#define VERSION "0.0.10"
 
+// 0.0.10 includes:
+//  - Add support for Nucleo F412ZG
+//  - Correct F411RE pin map
 // 0.0.9 includes:
 //  - Add support for Arduino Pro Mini
 //  - Add option to enable tests via myConfig.h
