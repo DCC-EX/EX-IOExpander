@@ -6,6 +6,7 @@
 
 // 0.0.10 includes:
 //  - Add support for Nucleo F412ZG
+//  - Correct F411RE pin map
 // 0.0.9 includes:
 //  - Add support for Arduino Pro Mini
 //  - Add option to enable tests via myConfig.h
