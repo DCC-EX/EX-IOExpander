@@ -67,50 +67,71 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15
 };
 
+/*
+Paul's notes re: F411RE
+
+Avoid using PH0/PH1, PA13/PA14, PC14/PC15, PA2/PA3
+PB8/PB9 are I2C of course
+PC13 has a user switch (blue button) with pullup resistor, so input-only unless you disconnect SB17.
+*/
+
 // NUCLEO F411RE - EXPERIMENTAL, in need of testing
 // Pins not available for use:
-// CN7 (digital) - PA_13|14 used for debugger, PB_7 - used for I2C, PA_15 conflict
+// CN7 (digital) - PA_13|14 (debugger),PB_7 (I2C),PH0|1,PA_15 conflict
 // CN10 (digital) - PB_4|3 seem to have conflicts as inputs, PB_8|9|6 - used for I2C
 // CN7 (analogue) - PA_0|1 seem to have conflicts as inputs
 #elif defined(ARDUINO_NUCLEO_F411RE)
 #define BOARD_TYPE F("NUCLEO-F411RE")
-#define NUMBER_OF_DIGITAL_PINS 25
+#define NUMBER_OF_DIGITAL_PINS 23
 #define NUMBER_OF_ANALOGUE_PINS 12
 static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
-  PC_10,PC_11,PC_12,PD_2,PC_13,PC_14,PC_15,PH_0,PH_1,    // CN7 digital
-  PC_9,PC_8,PC_6,PA_12,PA_11,PB_12,PC_7,PA_9,PB_2,PA_8,PB_10,PB_15,PB_14,PB_5,PB_13,PA_10, // CN10 digital
-  PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
-  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+  PC10,PC11,PC12,PD2,PC13,PC14,PC15,    // CN7 digital
+  PC9,PC8,PC6,PA12,PA11,PB12,PC7,PA9,PB2,PA8,PB10,PB15,PB14,PB5,PB13,PA10, // CN10 digital
+  PA4,PB0,PC2,PC1,PC3,PC0,   // CN7 analogue
+  PC5,PA5,PA6,PA7,PB1,PC4   // CN10 analogue
 };
 static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
-  PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN7 analogue
-  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4   // CN10 analogue
+  PA4,PB0,PC2,PC1,PC3,PC0,   // CN7 analogue
+  PC5,PA5,PA6,PA7,PB1,PC4   // CN10 analogue
 };
+
+/*
+Paul's note re: F412ZG
+
+Avoid using PH0/PH1, PA13/PA14, PC14/PC15
+PD8/PD9 are Serial3, used for the console so don't use them
+PB8/PB9 are I2C of course
+PC13 has a user switch (blue button) with pullup resistor, so input-only unless you disconnect SB17.
+PB0 is the Green LED
+PB7 is the Blue LED
+PB14 is the Red LED
+PA8/PA9/PA10/PA11/PA12/PG6/PG7 are all used for the USB OTG port - I wouldn't use them.
+*/
 
 // NUCLEO F412ZG - EXPERIMENTAL, in need of testing
 // Pins not available for use:
-// CN11 (digital) - PB_8|9 (I2C),PD_9|8 (serial),PH_0|1,PA_13|14,PC_14|15,PG_13|11|0
-// CN12 (digital) - PA_8|9|10|11|12 (USB OTG),PG_6|7 (USB OTG),PB_3,PE_13|11|8|12,PF_15
+// CN11 (digital) - PB_8|9 (I2C),PD_9|8 (serial),PH_0|1,PA_13|14,PC_14|15
+// CN12 (digital) - PA_8|9|10|11|12 (USB OTG),PG_6|7 (USB OTG)
 // CN11 (analogue) - 
 // CN12 (analogue) - 
 #elif defined(ARDUINO_NUCLEO_F412ZG)
 #define BOARD_TYPE F("NUCLEO-F412ZG")
-#define NUMBER_OF_DIGITAL_PINS 73
+#define NUMBER_OF_DIGITAL_PINS 82
 #define NUMBER_OF_ANALOGUE_PINS 16
 static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
-  PC_10,PC_11,PC_12,PD_2,PF_6,PF_7,PA_15,PB_7,PC_13,
-  PD_4,PD_3,PD_5,PG_2,PD_6,PG_3,PD_7,PE_2,PE_3,PE_4,PE_5,PF_1,PF_2,PF_0,
-  PF_8,PD_1,PF_9,PD_0,PG_1,PE_1,PE_6,PG_9,PG_15,PG_12,PG_10,PH_2,    // CN11 digital
-  PC_9,PC_8,PC_6,PB_12,PB_6,PB_11,PC_7,
-  PB_2,PB_10,PB_15,PB_4,PB_14,PB_5,PB_13,PF_5,PF_4,
-  PD_13,PF_10,PD_12,PE_7,PD_11,PD_14,PE_10,PD_15,PF_14,PE_14,PE_9,PE_15,
-  PF_13,PF_3,PF_12,PG_14,PF_11,PE_0,PD_10,PG_8,PG_5,PG_4, // CN12 digital
-  PA_0,PA_1,PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN11 analogue
-  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4,PA_2,PA_3   // CN12 analogue
+  PC10,PC11,PC12,PD2,PF6,PF7,PA15,PB7,PC13,
+  PD4,PD3,PD5,PG2,PD6,PG3,PD7,PE2,PE3,PE4,PE5,PF1,PF2,PF0,
+  PF8,PD1,PF9,PD0,PG1,PG0,PE1,PE6,PG9,PG15,PG12,PG10,PH_2,PG13,PG11,    // CN11 digital
+  PC9,PC8,PC6,PB12,PB6,PB11,PC7,
+  PB2,PB10,PB15,PB4,PB14,PB5,PB13,PB_3,PF5,PF4,PE8,
+  PD13,PF10,PD12,PE7,PD11,PD14,PE10,PD15,PE12,PF14,PE14,PE9,PE15,PE13,PE11,
+  PF13,PF3,PF12,PF15,PG14,PF11,PE0,PD10,PG8,PG5,PG4, // CN12 digital
+  PA0,PA1,PA4,PB0,PC2,PC1,PC3,PC0,   // CN11 analogue
+  PC5,PA5,PA6,PA7,PB1,PC4,PA2,PA3   // CN12 analogue
 };
 static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
-  PA_0,PA_1,PA_4,PB_0,PC_2,PC_1,PC_3,PC_0,   // CN11 analogue
-  PC_5,PA_5,PA_6,PA_7,PB_1,PC_4,PA_2,PA_3   // CN12 analogue
+  PA0,PA1,PA4,PB0,PC2,PC1,PC3,PC0,   // CN11 analogue
+  PC5,PA5,PA6,PA7,PB1,PC4,PA2,PA3   // CN12 analogue
 };
 
 #else
