@@ -67,53 +67,38 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15
 };
 
-/*
-Paul's notes re: F411RE
-
-Avoid using PH0/PH1, PA13/PA14, PC14/PC15, PA2/PA3
-PB8/PB9 are I2C of course
-PC13 has a user switch (blue button) with pullup resistor, so input-only unless you disconnect SB17.
-*/
-
-// NUCLEO F411RE - EXPERIMENTAL, in need of testing
+// NUCLEO F411RE
 // Pins not available for use:
-// CN7 (digital) - PA_13|14 (debugger),PB_7 (I2C),PH0|1,PA_15 conflict
-// CN10 (digital) - PB_4|3 seem to have conflicts as inputs, PB_8|9|6 - used for I2C
-// CN7 (analogue) - PA_0|1 seem to have conflicts as inputs
+// CN7 (digital) - PA13|14 (debugger),PH0|1 (clock)
+// CN10 (digital) - PB8|9 - (I2C)
+// CN7 (analogue) - 
+// Note that PC13 has a switch (blue button) with pullup, so input-only unless you disconnect SB17
 #elif defined(ARDUINO_NUCLEO_F411RE)
 #define BOARD_TYPE F("NUCLEO-F411RE")
-#define NUMBER_OF_DIGITAL_PINS 23
-#define NUMBER_OF_ANALOGUE_PINS 12
+#define NUMBER_OF_DIGITAL_PINS 26
+#define NUMBER_OF_ANALOGUE_PINS 14
 static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
-  PC10,PC11,PC12,PD2,PC13,PC14,PC15,    // CN7 digital
-  PC9,PC8,PC6,PA12,PA11,PB12,PC7,PA9,PB2,PA8,PB10,PB15,PB14,PB5,PB13,PA10, // CN10 digital
-  PA4,PB0,PC2,PC1,PC3,PC0,   // CN7 analogue
+  PC10,PC11,PC12,PD2,PA15,PB7,PC13,    // CN7 digital
+  PC9,PC8,PC6,PA12,PA11,PB12,PB6,PC7,PA9,PB2,PA8,PB10,PB15,PB4,PB14,PB5,PB13,PB3,PA10, // CN10 digital
+  PA0,PA1,PA4,PB0,PC2,PC1,PC3,PC0,   // CN7 analogue
   PC5,PA5,PA6,PA7,PB1,PC4   // CN10 analogue
 };
 static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
-  PA4,PB0,PC2,PC1,PC3,PC0,   // CN7 analogue
+  PA0,PA1,PA4,PB0,PC2,PC1,PC3,PC0,   // CN7 analogue
   PC5,PA5,PA6,PA7,PB1,PC4   // CN10 analogue
 };
 
-/*
-Paul's note re: F412ZG
-
-Avoid using PH0/PH1, PA13/PA14, PC14/PC15
-PD8/PD9 are Serial3, used for the console so don't use them
-PB8/PB9 are I2C of course
-PC13 has a user switch (blue button) with pullup resistor, so input-only unless you disconnect SB17.
-PB0 is the Green LED
-PB7 is the Blue LED
-PB14 is the Red LED
-PA8/PA9/PA10/PA11/PA12/PG6/PG7 are all used for the USB OTG port - I wouldn't use them.
-*/
-
 // NUCLEO F412ZG - EXPERIMENTAL, in need of testing
 // Pins not available for use:
-// CN11 (digital) - PB_8|9 (I2C),PD_9|8 (serial),PH_0|1,PA_13|14,PC_14|15
+// CN11 (digital) - PB_8|9 (I2C),PD_9|8 (serial),PH_0|1 (clock),PA_13|14,PC_14|15
 // CN12 (digital) - PA_8|9|10|11|12 (USB OTG),PG_6|7 (USB OTG)
 // CN11 (analogue) - 
 // CN12 (analogue) - 
+// Buttons/LEDs:
+// Note that PC13 has a switch (blue button) with pullup, so input-only unless you disconnect SB17
+// PB0 is the Green LED
+// PB7 is the Blue LED
+// PB14 is the Red LED
 #elif defined(ARDUINO_NUCLEO_F412ZG)
 #define BOARD_TYPE F("NUCLEO-F412ZG")
 #define NUMBER_OF_DIGITAL_PINS 82
