@@ -116,6 +116,9 @@ bool outputTesting = false;   // Flag that digital output testing is enabled/dis
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
+byte* digitalPinStates;   // Array pointer to store digital pin states to send to the device driver
+byte* analoguePinStates;  // Array pointer to store analogue pin states to send to the device driver
+
 // Ensure test modes defined in myConfig.h have values
 #define ANALOGUE_TEST 1
 #define INPUT_TEST 2
@@ -169,6 +172,7 @@ void setup() {
 void loop() {
   if (setupComplete) {
     for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
+      uint8_t pinByte = dPin / 8;
       if (digitalPinMap[dPin]) {
         if (digitalPins[dPin].direction == 1 && digitalPins[dPin].enable == 1) {
           if (digitalPins[dPin].pullup == 1) {
@@ -179,6 +183,12 @@ void loop() {
           bool currentState = digitalRead(digitalPinMap[dPin]);
           if (digitalPins[dPin].pullup) currentState = !currentState;
           digitalPins[dPin].state = currentState;
+          uint8_t pinBit = dPin - pinByte * 8;
+          if (currentState) {
+            bitSet(digitalPinStates[pinByte], pinBit);
+          } else {
+            bitClear(digitalPinStates[pinByte], pinBit);
+          }
         }
       }
     }
@@ -230,6 +240,8 @@ void receiveEvent(int numBytes) {
           // Calculate number of bytes required to cover pins
           digitalPinBytes = (numDigitalPins + 7) / 8;
           analoguePinBytes = (numAnaloguePins + 7) / 8;
+          digitalPinStates = (byte*) calloc(numDigitalPins, 1);
+          analoguePinStates = (byte*) calloc(numAnaloguePins, 2);
           Serial.print(F("Received pin configuration (digital|analogue): "));
           Serial.print(numDigitalPins);
           Serial.print(F("|"));
@@ -310,10 +322,8 @@ void receiveEvent(int numBytes) {
       }
       break;
     case EXIORDD:
-      if (numBytes == 3) {
-        uint8_t dPin = buffer[1];
+      if (numBytes == 1) {
         outboundFlag = EXIORDD;
-        digitalOutBuffer[0] = digitalPins[dPin].state;
       }
       break;
     case EXIOVER:
@@ -342,7 +352,7 @@ void requestEvent() {
       Wire.write(analogueOutBuffer, 2);
       break;
     case EXIORDD:
-      Wire.write(digitalOutBuffer, 1);
+      Wire.write(digitalPinStates, digitalPinBytes);
       break;
     case EXIOVER:
       Wire.write(versionBuffer, 3);
@@ -358,6 +368,10 @@ void requestEvent() {
 void displayPins() {
   if (millis() - lastPinDisplay > displayDelay) {
     lastPinDisplay = millis();
+    Serial.print(F("Digital pin states: "));
+    for (uint8_t byte = 0; byte < digitalPinBytes; byte++) {
+      Serial.println(digitalPinStates[byte], HEX);
+    }
     Serial.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       Serial.print(digitalPinMap[pin]);

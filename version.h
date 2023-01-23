@@ -2,8 +2,10 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.10"
+#define VERSION "0.0.11"
 
+// 0.0.11 includes:
+//  - Optimise speed of transferring inputs to the device driver by sending all at once
 // 0.0.10 includes:
 //  - Add support for Nucleo F412ZG
 //  - Correct F411RE pin map
