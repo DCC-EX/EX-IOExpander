@@ -193,7 +193,7 @@ void loop() {
       }
     }
     for (uint8_t aPin = 0; aPin < numAnaloguePins; aPin++) {
-      uint8_t pinLSBByte = (aPin / 4) * 2;
+      uint8_t pinLSBByte = aPin * 2;
       uint8_t pinMSBByte = pinLSBByte + 1;
       if (analoguePins[aPin].enable == 1) {
         uint16_t value = analogRead(analoguePinMap[aPin]);
@@ -243,9 +243,15 @@ void receiveEvent(int numBytes) {
         if (numDigitalPins + numAnaloguePins == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) {
           // Calculate number of bytes required to cover pins
           digitalPinBytes = (numDigitalPins + 7) / 8;
-          analoguePinBytes = (numAnaloguePins + 7) / 8;
+          analoguePinBytes = numAnaloguePins * 2;
           digitalPinStates = (byte*) calloc(numDigitalPins, 1);
-          analoguePinStates = (byte*) calloc(numAnaloguePins, 2);
+          analoguePinStates = (byte*) calloc(numAnaloguePins, 1);
+          for (uint8_t dByte = 0; dByte < digitalPinBytes; dByte++) {
+            digitalPinStates[dByte] = 0;
+          }
+          for (uint8_t aByte = 0; aByte < analoguePinBytes; aByte++) {
+            analoguePinStates[aByte] = 0;
+          }
           Serial.print(F("Received pin configuration (digital|analogue): "));
           Serial.print(numDigitalPins);
           Serial.print(F("|"));
@@ -342,6 +348,8 @@ void receiveEvent(int numBytes) {
       if (numBytes == 2) {
         uint8_t pin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
         analoguePins[pin].enable = 1;
+        analoguePins[pin].valueLSB = 0;
+        analoguePins[pin].valueMSB = 0;
       }
     default:
       break;
@@ -398,10 +406,7 @@ void displayPins() {
         Serial.print(F(","));
       }
     }
-    Serial.println(F("Analogue states:"));
-    for (uint8_t byte = 0; byte < analoguePinBytes; byte++) {
-      Serial.println(analoguePinStates[byte]);
-    }
+    Serial.println(F(""));
     Serial.println(F("Analogue Pin|Enable|Value|LSB|MSB:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
       Serial.print(analoguePinMap[pin]);
