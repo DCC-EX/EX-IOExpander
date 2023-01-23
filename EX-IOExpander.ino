@@ -193,10 +193,14 @@ void loop() {
       }
     }
     for (uint8_t aPin = 0; aPin < numAnaloguePins; aPin++) {
+      uint8_t pinLSBByte = (aPin / 4) * 2;
+      uint8_t pinMSBByte = pinLSBByte + 1;
       if (analoguePins[aPin].enable == 1) {
         uint16_t value = analogRead(analoguePinMap[aPin]);
         analoguePins[aPin].valueLSB = value & 0xFF;
         analoguePins[aPin].valueMSB = value >> 8;
+        analoguePinStates[pinLSBByte] = analoguePins[aPin].valueLSB;
+        analoguePinStates[pinMSBByte] = analoguePins[aPin].valueMSB;
       }
     }
     if (outputTesting) {
@@ -289,17 +293,20 @@ void receiveEvent(int numBytes) {
       }
       break;
     case EXIORDAN:
-      if (numBytes == 2) {
+      // if (numBytes == 2) {
+      //   outboundFlag = EXIORDAN;
+      //   uint8_t aPin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
+      //   if (analoguePins[aPin].enable == 0) {
+      //     analoguePins[aPin].enable = 1;
+      //     uint16_t value = analogRead(analoguePinMap[aPin]);
+      //     analoguePins[aPin].valueLSB = value & 0xFF;
+      //     analoguePins[aPin].valueMSB = value >> 8;
+      //   }
+      //   analogueOutBuffer[0] = analoguePins[aPin].valueLSB;
+      //   analogueOutBuffer[1] = analoguePins[aPin].valueMSB;
+      // }
+      if (numBytes == 1) {
         outboundFlag = EXIORDAN;
-        uint8_t aPin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
-        if (analoguePins[aPin].enable == 0) {
-          analoguePins[aPin].enable = 1;
-          uint16_t value = analogRead(analoguePinMap[aPin]);
-          analoguePins[aPin].valueLSB = value & 0xFF;
-          analoguePins[aPin].valueMSB = value >> 8;
-        }
-        analogueOutBuffer[0] = analoguePins[aPin].valueLSB;
-        analogueOutBuffer[1] = analoguePins[aPin].valueMSB;
       }
       break;
     case EXIOWRD:
@@ -331,6 +338,11 @@ void receiveEvent(int numBytes) {
         outboundFlag = EXIOVER;
       }
       break;
+    case EXIOENAN:
+      if (numBytes == 2) {
+        uint8_t pin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
+        analoguePins[pin].enable = 1;
+      }
     default:
       break;
   }
@@ -349,7 +361,8 @@ void requestEvent() {
       }
       break;
     case EXIORDAN:
-      Wire.write(analogueOutBuffer, 2);
+      // Wire.write(analogueOutBuffer, 2);
+      Wire.write(analoguePinStates, analoguePinBytes);
       break;
     case EXIORDD:
       Wire.write(digitalPinStates, digitalPinBytes);
@@ -368,10 +381,6 @@ void requestEvent() {
 void displayPins() {
   if (millis() - lastPinDisplay > displayDelay) {
     lastPinDisplay = millis();
-    Serial.print(F("Digital pin states: "));
-    for (uint8_t byte = 0; byte < digitalPinBytes; byte++) {
-      Serial.println(digitalPinStates[byte], HEX);
-    }
     Serial.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       Serial.print(digitalPinMap[pin]);
@@ -388,6 +397,10 @@ void displayPins() {
         Serial.print(digitalPins[pin].state);
         Serial.print(F(","));
       }
+    }
+    Serial.println(F("Analogue states:"));
+    for (uint8_t byte = 0; byte < analoguePinBytes; byte++) {
+      Serial.println(analoguePinStates[byte]);
     }
     Serial.println(F("Analogue Pin|Enable|Value|LSB|MSB:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
