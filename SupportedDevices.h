@@ -34,6 +34,8 @@ static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_P
 static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3
 };
+#define I2C_SDA A4
+#define I2C_SCL A5
 
 // Arduino Nano or Pro Mini
 #elif defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
@@ -51,6 +53,8 @@ static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_P
 static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   A0,A1,A2,A3,A6,A7
 };
+#define I2C_SDA A4
+#define I2C_SCL A5
 
 // Arduino Mega/Mega2560
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
@@ -87,6 +91,8 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   PA0,PA1,PA4,PB0,PC2,PC1,PC3,PC0,   // CN7 analogue
   PC5,PA5,PA6,PA7,PB1,PC4   // CN10 analogue
 };
+#define I2C_SDA PB9
+#define I2C_SCL PB8
 
 // NUCLEO F412ZG - EXPERIMENTAL, in need of testing
 // Pins not available for use:
@@ -118,6 +124,8 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
   PA0,PA1,PA4,PB0,PC2,PC1,PC3,PC0,   // CN11 analogue
   PC5,PA5,PA6,PA7,PB1,PC4,PA2,PA3   // CN12 analogue
 };
+#define I2C_SDA PB9
+#define I2C_SCL PB8
 
 #else
 #define CPU_TYPE_ERROR

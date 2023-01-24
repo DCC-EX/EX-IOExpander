@@ -147,6 +147,15 @@ void setup() {
   diag = true;
 #endif
   Wire.begin(i2cAddress);
+// If desired and pins defined, disable I2C pullups
+#if defined(DISABLE_I2C_PULLUPS) && defined(I2C_SDA) && defined(I2C_SCL)
+  Serial.print(F("Disabling I2C pullups on pins SDA|SCL: "));
+  Serial.print(I2C_SDA);
+  Serial.print(F("|"));
+  Serial.println(I2C_SCL);
+  digitalWrite(I2C_SDA, LOW);
+  digitalWrite(I2C_SCL, LOW);
+#endif
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   initialisePins();
   Serial.println(F("Initialised all pins as input only"));
