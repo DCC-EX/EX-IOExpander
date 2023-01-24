@@ -41,4 +41,9 @@
 // #define TEST_MODE OUTPUT_TEST
 // #define TEST_MODE PULLUP_TEST
 
+/////////////////////////////////////////////////////////////////////////////////////
+//  Uncomment to disable internal I2C pullup resistors
+//  NOTE: This will not apply to all supported devices, refer to the documentation
+// #define DISABLE_I2C_PULLUPS
+
 #endif
