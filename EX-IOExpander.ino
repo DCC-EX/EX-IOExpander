@@ -54,7 +54,6 @@ If we haven't got a custom config.h, use the example.
 typedef struct {
   bool direction;       // 0 = output, 1 = input
   bool pullup;          // 0 = no pullup, 1 = pullup (input only)
-  bool state;           // stores current state, 0 = LOW, 1 = HIGH
   bool enable;          // 0 = disabled (default), set to 1 = enabled
 } digitalConfig;
 
@@ -62,8 +61,6 @@ typedef struct {
 * Struct to define the analogue pin assignment and keep state
 */
 typedef struct {
-  byte valueLSB;        // Least significant byte of analogue value
-  byte valueMSB;        // Most significant byte of analogue value
   bool enable;          // Flag if it's enabled (1) or not (0)
 } analogueConfig;
 
@@ -116,8 +113,8 @@ bool outputTesting = false;   // Flag that digital output testing is enabled/dis
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
-byte* digitalPinStates;   // Array pointer to store digital pin states to send to the device driver
-byte* analoguePinStates;  // Array pointer to store analogue pin states to send to the device driver
+byte digitalPinStates[(NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8];
+byte analoguePinStates[NUMBER_OF_ANALOGUE_PINS * 2];
 
 // Ensure test modes defined in myConfig.h have values
 #define ANALOGUE_TEST 1
@@ -182,7 +179,6 @@ void loop() {
           }
           bool currentState = digitalRead(digitalPinMap[dPin]);
           if (digitalPins[dPin].pullup) currentState = !currentState;
-          digitalPins[dPin].state = currentState;
           uint8_t pinBit = dPin - pinByte * 8;
           if (currentState) {
             bitSet(digitalPinStates[pinByte], pinBit);
@@ -197,10 +193,8 @@ void loop() {
       uint8_t pinMSBByte = pinLSBByte + 1;
       if (analoguePins[aPin].enable == 1) {
         uint16_t value = analogRead(analoguePinMap[aPin]);
-        analoguePins[aPin].valueLSB = value & 0xFF;
-        analoguePins[aPin].valueMSB = value >> 8;
-        analoguePinStates[pinLSBByte] = analoguePins[aPin].valueLSB;
-        analoguePinStates[pinMSBByte] = analoguePins[aPin].valueMSB;
+        analoguePinStates[pinLSBByte] = value & 0xFF;
+        analoguePinStates[pinMSBByte] = value >> 8;
       }
     }
     if (outputTesting) {
@@ -244,14 +238,6 @@ void receiveEvent(int numBytes) {
           // Calculate number of bytes required to cover pins
           digitalPinBytes = (numDigitalPins + 7) / 8;
           analoguePinBytes = numAnaloguePins * 2;
-          digitalPinStates = (byte*) calloc(numDigitalPins, 1);
-          analoguePinStates = (byte*) calloc(numAnaloguePins, 1);
-          for (uint8_t dByte = 0; dByte < digitalPinBytes; dByte++) {
-            digitalPinStates[dByte] = 0;
-          }
-          for (uint8_t aByte = 0; aByte < analoguePinBytes; aByte++) {
-            analoguePinStates[aByte] = 0;
-          }
           Serial.print(F("Received pin configuration (digital|analogue): "));
           Serial.print(numDigitalPins);
           Serial.print(F("|"));
@@ -291,7 +277,6 @@ void receiveEvent(int numBytes) {
             pinMode(digitalPinMap[pin], INPUT);
           }
         }
-        digitalPins[pin].state = digitalRead(digitalPinMap[pin]);
       } else {
 #ifdef DIAG
       Serial.println(F("EXIODPUP received with incorrect number of bytes"));
@@ -299,18 +284,6 @@ void receiveEvent(int numBytes) {
       }
       break;
     case EXIORDAN:
-      // if (numBytes == 2) {
-      //   outboundFlag = EXIORDAN;
-      //   uint8_t aPin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
-      //   if (analoguePins[aPin].enable == 0) {
-      //     analoguePins[aPin].enable = 1;
-      //     uint16_t value = analogRead(analoguePinMap[aPin]);
-      //     analoguePins[aPin].valueLSB = value & 0xFF;
-      //     analoguePins[aPin].valueMSB = value >> 8;
-      //   }
-      //   analogueOutBuffer[0] = analoguePins[aPin].valueLSB;
-      //   analogueOutBuffer[1] = analoguePins[aPin].valueMSB;
-      // }
       if (numBytes == 1) {
         outboundFlag = EXIORDAN;
       }
@@ -319,6 +292,8 @@ void receiveEvent(int numBytes) {
       if (numBytes == 3) {
         uint8_t dPin = buffer[1];
         bool state = buffer[2];
+        uint8_t dPinByte = dPin / 8;
+        uint8_t dPinBit = dPin - dPinByte * 8;
         if (digitalPins[dPin].enable == 1 && digitalPins[dPin].direction == 1) {
           Serial.print(F("ERROR! pin "));
           Serial.print(digitalPinMap[dPin]);
@@ -330,7 +305,11 @@ void receiveEvent(int numBytes) {
           pinMode(digitalPinMap[dPin], OUTPUT);
           digitalPins[dPin].direction = 0;
         }
-        digitalPins[dPin].state = state;
+        if (state) {
+          bitSet(digitalPinStates[dPinByte], dPinBit);
+        } else {
+          bitClear(digitalPinStates[dPinByte], dPinBit);
+        }
         digitalWrite(digitalPinMap[dPin], state);
       }
       break;
@@ -348,8 +327,6 @@ void receiveEvent(int numBytes) {
       if (numBytes == 2) {
         uint8_t pin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
         analoguePins[pin].enable = 1;
-        analoguePins[pin].valueLSB = 0;
-        analoguePins[pin].valueMSB = 0;
       }
     default:
       break;
@@ -369,7 +346,6 @@ void requestEvent() {
       }
       break;
     case EXIORDAN:
-      // Wire.write(analogueOutBuffer, 2);
       Wire.write(analoguePinStates, analoguePinBytes);
       break;
     case EXIORDD:
@@ -391,6 +367,8 @@ void displayPins() {
     lastPinDisplay = millis();
     Serial.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
+      uint8_t dPinByte = pin / 8;
+      uint8_t dPinBit = pin - dPinByte * 8;
       Serial.print(digitalPinMap[pin]);
       Serial.print(F("|"));
       Serial.print(digitalPins[pin].enable);
@@ -400,27 +378,28 @@ void displayPins() {
       Serial.print(digitalPins[pin].pullup);
       Serial.print(F("|"));
       if (pin == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS - 1 || (pin % 15 == 0 && pin > 0)) {
-        Serial.println(digitalPins[pin].state);
+        Serial.println(bitRead(digitalPinStates[dPinByte], dPinBit));
       } else {
-        Serial.print(digitalPins[pin].state);
+        Serial.print(bitRead(digitalPinStates[dPinByte], dPinBit));
         Serial.print(F(","));
       }
     }
-    Serial.println(F(""));
     Serial.println(F("Analogue Pin|Enable|Value|LSB|MSB:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
+      uint8_t lsbByte = pin * 2;
+      uint8_t msbByte = lsbByte + 1;
       Serial.print(analoguePinMap[pin]);
       Serial.print(F("|"));
       Serial.print(analoguePins[pin].enable);
       Serial.print(F("|"));
-      Serial.print((analoguePins[pin].valueMSB << 8) + analoguePins[pin].valueLSB);
+      Serial.print((analoguePinStates[msbByte] << 8) + analoguePinStates[lsbByte]);
       Serial.print(F("|"));
-      Serial.print(analoguePins[pin].valueLSB);
+      Serial.print(analoguePinStates[lsbByte]);
       Serial.print(F("|"));
       if (pin == NUMBER_OF_ANALOGUE_PINS - 1) {
-        Serial.println(analoguePins[pin].valueMSB);
+        Serial.println(analoguePinStates[msbByte]);
       } else {
-        Serial.print(analoguePins[pin].valueMSB);
+        Serial.print(analoguePinStates[msbByte]);
         Serial.print(F(","));
       }
     }
@@ -774,13 +753,16 @@ void initialisePins() {
       digitalPins[pin].direction = 1;
       digitalPins[pin].enable = 0;
       digitalPins[pin].pullup = 0;
-      digitalPins[pin].state = 0;
     }
+  }
+  for (uint8_t dPinByte = 0; dPinByte < (NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8; dPinByte++) {
+    digitalPinStates[dPinByte] = 0;
   }
   for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
     pinMode(analoguePinMap[pin], INPUT);
     analoguePins[pin].enable = 0;
-    analoguePins[pin].valueLSB = 0;
-    analoguePins[pin].valueMSB = 0;
+  }
+  for (uint8_t aPinByte = 0; aPinByte < NUMBER_OF_ANALOGUE_PINS * 2; aPinByte++) {
+    analoguePinStates[aPinByte] = 0;
   }
 }
