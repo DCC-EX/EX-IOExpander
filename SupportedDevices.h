@@ -133,6 +133,7 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #define EXIORDAN 0xE4     // Flag an analogue input is being read
 #define EXIOWRD 0xE5      // Flag for digital write
 #define EXIORDD 0xE6      // Flag a digital input is being read
+#define EXIOENAN 0xE7     // Flag to enable an analogue input pin
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define version to store in EEPROM/FLASH in case this needs to change later
