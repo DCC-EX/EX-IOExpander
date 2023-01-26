@@ -27,8 +27,14 @@
 
 #include <Arduino.h>
 #include "SupportedDevices.h"
+#undef USB_SERIAL           // Teensy has this defined by default (in case we ever support Teensy)
+#define USB_SERIAL Serial   // Standard serial port most of the time!
 #if defined(ARDUINO_ARCH_AVR)
 #include <avr/wdt.h>
+#endif
+#if defined(ARDUINO_ARCH_SAMD)
+#undef USB_SERIAL
+#define USB_SERIAL SerialUSB  // Most SAMD21 clones use native USB on the SAMD21G18 variants
 #endif
 #ifdef HAS_EEPROM
 #include <EEPROM.h>
@@ -127,21 +133,21 @@ byte analoguePinStates[NUMBER_OF_ANALOGUE_PINS * 2];
 */
 void setup() {
   Serial.begin(115200);
-  Serial.print(F("DCC-EX EX-IOExpander v"));
-  Serial.println(VERSION);
-  Serial.print(F("Detected device: "));
-  Serial.println(BOARD_TYPE);
+  USB_SERIAL.print(F("DCC-EX EX-IOExpander v"));
+  USB_SERIAL.println(VERSION);
+  USB_SERIAL.print(F("Detected device: "));
+  USB_SERIAL.println(BOARD_TYPE);
   if (getI2CAddress() != 0) {
     i2cAddress = getI2CAddress();
   }
   if (i2cAddress < 0x08 || i2cAddress > 0x77) {
-    Serial.print(F("ERROR: Invalid I2C address configured: 0x"));
-    Serial.print(i2cAddress, HEX);
-    Serial.println(F(", using myConfig.h instead"));
+    USB_SERIAL.print(F("ERROR: Invalid I2C address configured: 0x"));
+    USB_SERIAL.print(i2cAddress, HEX);
+    USB_SERIAL.println(F(", using myConfig.h instead"));
     i2cAddress = I2C_ADDRESS;
   }
-  Serial.print(F("Available at I2C address 0x"));
-  Serial.println(i2cAddress, HEX);
+  USB_SERIAL.print(F("Available at I2C address 0x"));
+  USB_SERIAL.println(i2cAddress, HEX);
   setVersion();
 #ifdef DIAG
   diag = true;
@@ -149,16 +155,16 @@ void setup() {
   Wire.begin(i2cAddress);
 // If desired and pins defined, disable I2C pullups
 #if defined(DISABLE_I2C_PULLUPS) && defined(I2C_SDA) && defined(I2C_SCL)
-  Serial.print(F("Disabling I2C pullups on pins SDA|SCL: "));
-  Serial.print(I2C_SDA);
-  Serial.print(F("|"));
-  Serial.println(I2C_SCL);
+  USB_SERIAL.print(F("Disabling I2C pullups on pins SDA|SCL: "));
+  USB_SERIAL.print(I2C_SDA);
+  USB_SERIAL.print(F("|"));
+  USB_SERIAL.println(I2C_SCL);
   digitalWrite(I2C_SDA, LOW);
   digitalWrite(I2C_SCL, LOW);
 #endif
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   initialisePins();
-  Serial.println(F("Initialised all pins as input only"));
+  USB_SERIAL.println(F("Initialised all pins as input only"));
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
 #if (TEST_MODE == ANALOGUE_TEST)
@@ -247,22 +253,22 @@ void receiveEvent(int numBytes) {
           // Calculate number of bytes required to cover pins
           digitalPinBytes = (numDigitalPins + 7) / 8;
           analoguePinBytes = numAnaloguePins * 2;
-          Serial.print(F("Received pin configuration (digital|analogue): "));
-          Serial.print(numDigitalPins);
-          Serial.print(F("|"));
-          Serial.println(numAnaloguePins);
+          USB_SERIAL.print(F("Received pin configuration (digital|analogue): "));
+          USB_SERIAL.print(numDigitalPins);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.println(numAnaloguePins);
           setupComplete = true;
         } else {
-          Serial.print(F("ERROR: Invalid pins sent by device driver! (Digital|Analogue): "));
-          Serial.print(numDigitalPins);
-          Serial.print(F("|"));
-          Serial.println(numAnaloguePins);
+          USB_SERIAL.print(F("ERROR: Invalid pins sent by device driver! (Digital|Analogue): "));
+          USB_SERIAL.print(numDigitalPins);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.println(numAnaloguePins);
           setupComplete = false;
         }
         outboundFlag = EXIOINIT;
       } else {
 #ifdef DIAG
-        Serial.println(F("EXIOINIT received with incorrect data"));
+        USB_SERIAL.println(F("EXIOINIT received with incorrect data"));
 #endif
       }
       break;
@@ -271,9 +277,9 @@ void receiveEvent(int numBytes) {
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
         if (digitalPins[pin].enable == 1 && digitalPins[pin].direction == 0) {
-          Serial.print(F("ERROR! pin *"));
-          Serial.print(digitalPinMap[pin]);
-          Serial.println(F(" already defined as output pin, cannot use as input"));
+          USB_SERIAL.print(F("ERROR! pin *"));
+          USB_SERIAL.print(digitalPinMap[pin]);
+          USB_SERIAL.println(F(" already defined as output pin, cannot use as input"));
           break;
         }
         if (digitalPins[pin].enable == 0) {
@@ -288,7 +294,7 @@ void receiveEvent(int numBytes) {
         }
       } else {
 #ifdef DIAG
-      Serial.println(F("EXIODPUP received with incorrect number of bytes"));
+      USB_SERIAL.println(F("EXIODPUP received with incorrect number of bytes"));
 #endif
       }
       break;
@@ -304,9 +310,9 @@ void receiveEvent(int numBytes) {
         uint8_t dPinByte = dPin / 8;
         uint8_t dPinBit = dPin - dPinByte * 8;
         if (digitalPins[dPin].enable == 1 && digitalPins[dPin].direction == 1) {
-          Serial.print(F("ERROR! pin "));
-          Serial.print(digitalPinMap[dPin]);
-          Serial.println(F(" already defined as input pin, cannot use as output"));
+          USB_SERIAL.print(F("ERROR! pin "));
+          USB_SERIAL.print(digitalPinMap[dPin]);
+          USB_SERIAL.println(F(" already defined as input pin, cannot use as output"));
           break;
         }
         if (digitalPins[dPin].enable == 0) {
@@ -374,42 +380,42 @@ void requestEvent() {
 void displayPins() {
   if (millis() - lastPinDisplay > displayDelay) {
     lastPinDisplay = millis();
-    Serial.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
+    USB_SERIAL.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       uint8_t dPinByte = pin / 8;
       uint8_t dPinBit = pin - dPinByte * 8;
-      Serial.print(digitalPinMap[pin]);
-      Serial.print(F("|"));
-      Serial.print(digitalPins[pin].enable);
-      Serial.print(F("|"));
-      Serial.print(digitalPins[pin].direction);
-      Serial.print(F("|"));
-      Serial.print(digitalPins[pin].pullup);
-      Serial.print(F("|"));
+      USB_SERIAL.print(digitalPinMap[pin]);
+      USB_SERIAL.print(F("|"));
+      USB_SERIAL.print(digitalPins[pin].enable);
+      USB_SERIAL.print(F("|"));
+      USB_SERIAL.print(digitalPins[pin].direction);
+      USB_SERIAL.print(F("|"));
+      USB_SERIAL.print(digitalPins[pin].pullup);
+      USB_SERIAL.print(F("|"));
       if (pin == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS - 1 || (pin % 15 == 0 && pin > 0)) {
-        Serial.println(bitRead(digitalPinStates[dPinByte], dPinBit));
+        USB_SERIAL.println(bitRead(digitalPinStates[dPinByte], dPinBit));
       } else {
-        Serial.print(bitRead(digitalPinStates[dPinByte], dPinBit));
-        Serial.print(F(","));
+        USB_SERIAL.print(bitRead(digitalPinStates[dPinByte], dPinBit));
+        USB_SERIAL.print(F(","));
       }
     }
-    Serial.println(F("Analogue Pin|Enable|Value|LSB|MSB:"));
+    USB_SERIAL.println(F("Analogue Pin|Enable|Value|LSB|MSB:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
       uint8_t lsbByte = pin * 2;
       uint8_t msbByte = lsbByte + 1;
-      Serial.print(analoguePinMap[pin]);
-      Serial.print(F("|"));
-      Serial.print(analoguePins[pin].enable);
-      Serial.print(F("|"));
-      Serial.print((analoguePinStates[msbByte] << 8) + analoguePinStates[lsbByte]);
-      Serial.print(F("|"));
-      Serial.print(analoguePinStates[lsbByte]);
-      Serial.print(F("|"));
+      USB_SERIAL.print(analoguePinMap[pin]);
+      USB_SERIAL.print(F("|"));
+      USB_SERIAL.print(analoguePins[pin].enable);
+      USB_SERIAL.print(F("|"));
+      USB_SERIAL.print((analoguePinStates[msbByte] << 8) + analoguePinStates[lsbByte]);
+      USB_SERIAL.print(F("|"));
+      USB_SERIAL.print(analoguePinStates[lsbByte]);
+      USB_SERIAL.print(F("|"));
       if (pin == NUMBER_OF_ANALOGUE_PINS - 1) {
-        Serial.println(analoguePinStates[msbByte]);
+        USB_SERIAL.println(analoguePinStates[msbByte]);
       } else {
-        Serial.print(analoguePinStates[msbByte]);
-        Serial.print(F(","));
+        USB_SERIAL.print(analoguePinStates[msbByte]);
+        USB_SERIAL.print(F(","));
       }
     }
   }
@@ -474,7 +480,7 @@ void processSerialInput() {
       case 'A': // Enable/disable analogue input testing
         if (analogueTesting) {
           testAnalogue(false);
-          Serial.println(F("Analogue testing disabled"));
+          USB_SERIAL.println(F("Analogue testing disabled"));
         } else {
           testAnalogue(true);
         }
@@ -482,15 +488,15 @@ void processSerialInput() {
       case 'D': // Enable/disable diagnostic output
         if (diag && parameter) {
           displayDelay = parameter * 1000;
-          Serial.print(F("Diagnostics enabled, delay set to "));
-          Serial.println(displayDelay);
+          USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
+          USB_SERIAL.println(displayDelay);
           diag = true;
         } else if (diag && !parameter) {
-          Serial.println(F("Diagnostics disabled"));
+          USB_SERIAL.println(F("Diagnostics disabled"));
           diag = false;
         } else {
-          Serial.print(F("Diagnostics enabled, delay set to "));
-          Serial.println(displayDelay);
+          USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
+          USB_SERIAL.println(displayDelay);
           diag = true;
         }
         break;
@@ -500,7 +506,7 @@ void processSerialInput() {
       case 'I': // Enable/disable digital input testing
         if (inputTesting) {
           testInput(false);
-          Serial.println(F("Input testing (no pullups) disabled"));
+          USB_SERIAL.println(F("Input testing (no pullups) disabled"));
         } else {
           testInput(true);
         }
@@ -508,7 +514,7 @@ void processSerialInput() {
       case 'O': // Enable/disable digital output testing
         if (outputTesting) {
           testOutput(false);
-          Serial.println(F("Output testing disabled"));
+          USB_SERIAL.println(F("Output testing disabled"));
         } else {
           testOutput(true);
         }
@@ -516,37 +522,37 @@ void processSerialInput() {
       case 'P': // Enable/disable digital input testing with pullups
         if (pullupTesting) {
           testPullup(false);
-          Serial.println(F("Pullup input testing disabled"));
+          USB_SERIAL.println(F("Pullup input testing disabled"));
         } else {
           testPullup(true);
         }
         break;
       case 'R': // Read address from EEPROM
         if (getI2CAddress() == 0) {
-          Serial.println(F("I2C address not stored, using myConfig.h"));
+          USB_SERIAL.println(F("I2C address not stored, using myConfig.h"));
         } else {
-          Serial.print(F("I2C address stored is 0x"));
-          Serial.println(getI2CAddress(), HEX);
+          USB_SERIAL.print(F("I2C address stored is 0x"));
+          USB_SERIAL.println(getI2CAddress(), HEX);
         }
         break;
       case 'T': // Display current state of test modes
         if (analogueTesting) {
-          Serial.println(F("Analogue testing enabled"));
+          USB_SERIAL.println(F("Analogue testing enabled"));
         } else if (inputTesting) {
-          Serial.println(F("Input testing (no pullups) enabled"));
+          USB_SERIAL.println(F("Input testing (no pullups) enabled"));
         } else if (outputTesting) {
-          Serial.println(F("Output testing enabled"));
+          USB_SERIAL.println(F("Output testing enabled"));
         } else if (pullupTesting) {
-          Serial.println(F("Pullup input testing enabled"));
+          USB_SERIAL.println(F("Pullup input testing enabled"));
         } else {
-          Serial.println(F("No testing in progress"));
+          USB_SERIAL.println(F("No testing in progress"));
         }
         break;
       case 'W': // Write address to EEPROM
         if (parameter > 0x07 && parameter < 0x78) {
           writeI2CAddress(parameter);
         } else {
-          Serial.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
+          USB_SERIAL.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
         }
         break;
       case 'Z': // Software reboot
@@ -580,13 +586,13 @@ uint8_t getI2CAddress() {
   if (addressSet) {
     eepromAddress = EEPROM.read(5);
 #ifdef DIAG
-      Serial.print(F("I2C address defined in EEPROM: 0x"));
-      Serial.println(eepromAddress, HEX);
+      USB_SERIAL.print(F("I2C address defined in EEPROM: 0x"));
+      USB_SERIAL.println(eepromAddress, HEX);
 #endif
     return eepromAddress;
   } else {
 #ifdef DIAG
-    Serial.println(F("I2C address not defined in EEPROM"));
+    USB_SERIAL.println(F("I2C address not defined in EEPROM"));
 #endif
     return 0;
   }
@@ -600,9 +606,9 @@ void writeI2CAddress(int16_t eepromAddress) {
   for (uint8_t i = 0; i < 5; i++) {
     EEPROM.write(i, eepromData[i]);
   }
-  Serial.print(F("Saving address 0x"));
-  Serial.print(eepromAddress, HEX);
-  Serial.println(F(" to EEPROM, reboot to activate"));
+  USB_SERIAL.print(F("Saving address 0x"));
+  USB_SERIAL.print(eepromAddress, HEX);
+  USB_SERIAL.println(F(" to EEPROM, reboot to activate"));
   EEPROM.write(5, eepromAddress);
 }
 
@@ -613,22 +619,22 @@ void eraseI2CAddress() {
   for (uint8_t i = 0; i < 6; i++) {
     EEPROM.write(i, 0);
   }
-  Serial.println(F("Erased EEPROM, reboot to revert to myConfig.h"));
+  USB_SERIAL.println(F("Erased EEPROM, reboot to revert to myConfig.h"));
 }
 
 #else
 // Placeholders for no EEPROM support
 uint8_t getI2CAddress() {
-  Serial.println(F("No EEPROM support, use myConfig.h"));
+  USB_SERIAL.println(F("No EEPROM support, use myConfig.h"));
   return 0;
 }
 
 void writeI2CAddress(int16_t notRequired) {
-  Serial.println(F("No EEPROM support, use myConfig.h"));
+  USB_SERIAL.println(F("No EEPROM support, use myConfig.h"));
 }
 
 void eraseI2CAddress() {
-  Serial.println(F("No EEPROM support, use myConfig.h"));
+  USB_SERIAL.println(F("No EEPROM support, use myConfig.h"));
 }
 
 #endif
@@ -651,7 +657,7 @@ void reset() {
 */
 void testAnalogue(bool enable) {
   if (enable) {
-    Serial.println(F("Analogue input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    USB_SERIAL.println(F("Analogue input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
     setupComplete = true;
     disableWire();
     testInput(false);
@@ -671,7 +677,7 @@ void testAnalogue(bool enable) {
 
 void testInput(bool enable) {
   if (enable) {
-    Serial.println(F("Input testing (no pullups) enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    USB_SERIAL.println(F("Input testing (no pullups) enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
     setupComplete = true;
     disableWire();
     testAnalogue(false);
@@ -696,7 +702,7 @@ void testInput(bool enable) {
 
 void testOutput(bool enable) {
   if (enable) {
-    Serial.println(F("Output testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    USB_SERIAL.println(F("Output testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
     setupComplete = true;
     disableWire();
     testAnalogue(false);
@@ -719,7 +725,7 @@ void testOutput(bool enable) {
 
 void testPullup(bool enable) {
   if (enable) {
-    Serial.println(F("Pullup input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    USB_SERIAL.println(F("Pullup input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
     setupComplete = true;
     disableWire();
     testAnalogue(false);
@@ -746,7 +752,7 @@ void disableWire() {
 #ifdef WIRE_HAS_END
   Wire.end();
 #else
-  Serial.println(F("WARNING! The Wire.h library has no end() function, ensure EX-IOExpander is disconnected from your CommandStation"));
+  USB_SERIAL.println(F("WARNING! The Wire.h library has no end() function, ensure EX-IOExpander is disconnected from your CommandStation"));
 #endif
 }
 

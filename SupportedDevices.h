@@ -127,6 +127,26 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #define I2C_SDA PB9
 #define I2C_SCL PB8
 
+// Arduino Zero (SAMD21) using native USB - EXPERIMENTAL, in need of testing
+// Pins not available for use:
+// XTAL pins - PA00, PA01
+// USB pins - USB_HOST_ENABLE (D27), USB_DM (D28), USB_DP (D29)
+// I2C pins - SDA (PA22/D20), SCL (PA23,D21)
+// LED pins - BuiltinLED (D13), RxLED (D25), TxLED (D26)
+// AREF pin - AREF (42)
+#elif defined(ARDUINO_ARCH_SAMD)
+#define BOARD_TYPE F("Arduino Zero or Clone")
+#define NUMBER_OF_DIGITAL_PINS 27
+#define NUMBER_OF_ANALOGUE_PINS 6
+static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
+  0,1,2,3,4,5,6,7,8,9,10,11,12,13,A0,A1,A2,A3,A4,A5,22,23,24,38,39,40,41
+};
+static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
+  A0, A1, A2, A3, A4, A5
+};
+#define I2C_SDA PA22
+#define I2C_SCL PA23
+
 #else
 #define CPU_TYPE_ERROR
 #endif

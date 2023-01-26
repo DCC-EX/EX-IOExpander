@@ -2,8 +2,10 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.12"
+#define VERSION "0.0.13"
 
+// 0.0.13 includes:
+//  - Experimental support for SAMD21 Arduino Zero clones using native USB serial comms
 // 0.0.12 includes:
 //  - Add configuration option to disable internal I2C pullups
 // 0.0.11 includes:
