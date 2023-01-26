@@ -16,9 +16,7 @@ jobs:
     - name: Copy generic config over
       run: cp myConfig.example.h myConfig.h
     - name: Install PlatformIO dependencies
-      run: |
-        pio settings set force_verbose Yes
-        pio pkg install
+      run: pio pkg install
     - name: Copy F412ZG variant files
       run: |
         mkdir -p ~/.platformio/platforms/ststm32/boards
