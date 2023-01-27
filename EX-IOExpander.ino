@@ -29,7 +29,7 @@
 Struct to define the capability of each physical pin
 */
 typedef struct {
-  uint8_t pin;
+  uint8_t physPin;
   uint8_t capability;
 } pinDefinition;
 
@@ -255,8 +255,8 @@ void loop() {
         lastOutputTest = millis();
         for (uint8_t pin = 0; pin < numPins; pin++) {
           if (bitRead(pinMap[pin].capability, 1)) {
-            pinMode(pinMap[pin].pin, OUTPUT);
-            digitalWrite(pinMap[pin].pin, outputTestState);
+            pinMode(pinMap[pin].physPin, OUTPUT);
+            digitalWrite(pinMap[pin].physPin, outputTestState);
           }
         }
         /*
@@ -292,8 +292,10 @@ void receiveEvent(int numBytes) {
     case EXIOINIT:
       if (numBytes == 3) {
         initialisePins();
-        numDigitalPins = buffer[1];
-        numAnaloguePins = buffer[2];
+        // numDigitalPins = buffer[1];
+        // numAnaloguePins = buffer[2];
+        uint8_t numReceivedPins = buffer[1];
+        /*
         if (numDigitalPins + numAnaloguePins == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) {
           // Calculate number of bytes required to cover pins
           digitalPinBytes = (numDigitalPins + 7) / 8;
@@ -310,6 +312,16 @@ void receiveEvent(int numBytes) {
           USB_SERIAL.println(numAnaloguePins);
           setupComplete = false;
         }
+        */
+        if (numReceivedPins = numPins) {
+          USB_SERIAL.print(F("Received correct pin count: "));
+          USB_SERIAL.println(numReceivedPins);
+          setupComplete = true;
+        } else {
+          USB_SERIAL.print(F("ERROR: Invalid pin count sent by device driver!: "));
+          USB_SERIAL.println(numReceivedPins);
+          setupComplete = false;
+        }
         outboundFlag = EXIOINIT;
       } else {
 #ifdef DIAG
@@ -321,6 +333,7 @@ void receiveEvent(int numBytes) {
     case EXIODPUP:
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
+        /*
         if (digitalPins[pin].enable == 1 && digitalPins[pin].direction == 0) {
           USB_SERIAL.print(F("ERROR! pin *"));
           USB_SERIAL.print(digitalPinMap[pin]);
@@ -335,6 +348,24 @@ void receiveEvent(int numBytes) {
             pinMode(digitalPinMap[pin], INPUT_PULLUP);
           } else {
             pinMode(digitalPinMap[pin], INPUT);
+          }
+        }
+        */
+        if (exioPins[pin].enable && !exioPins[pin].direction) {
+          USB_SERIAL.print(F("ERROR! pin "));
+          USB_SERIAL.print(pinMap[pin].physPin);
+          USB_SERIAL.println(F(" already defined as output pin, cannot use as input"));
+          break;
+        }
+        if (!exioPins[pin].enable) {
+          exioPins[pin].direction = 1;   // Must be an input if we got a pullup config
+          exioPins[pin].mode = 0;        // Must be digital if we got a pullup config
+          exioPins[pin].pullup = buffer[2];
+          exioPins[pin].enable = 1;
+          if (exioPins[pin].pullup) {
+            pinMode(pinMap[pin].physPin, INPUT_PULLUP);
+          } else {
+            pinMode(pinMap[pin].physPin, INPUT);
           }
         }
       } else {
@@ -807,7 +838,7 @@ void disableWire() {
 void initialisePins() {
   for (uint8_t pin = 0; pin < TOTAL_PINS; pin++) {
     if (bitRead(pinMap[pin].capability, 0) || bitRead(pinMap[pin].capability, 2)) {
-      pinMode(pinMap[pin].pin, INPUT);
+      pinMode(pinMap[pin].physPin, INPUT);
       exioPins[pin].direction = 1;
     } else {
       exioPins[pin].direction = 0;
