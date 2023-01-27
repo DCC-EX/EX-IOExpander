@@ -25,13 +25,22 @@
 * Analogue I/O pins are available as digital inputs or outputs or analogue inputs (depending on architecture).
 */
 
+/*
+Struct to define the capability of each physical pin
+*/
 typedef struct {
   uint8_t pin;
   uint8_t capability;
 } pinDefinition;
 
+/*
+* Include required files and libraries.
+*/
 #include <Arduino.h>
+#include "defines.h"
 #include "SupportedDevices.h"
+#include "version.h"
+#include <Wire.h>
 #undef USB_SERIAL           // Teensy has this defined by default (in case we ever support Teensy)
 #define USB_SERIAL Serial   // Standard serial port most of the time!
 #if defined(ARDUINO_ARCH_AVR)
@@ -99,12 +108,6 @@ typedef struct {
 pinConfig exioPins[TOTAL_PINS];
 
 /*
-* Include required files and libraries.
-*/
-#include "version.h"
-#include <Wire.h>
-
-/*
 * Global variables here
 */
 /*
@@ -118,7 +121,7 @@ uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validati
 uint8_t numPins = TOTAL_PINS;
 uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
 int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
-int analoguePinBytes; // Used for enabling/disabling analogue pins
+int analoguePinBytes; // Used for sending analogue 16 bit values
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
 byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
@@ -202,6 +205,20 @@ void setup() {
 */
 void loop() {
   if (setupComplete) {
+    for (uint8_t pin = 0; pin < numPins; pin++) {
+      uint8_t pinByte = pin / 8;
+      if (exioPins[pin].enable && exioPins[pin].direction) {
+        switch(exioPins[pin].mode) {
+          case 1:
+            break;
+          case 2:
+            break;
+          default:
+            break;
+        }
+      }
+    }
+    /*
     for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
       uint8_t pinByte = dPin / 8;
       if (digitalPinMap[dPin]) {
@@ -231,16 +248,25 @@ void loop() {
         analoguePinStates[pinMSBByte] = value >> 8;
       }
     }
+    */
     if (outputTesting) {
       if (millis() - lastOutputTest > 500) {
         outputTestState = !outputTestState;
         lastOutputTest = millis();
+        for (uint8_t pin = 0; pin < numPins; pin++) {
+          if (bitRead(pinMap[pin].capability, 1)) {
+            pinMode(pinMap[pin].pin, OUTPUT);
+            digitalWrite(pinMap[pin].pin, outputTestState);
+          }
+        }
+        /*
         for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
           if (digitalPinMap[dPin]) {
             pinMode(digitalPinMap[dPin], OUTPUT);
             digitalWrite(digitalPinMap[dPin], outputTestState);
           }
         }
+        */
       }
     }
   }
@@ -780,9 +806,21 @@ void disableWire() {
 */
 void initialisePins() {
   for (uint8_t pin = 0; pin < TOTAL_PINS; pin++) {
-    if (bitRead(pinMap[pin].capability, 0) == 1 || bitRead(pinMap[pin].capability, 2) == 1) {
+    if (bitRead(pinMap[pin].capability, 0) || bitRead(pinMap[pin].capability, 2)) {
       pinMode(pinMap[pin].pin, INPUT);
+      exioPins[pin].direction = 1;
+    } else {
+      exioPins[pin].direction = 0;
     }
+    exioPins[pin].enable = 0;
+    exioPins[pin].mode = 0;
+    exioPins[pin].pullup = 0;
+  }
+  for (uint8_t dPinByte = 0; dPinByte < (TOTAL_PINS) / 8; dPinByte++) {
+    digitalPinStates[dPinByte] = 0;
+  }
+  for (uint8_t aPinByte = 0; aPinByte < NUMBER_OF_ANALOGUE_PINS * 2; aPinByte++) {
+    analoguePinStates[aPinByte] = 0;
   }
   /*
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {

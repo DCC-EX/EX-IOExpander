@@ -13,6 +13,7 @@
 #define SUPPORTEDDEVICES_H
 
 #include <Arduino.h>
+#include "defines.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Defines for the supported hardware architectures
@@ -30,10 +31,10 @@
 #define BOARD_TYPE F("Pro Mini")
 #endif
 #define TOTAL_PINS 18
-#define NUMBER_OF_ANALOGUE_PINS = 6
+#define NUMBER_OF_ANALOGUE_PINS 6
 pinDefinition pinMap[TOTAL_PINS] = {
-  {D2,DIO},{D3,DIOPO},{D4,DIO},{D5,DIOPO},{D6,DIOPO},{D7,DIO},
-  {D8,DIO},{D9,DIOPO},{D10,DIOPO},{D11,DIOPO},{D12,DIO},{D13,DIO},
+  {2,DIO},{3,DIOPO},{4,DIO},{5,DIOPO},{6,DIOPO},{7,DIO},
+  {8,DIO},{9,DIOPO},{10,DIOPO},{11,DIOPO},{12,DIO},{13,DIO},
   {A0,AIDIO},{A1,AIDIO},{A2,AIDIO},{A3,AIDIO},{A6,AI},{A7,AI},
 };
 #define I2C_SDA A4
@@ -169,48 +170,5 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 #else
 #define CPU_TYPE_ERROR
 #endif
-
-/////////////////////////////////////////////////////////////////////////////////////
-//  Define the register hex values we need to act on or respond with
-//
-#define EXIOINIT 0xE0     // Flag to start setup procedure
-#define EXIORDY 0xE1      // Flag setup procedure done, return to CS to ACK
-#define EXIODPUP 0xE2     // Flag we're receiving digital pin pullup configuration
-#define EXIOVER 0xE3      // Flag to send version
-#define EXIORDAN 0xE4     // Flag an analogue input is being read
-#define EXIOWRD 0xE5      // Flag for digital write
-#define EXIORDD 0xE6      // Flag a digital input is being read
-#define EXIOENAN 0xE7     // Flag to enable an analogue input pin
-
-/////////////////////////////////////////////////////////////////////////////////////
-//  Define version to store in EEPROM/FLASH in case this needs to change later
-//  This needs to be defined in order to invalidate contents if the structure changes
-//  in future releases.
-//
-#define EEPROM_VERSION 1
-
-/////////////////////////////////////////////////////////////////////////////////////
-//  Define the capability hex values for pins based on these bit values:
-//  Bit Capability
-//  0   Digital input
-//  1   Digital output
-//  2   Analogue input
-//  3   PWM output
-//
-#define DI 0x01       // Digital input only
-#define DO 0x02       // Digital output only
-#define DIO 0x03      // Digital input/output
-#define AI 0x04       // Analogue input only
-#define AIDI 0x05     // Analogue and digital input
-#define AIDO 0x06     // Analogue input, digital output
-#define AIDIO 0x07    // Analogue input, digital input and output
-#define PO 0x08       // PWM output only
-#define DIPO 0x09     // Digital input, PWM output
-#define DOPO 0x0A     // Digital output, PWM output
-#define DIOPO 0x0B    // Digital input/output, PWM output
-#define AOPO 0x0C     // Analogue input, PWM output
-#define AODIPO 0x0D   // Analogue input, digital input, PWM output
-#define AODOPO 0x0E   // Analogue input, digital output, PWM output
-#define AODIOPO 0x0F  // Analogue input, digital input/output, PWM output
 
 #endif
