@@ -22,6 +22,24 @@
 //  When the CommandStation configures EX-IOExpander, it will set whether the pin is in
 //  digital or analogue mode based on the number of digital/analogue pins.
 
+// Arduino Nano or Pro Mini
+#if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
+#if defined(ARDUINO_AVR_NANO)
+#define BOARD_TYPE F("Nano")
+#elif defined(ARDUINO_AVR_PRO)
+#define BOARD_TYPE F("Pro Mini")
+#endif
+#define TOTAL_PINS 18
+#define NUMBER_OF_ANALOGUE_PINS = 6
+pinDefinition pinMap[TOTAL_PINS] = {
+  {D2,DIO},{D3,DIOPO},{D4,DIO},{D5,DIOPO},{D6,DIOPO},{D7,DIO},
+  {D8,DIO},{D9,DIOPO},{D10,DIOPO},{D11,DIOPO},{D12,DIO},{D13,DIO},
+  {A0,AIDIO},{A1,AIDIO},{A2,AIDIO},{A3,AIDIO},{A6,AI},{A7,AI},
+};
+#define I2C_SDA A4
+#define I2C_SCL A5
+
+/*
 // Arduino Uno
 #if defined(ARDUINO_AVR_UNO)
 #define BOARD_TYPE F("Uno")
@@ -146,6 +164,7 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 };
 #define I2C_SDA PA22
 #define I2C_SCL PA23
+*/
 
 #else
 #define CPU_TYPE_ERROR
@@ -169,5 +188,29 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 //  in future releases.
 //
 #define EEPROM_VERSION 1
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Define the capability hex values for pins based on these bit values:
+//  Bit Capability
+//  0   Digital input
+//  1   Digital output
+//  2   Analogue input
+//  3   PWM output
+//
+#define DI 0x01       // Digital input only
+#define DO 0x02       // Digital output only
+#define DIO 0x03      // Digital input/output
+#define AI 0x04       // Analogue input only
+#define AIDI 0x05     // Analogue and digital input
+#define AIDO 0x06     // Analogue input, digital output
+#define AIDIO 0x07    // Analogue input, digital input and output
+#define PO 0x08       // PWM output only
+#define DIPO 0x09     // Digital input, PWM output
+#define DOPO 0x0A     // Digital output, PWM output
+#define DIOPO 0x0B    // Digital input/output, PWM output
+#define AOPO 0x0C     // Analogue input, PWM output
+#define AODIPO 0x0D   // Analogue input, digital input, PWM output
+#define AODOPO 0x0E   // Analogue input, digital output, PWM output
+#define AODIOPO 0x0F  // Analogue input, digital input/output, PWM output
 
 #endif

@@ -25,6 +25,11 @@
 * Analogue I/O pins are available as digital inputs or outputs or analogue inputs (depending on architecture).
 */
 
+typedef struct {
+  uint8_t pin;
+  uint8_t capability;
+} pinDefinition;
+
 #include <Arduino.h>
 #include "SupportedDevices.h"
 #undef USB_SERIAL           // Teensy has this defined by default (in case we ever support Teensy)
@@ -41,7 +46,7 @@
 #endif
 
 #ifdef CPU_TYPE_ERROR
-#error Unsupported microcontroller architecture detected, you need to use a type listed in defines.h
+#error Unsupported microcontroller architecture detected, you need to use a type listed in SupportedDevices.h
 #endif
 
 /*
@@ -57,29 +62,41 @@ If we haven't got a custom config.h, use the example.
 /*
 * Struct to define the digital pin parameters and keep state.
 */
-typedef struct {
-  bool direction;       // 0 = output, 1 = input
-  bool pullup;          // 0 = no pullup, 1 = pullup (input only)
-  bool enable;          // 0 = disabled (default), set to 1 = enabled
-} digitalConfig;
+// typedef struct {
+//   bool direction;       // 0 = output, 1 = input
+//   bool pullup;          // 0 = no pullup, 1 = pullup (input only)
+//   bool enable;          // 0 = disabled (default), set to 1 = enabled
+// } digitalConfig;
 
 /*
 * Struct to define the analogue pin assignment and keep state
 */
-typedef struct {
-  bool enable;          // Flag if it's enabled (1) or not (0)
-} analogueConfig;
+// typedef struct {
+//   bool enable;          // Flag if it's enabled (1) or not (0)
+// } analogueConfig;
 
 /*
 * Create digitalConfig array using struct.
 * Size of the array needs to be able to include analogue pins as well.
 */
-digitalConfig digitalPins[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS];
+// digitalConfig digitalPins[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS];
 
 /*
 * Create array for analogue pin assignments.
 */
-analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
+// analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
+
+/*
+Define the structure of the pin config and array to hold them
+*/
+typedef struct {
+  uint8_t mode;       // 0 = digital, 1 = analogue, 2 = PWM
+  bool direction;     // 0 = output, 1 = input
+  bool pullup;        // 0 = no pullup, 1 = pullup (input only)
+  bool enable;        // 0 = disabled (default), 1 = enabled
+} pinConfig;
+
+pinConfig exioPins[TOTAL_PINS];
 
 /*
 * Include required files and libraries.
@@ -97,7 +114,8 @@ analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 #define I2C_ADDRESS 0x65
 #endif
 uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
-uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
+// uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
+uint8_t numPins = TOTAL_PINS;
 uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
 int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
 int analoguePinBytes; // Used for enabling/disabling analogue pins
@@ -119,7 +137,8 @@ bool outputTesting = false;   // Flag that digital output testing is enabled/dis
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
-byte digitalPinStates[(NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8];
+// byte digitalPinStates[(NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8];
+byte digitalPinStates[TOTAL_PINS / 8];
 byte analoguePinStates[NUMBER_OF_ANALOGUE_PINS * 2];
 
 // Ensure test modes defined in myConfig.h have values
@@ -760,6 +779,12 @@ void disableWire() {
 * Function to initialise all pins as input and initialise pin struct
 */
 void initialisePins() {
+  for (uint8_t pin = 0; pin < TOTAL_PINS; pin++) {
+    if (bitRead(pinMap[pin].capability, 0) == 1 || bitRead(pinMap[pin].capability, 2) == 1) {
+      pinMode(pinMap[pin].pin, INPUT);
+    }
+  }
+  /*
   for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
     pinMode(digitalPinMap[pin], INPUT);
   }
@@ -780,4 +805,5 @@ void initialisePins() {
   for (uint8_t aPinByte = 0; aPinByte < NUMBER_OF_ANALOGUE_PINS * 2; aPinByte++) {
     analoguePinStates[aPinByte] = 0;
   }
+  */
 }
