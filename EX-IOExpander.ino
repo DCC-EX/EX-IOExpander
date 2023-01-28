@@ -29,7 +29,7 @@
 Struct to define the capability of each physical pin
 */
 typedef struct {
-  uint8_t physPin;
+  uint8_t physicalPin;
   uint8_t capability;
 } pinDefinition;
 
@@ -99,10 +99,11 @@ If we haven't got a custom config.h, use the example.
 Define the structure of the pin config and array to hold them
 */
 typedef struct {
-  uint8_t mode;       // 0 = digital, 1 = analogue, 2 = PWM
-  bool direction;     // 0 = output, 1 = input
-  bool pullup;        // 0 = no pullup, 1 = pullup (input only)
-  bool enable;        // 0 = disabled (default), 1 = enabled
+  uint8_t mode;             // 1 = digital, 2 = analogue, 3 = PWM
+  bool direction;           // 0 = output, 1 = input
+  bool pullup;              // 0 = no pullup, 1 = pullup (input only)
+  bool enable;              // 0 = disabled (default), 1 = enabled
+  uint8_t analogueLSBByte;  // Stores the byte number of the LSB byte in analoguePinStates
 } pinConfig;
 
 pinConfig exioPins[TOTAL_PINS];
@@ -124,8 +125,8 @@ int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
 int analoguePinBytes; // Used for sending analogue 16 bit values
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
-byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
-byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
+// byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
+// byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 bool newSerialData = false;   // Flag for new serial data being received
 const byte numSerialChars = 10;   // Max number of chars for serial input
 char serialInputChars[numSerialChars];  // Char array for serial input
@@ -207,12 +208,34 @@ void loop() {
   if (setupComplete) {
     for (uint8_t pin = 0; pin < numPins; pin++) {
       uint8_t pinByte = pin / 8;
+      uint8_t pinBit = pin - pinByte * 8;
       if (exioPins[pin].enable && exioPins[pin].direction) {
         switch(exioPins[pin].mode) {
-          case 1:
+          case MODE_DIGITAL: {
+            bool pullup = exioPins[pin].pullup;
+            if (pullup) {
+              pinMode(pinMap[pin].physicalPin, INPUT_PULLUP);
+            } else {
+              pinMode(pinMap[pin].physicalPin, INPUT);
+            }
+            bool currentState = digitalRead(pinMap[pin].physicalPin);
+            if (pullup) currentState = !currentState;
+            if (currentState) {
+              bitSet(digitalPinStates[pinByte], pinBit);
+            } else {
+              bitClear(digitalPinStates[pinByte], pinBit);
+            }
             break;
-          case 2:
+          }
+          case MODE_ANALOGUE: {
+            uint8_t pinLSBByte = exioPins[pin].analogueLSBByte;
+            uint8_t pinMSBByte = pinLSBByte + 1;
+            pinMode(pinMap[pin].physicalPin, INPUT);
+            uint16_t value = analogRead(pinMap[pin].physicalPin);
+            analoguePinStates[pinLSBByte] = value & 0xFF;
+            analoguePinStates[pinMSBByte] = value >> 8;
             break;
+          }
           default:
             break;
         }
@@ -239,6 +262,8 @@ void loop() {
         }
       }
     }
+    */
+    /*
     for (uint8_t aPin = 0; aPin < numAnaloguePins; aPin++) {
       uint8_t pinLSBByte = aPin * 2;
       uint8_t pinMSBByte = pinLSBByte + 1;
@@ -254,9 +279,9 @@ void loop() {
         outputTestState = !outputTestState;
         lastOutputTest = millis();
         for (uint8_t pin = 0; pin < numPins; pin++) {
-          if (bitRead(pinMap[pin].capability, 1)) {
-            pinMode(pinMap[pin].physPin, OUTPUT);
-            digitalWrite(pinMap[pin].physPin, outputTestState);
+          if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+            pinMode(pinMap[pin].physicalPin, OUTPUT);
+            digitalWrite(pinMap[pin].physicalPin, outputTestState);
           }
         }
         /*
@@ -290,7 +315,8 @@ void receiveEvent(int numBytes) {
   switch(buffer[0]) {
     // Initial configuration start, must be 3 bytes
     case EXIOINIT:
-      if (numBytes == 3) {
+      // if (numBytes == 3) {
+      if (numBytes == 2) {
         initialisePins();
         // numDigitalPins = buffer[1];
         // numAnaloguePins = buffer[2];
@@ -313,9 +339,16 @@ void receiveEvent(int numBytes) {
           setupComplete = false;
         }
         */
-        if (numReceivedPins = numPins) {
+        if (numReceivedPins == numPins) {
           USB_SERIAL.print(F("Received correct pin count: "));
           USB_SERIAL.println(numReceivedPins);
+          uint8_t analoguePin = 0;
+          for (uint8_t pin = 0; pin < numPins; pin++) {
+            if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+              exioPins[pin].analogueLSBByte = analoguePin * 2;
+              analoguePin++;
+            }            
+          }
           setupComplete = true;
         } else {
           USB_SERIAL.print(F("ERROR: Invalid pin count sent by device driver!: "));
@@ -333,6 +366,7 @@ void receiveEvent(int numBytes) {
     case EXIODPUP:
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
+        bool pullup = buffer[2];
         /*
         if (digitalPins[pin].enable == 1 && digitalPins[pin].direction == 0) {
           USB_SERIAL.print(F("ERROR! pin *"));
@@ -351,21 +385,21 @@ void receiveEvent(int numBytes) {
           }
         }
         */
-        if (exioPins[pin].enable && !exioPins[pin].direction) {
+        if (exioPins[pin].enable && exioPins[pin].mode != MODE_DIGITAL && !exioPins[pin].direction) {
           USB_SERIAL.print(F("ERROR! pin "));
-          USB_SERIAL.print(pinMap[pin].physPin);
-          USB_SERIAL.println(F(" already defined as output pin, cannot use as input"));
+          USB_SERIAL.print(pinMap[pin].physicalPin);
+          USB_SERIAL.println(F(" already in use, cannot use as a digital input pin"));
           break;
         }
         if (!exioPins[pin].enable) {
           exioPins[pin].direction = 1;   // Must be an input if we got a pullup config
-          exioPins[pin].mode = 0;        // Must be digital if we got a pullup config
-          exioPins[pin].pullup = buffer[2];
+          exioPins[pin].mode = MODE_DIGITAL;        // Must be digital if we got a pullup config
+          exioPins[pin].pullup = pullup;
           exioPins[pin].enable = 1;
           if (exioPins[pin].pullup) {
-            pinMode(pinMap[pin].physPin, INPUT_PULLUP);
+            pinMode(pinMap[pin].physicalPin, INPUT_PULLUP);
           } else {
-            pinMode(pinMap[pin].physPin, INPUT);
+            pinMode(pinMap[pin].physicalPin, INPUT);
           }
         }
       } else {
@@ -381,10 +415,11 @@ void receiveEvent(int numBytes) {
       break;
     case EXIOWRD:
       if (numBytes == 3) {
-        uint8_t dPin = buffer[1];
+        uint8_t pin = buffer[1];
         bool state = buffer[2];
-        uint8_t dPinByte = dPin / 8;
-        uint8_t dPinBit = dPin - dPinByte * 8;
+        uint8_t pinByte = pin / 8;
+        uint8_t pinBit = pin - pinByte * 8;
+        /*
         if (digitalPins[dPin].enable == 1 && digitalPins[dPin].direction == 1) {
           USB_SERIAL.print(F("ERROR! pin "));
           USB_SERIAL.print(digitalPinMap[dPin]);
@@ -402,6 +437,31 @@ void receiveEvent(int numBytes) {
           bitClear(digitalPinStates[dPinByte], dPinBit);
         }
         digitalWrite(digitalPinMap[dPin], state);
+        */
+        if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+          if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_DIGITAL)) {
+            USB_SERIAL.print(F("ERROR! pin "));
+            USB_SERIAL.print(pinMap[pin].physicalPin);
+            USB_SERIAL.println(F(" already in use, cannot use as a digital output pin"));
+            break;
+          }
+          if (!exioPins[pin].enable) {
+            exioPins[pin].enable = 1;
+            exioPins[pin].mode = MODE_DIGITAL;
+            exioPins[pin].direction = 0;
+            pinMode(pinMap[pin].physicalPin, OUTPUT);
+          }
+          if (state) {
+            bitSet(digitalPinStates[pinByte], pinBit);
+          } else {
+            bitClear(digitalPinStates[pinByte], pinBit);
+          }
+          digitalWrite(pinMap[pin].physicalPin, state);
+        } else {
+          USB_SERIAL.print(F("ERROR! Pin "));
+          USB_SERIAL.print(pinMap[pin].physicalPin);
+          USB_SERIAL.println(F(" not capable of digital output"));
+        }
       }
       break;
     case EXIORDD:
@@ -416,8 +476,27 @@ void receiveEvent(int numBytes) {
       break;
     case EXIOENAN:
       if (numBytes == 2) {
+        /*
         uint8_t pin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
         analoguePins[pin].enable = 1;
+        */
+        uint8_t pin = buffer[1];
+        if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+          if (exioPins[pin].enable && exioPins[pin].mode != MODE_ANALOGUE && !exioPins[pin].direction) {
+            USB_SERIAL.print(F("ERROR! pin "));
+            USB_SERIAL.print(pinMap[pin].physicalPin);
+            USB_SERIAL.println(F(" already in use, cannot use as an analogue input pin"));
+            break;
+          }
+          exioPins[pin].enable = 1;
+          exioPins[pin].mode = MODE_ANALOGUE;
+          exioPins[pin].direction = 1;
+          pinMode(pinMap[pin].physicalPin, INPUT);
+        } else {
+          USB_SERIAL.print(F("ERROR! Pin "));
+          USB_SERIAL.print(pinMap[pin].physicalPin);
+          USB_SERIAL.println(F(" not capable of analogue input"));
+        }
       }
     default:
       break;
@@ -456,6 +535,7 @@ void requestEvent() {
 void displayPins() {
   if (millis() - lastPinDisplay > displayDelay) {
     lastPinDisplay = millis();
+    /*
     USB_SERIAL.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       uint8_t dPinByte = pin / 8;
@@ -494,6 +574,7 @@ void displayPins() {
         USB_SERIAL.print(F(","));
       }
     }
+    */
   }
 }
 
@@ -741,9 +822,11 @@ void testAnalogue(bool enable) {
     testPullup(false);
     diag = true;
     analogueTesting = true;
+    /*
     for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
       analoguePins[pin].enable = 1;
     }
+    */
   } else {
     analogueTesting = false;
     diag = false;
@@ -760,8 +843,9 @@ void testInput(bool enable) {
     testOutput(false);
     testPullup(false);
     diag = true;
-    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
+    // numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
     inputTesting = true;
+    /*
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       if (digitalPinMap[pin]) {
         digitalPins[pin].direction = 1;
@@ -769,6 +853,7 @@ void testInput(bool enable) {
         digitalPins[pin].enable = 1;
       }
     }
+    */
   } else {
     inputTesting = false;
     diag = false;
@@ -785,13 +870,15 @@ void testOutput(bool enable) {
     testInput(false);
     testPullup(false);
     diag = true;
-    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
+    // numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
     outputTesting = true;
+    /*
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       if (digitalPinMap[pin]) {
         digitalPins[pin].direction = 0;
       }
     }
+    */
   } else {
     outputTesting = false;
     diag = false;
@@ -808,8 +895,9 @@ void testPullup(bool enable) {
     testOutput(false);
     testInput(false);
     diag = true;
-    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
+    // numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
     pullupTesting = true;
+    /*
     for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
       if (digitalPinMap[pin]) {
         digitalPins[pin].direction = 1;
@@ -817,6 +905,7 @@ void testPullup(bool enable) {
         digitalPins[pin].enable = 1;
       }
     }
+    */
   } else {
     pullupTesting = false;
     diag = false;
@@ -837,8 +926,8 @@ void disableWire() {
 */
 void initialisePins() {
   for (uint8_t pin = 0; pin < TOTAL_PINS; pin++) {
-    if (bitRead(pinMap[pin].capability, 0) || bitRead(pinMap[pin].capability, 2)) {
-      pinMode(pinMap[pin].physPin, INPUT);
+    if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+      pinMode(pinMap[pin].physicalPin, INPUT);
       exioPins[pin].direction = 1;
     } else {
       exioPins[pin].direction = 0;

@@ -33,8 +33,8 @@
 #define TOTAL_PINS 18
 #define NUMBER_OF_ANALOGUE_PINS 6
 pinDefinition pinMap[TOTAL_PINS] = {
-  {2,DIO},{3,DIOPO},{4,DIO},{5,DIOPO},{6,DIOPO},{7,DIO},
-  {8,DIO},{9,DIOPO},{10,DIOPO},{11,DIOPO},{12,DIO},{13,DIO},
+  {2,DIO},{3,DIOP},{4,DIO},{5,DIOP},{6,DIOP},{7,DIO},
+  {8,DIO},{9,DIOP},{10,DIOP},{11,DIOP},{12,DIO},{13,DIO},
   {A0,AIDIO},{A1,AIDIO},{A2,AIDIO},{A3,AIDIO},{A6,AI},{A7,AI},
 };
 #define I2C_SDA A4

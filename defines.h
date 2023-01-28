@@ -40,6 +40,12 @@
 //  2   Analogue input
 //  3   PWM output
 //
+#define DIGITAL_INPUT 0
+#define DIGITAL_OUTPUT 1
+#define ANALOGUE_INPUT 2
+#define PWM_OUTPUT 3
+
+#define NA 0x00       // Not suitable for use
 #define DI 0x01       // Digital input only
 #define DO 0x02       // Digital output only
 #define DIO 0x03      // Digital input/output
@@ -47,13 +53,20 @@
 #define AIDI 0x05     // Analogue and digital input
 #define AIDO 0x06     // Analogue input, digital output
 #define AIDIO 0x07    // Analogue input, digital input and output
-#define PO 0x08       // PWM output only
-#define DIPO 0x09     // Digital input, PWM output
-#define DOPO 0x0A     // Digital output, PWM output
-#define DIOPO 0x0B    // Digital input/output, PWM output
-#define AOPO 0x0C     // Analogue input, PWM output
-#define AODIPO 0x0D   // Analogue input, digital input, PWM output
-#define AODOPO 0x0E   // Analogue input, digital output, PWM output
-#define AODIOPO 0x0F  // Analogue input, digital input/output, PWM output
+#define P 0x08        // PWM output only
+#define DIP 0x09      // Digital input, PWM output
+#define DOP 0x0A      // Digital output, PWM output
+#define DIOP 0x0B     // Digital input/output, PWM output
+#define AOP 0x0C      // Analogue input, PWM output
+#define AODIP 0x0D    // Analogue input, digital input, PWM output
+#define AODOP 0x0E    // Analogue input, digital output, PWM output
+#define AODIOP 0x0F   // Analogue input, digital input/output, PWM output
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Define the available pin modes
+//
+#define MODE_DIGITAL 1
+#define MODE_ANALOGUE 2
+#define MODE_PWM 3
 
 #endif

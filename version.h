@@ -2,14 +2,18 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.13"
+#define VERSION "0.0.14"
 
+// 0.0.14 includes:
+//  - *Breaking change* to interaction with device driver
+//  - *Breaking change* to pin maps
+//  - Add PWM support
 // 0.0.13 includes:
 //  - Experimental support for SAMD21 Arduino Zero clones using native USB serial comms
 // 0.0.12 includes:
 //  - Add configuration option to disable internal I2C pullups
 // 0.0.11 includes:
-//  - Optimise speed of transferring inputs to the device driver by sending all at once
+//  - *Breaking change* to optimise speed of transferring inputs to the device driver by sending all at once
 // 0.0.10 includes:
 //  - Add support for Nucleo F412ZG
 //  - Correct F411RE pin map
