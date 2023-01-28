@@ -822,6 +822,13 @@ void testAnalogue(bool enable) {
     testPullup(false);
     diag = true;
     analogueTesting = true;
+    for (uint8_t pin = 0; pin < numPins; pin++) {
+      if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+        exioPins[pin].enable = 1;
+        exioPins[pin].mode = MODE_ANALOGUE;
+        exioPins[pin].direction = 1;
+      }
+    }
     /*
     for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
       analoguePins[pin].enable = 1;
