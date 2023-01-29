@@ -231,9 +231,16 @@ void loop() {
         outputTestState = !outputTestState;
         lastOutputTest = millis();
         for (uint8_t pin = 0; pin < numPins; pin++) {
+          uint8_t pinByte = pin / 8;
+          uint8_t pinBit = pin - pinByte * 8;
           if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
             pinMode(pinMap[pin].physicalPin, OUTPUT);
             digitalWrite(pinMap[pin].physicalPin, outputTestState);
+            if (outputTestState) {
+              bitSet(digitalPinStates[pinByte], pinBit);
+            } else {
+              bitClear(digitalPinStates[pinByte], pinBit);
+            }
           }
         }
       }
