@@ -326,25 +326,6 @@ void receiveEvent(int numBytes) {
         bool state = buffer[2];
         uint8_t pinByte = pin / 8;
         uint8_t pinBit = pin - pinByte * 8;
-        /*
-        if (digitalPins[dPin].enable == 1 && digitalPins[dPin].direction == 1) {
-          USB_SERIAL.print(F("ERROR! pin "));
-          USB_SERIAL.print(digitalPinMap[dPin]);
-          USB_SERIAL.println(F(" already defined as input pin, cannot use as output"));
-          break;
-        }
-        if (digitalPins[dPin].enable == 0) {
-          digitalPins[dPin].enable = 1;
-          pinMode(digitalPinMap[dPin], OUTPUT);
-          digitalPins[dPin].direction = 0;
-        }
-        if (state) {
-          bitSet(digitalPinStates[dPinByte], dPinBit);
-        } else {
-          bitClear(digitalPinStates[dPinByte], dPinBit);
-        }
-        digitalWrite(digitalPinMap[dPin], state);
-        */
         if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
           if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_DIGITAL)) {
             USB_SERIAL.print(F("ERROR! pin "));
