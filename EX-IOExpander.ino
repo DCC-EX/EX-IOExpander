@@ -118,8 +118,9 @@ bool outputTestState = LOW;   // Flag to set outputs high or low for testing
 // byte digitalPinStates[(NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8];
 byte digitalPinStates[TOTAL_PINS / 8];  // Store digital pin states to send to device driver
 byte analoguePinStates[NUMBER_OF_ANALOGUE_PINS * 2];  // Store analogue values to send to device driver
-byte commandBuffer[2];    // Command buffer to interact with device driver
+byte commandBuffer[3];    // Command buffer to interact with device driver
 uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS];  // Map which analogue pin's value is in which byte
+uint8_t numPWMPins = NUMBER_OF_PWM_PINS;  // Number of PWM capable pins
 
 // Ensure test modes defined in myConfig.h have values
 #define ANALOGUE_TEST 1
@@ -396,11 +397,13 @@ void requestEvent() {
       if (setupComplete) {
         commandBuffer[0] = EXIOINITA;
         commandBuffer[1] = numAnaloguePins;
+        commandBuffer[2] = numPWMPins;
       } else {
         commandBuffer[0] = 0;
         commandBuffer[1] = 0;
+        commandBuffer[2] = 0;
       }
-      Wire.write(commandBuffer, 2);
+      Wire.write(commandBuffer, 3);
       break;
     case EXIOINITA:
       Wire.write(analoguePinMap, numAnaloguePins);
