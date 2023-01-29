@@ -30,6 +30,7 @@
 #elif defined(ARDUINO_AVR_PRO)
 #define BOARD_TYPE F("Pro Mini")
 #endif
+#define HAS_EEPROM
 #define TOTAL_PINS 18
 #define NUMBER_OF_ANALOGUE_PINS 6
 pinDefinition pinMap[TOTAL_PINS] = {

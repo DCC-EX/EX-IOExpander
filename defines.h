@@ -24,6 +24,7 @@
 #define EXIOWRD 0xE5      // Flag for digital write
 #define EXIORDD 0xE6      // Flag a digital input is being read
 #define EXIOENAN 0xE7     // Flag to enable an analogue input pin
+#define EXIOINITA 0xE8    // Flag to send analogue pin info
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define version to store in EEPROM/FLASH in case this needs to change later
@@ -65,6 +66,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the available pin modes
 //
+#define MODE_UNUSED 0
 #define MODE_DIGITAL 1
 #define MODE_ANALOGUE 2
 #define MODE_PWM 3

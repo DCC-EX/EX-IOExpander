@@ -7,6 +7,7 @@
 // 0.0.14 includes:
 //  - *Breaking change* to interaction with device driver
 //  - *Breaking change* to pin maps
+//  - Use EX-CommandStation v4.2.xxx or later
 //  - Add PWM support
 // 0.0.13 includes:
 //  - Experimental support for SAMD21 Arduino Zero clones using native USB serial comms
@@ -14,6 +15,7 @@
 //  - Add configuration option to disable internal I2C pullups
 // 0.0.11 includes:
 //  - *Breaking change* to optimise speed of transferring inputs to the device driver by sending all at once
+//  - Use EX-CommandStation v4.2.10pre1 or later
 // 0.0.10 includes:
 //  - Add support for Nucleo F412ZG
 //  - Correct F411RE pin map
