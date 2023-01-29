@@ -41,40 +41,21 @@ pinDefinition pinMap[TOTAL_PINS] = {
 #define I2C_SDA A4
 #define I2C_SCL A5
 
-/*
 // Arduino Uno
-#if defined(ARDUINO_AVR_UNO)
+#elif defined(ARDUINO_AVR_UNO)
 #define BOARD_TYPE F("Uno")
 #define HAS_EEPROM
-#define NUMBER_OF_DIGITAL_PINS 12   // D2 - D13
-#define NUMBER_OF_ANALOGUE_PINS 4     // A0 - A3, cannot use A4/A5
-static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
-  2,3,4,5,6,7,8,9,10,11,12,13,A0,A1,A2,A3
-};
-static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
-  A0,A1,A2,A3
+#define TOTAL_PINS 16
+#define NUMBER_OF_ANALOGUE_PINS 4
+pinDefinition pinMap[TOTAL_PINS] = {
+  {2,DIO},{3,DIOP},{4,DIO},{5,DIOP},{6,DIOP},{7,DIO},
+  {8,DIO},{9,DIOP},{10,DIOP},{11,DIOP},{12,DIO},{13,DIO},
+  {A0,AIDIO},{A1,AIDIO},{A2,AIDIO},{A3,AIDIO},
 };
 #define I2C_SDA A4
 #define I2C_SCL A5
 
-// Arduino Nano or Pro Mini
-#elif defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
-#if defined(ARDUINO_AVR_NANO)
-#define BOARD_TYPE F("Nano")
-#elif defined(ARDUINO_AVR_PRO)
-#define BOARD_TYPE F("Pro Mini")
-#endif
-#define HAS_EEPROM
-#define NUMBER_OF_DIGITAL_PINS 12   // D2 - D13
-#define NUMBER_OF_ANALOGUE_PINS 6     // A0 - A3, A6/A7, cannot use A4/A5
-static const uint8_t digitalPinMap[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS] = {
-  2,3,4,5,6,7,8,9,10,11,12,13,A0,A1,A2,A3
-};
-static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
-  A0,A1,A2,A3,A6,A7
-};
-#define I2C_SDA A4
-#define I2C_SCL A5
+/*
 
 // Arduino Mega/Mega2560
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
@@ -166,6 +147,7 @@ static const uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS] = {
 };
 #define I2C_SDA PA22
 #define I2C_SCL PA23
+
 */
 
 #else
