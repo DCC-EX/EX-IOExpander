@@ -23,8 +23,23 @@
 //  When the CommandStation configures EX-IOExpander, it will set whether the pin is in
 //  digital or analogue mode based on the number of digital/analogue pins.
 
+// Arduino Uno
+#if defined(ARDUINO_AVR_UNO)
+#define BOARD_TYPE F("Uno")
+#define HAS_EEPROM
+#define TOTAL_PINS 16
+#define NUMBER_OF_ANALOGUE_PINS 4
+#define NUMBER_OF_PWM_PINS 6
+pinDefinition pinMap[TOTAL_PINS] = {
+  {2,DIO},{3,DIOP},{4,DIO},{5,DIOP},{6,DIOP},{7,DIO},
+  {8,DIO},{9,DIOP},{10,DIOP},{11,DIOP},{12,DIO},{13,DIO},
+  {A0,AIDIO},{A1,AIDIO},{A2,AIDIO},{A3,AIDIO},
+};
+#define I2C_SDA A4
+#define I2C_SCL A5
+
 // Arduino Nano or Pro Mini
-#if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
+#elif defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
 #if defined(ARDUINO_AVR_NANO)
 #define BOARD_TYPE F("Nano")
 #elif defined(ARDUINO_AVR_PRO)
@@ -38,21 +53,6 @@ pinDefinition pinMap[TOTAL_PINS] = {
   {2,DIO},{3,DIOP},{4,DIO},{5,DIOP},{6,DIOP},{7,DIO},
   {8,DIO},{9,DIOP},{10,DIOP},{11,DIOP},{12,DIO},{13,DIO},
   {A0,AIDIO},{A1,AIDIO},{A2,AIDIO},{A3,AIDIO},{A6,AI},{A7,AI},
-};
-#define I2C_SDA A4
-#define I2C_SCL A5
-
-// Arduino Uno
-#elif defined(ARDUINO_AVR_UNO)
-#define BOARD_TYPE F("Uno")
-#define HAS_EEPROM
-#define TOTAL_PINS 16
-#define NUMBER_OF_ANALOGUE_PINS 4
-#define NUMBER_OF_PWM_PINS 6
-pinDefinition pinMap[TOTAL_PINS] = {
-  {2,DIO},{3,DIOP},{4,DIO},{5,DIOP},{6,DIOP},{7,DIO},
-  {8,DIO},{9,DIOP},{10,DIOP},{11,DIOP},{12,DIO},{13,DIO},
-  {A0,AIDIO},{A1,AIDIO},{A2,AIDIO},{A3,AIDIO},
 };
 #define I2C_SDA A4
 #define I2C_SCL A5
