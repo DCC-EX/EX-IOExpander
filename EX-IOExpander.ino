@@ -885,24 +885,33 @@ void initialisePins() {
 * Function to create pin maps to physical pins
 */
 void createPinMaps() {
-  for (uint8_t i = 0; i < numPWMPins; i++) {
-    for (uint8_t pin = 0; pin < numPins; pin++) {
-      if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
-        pwmPinMap[i] = pin;
+  uint8_t i = 0;
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
+      pwmPinMap[i] = pin;
+      i++;
+      if (i == numPWMPins) {
+        break;
       }
     }
   }
-  for (uint8_t i = 0; i < numDigitalPins; i++) {
-    for (uint8_t pin = 0; pin < numPins; pin++) {
-      if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-        digitalPinMap[i] = pin;
+  i = 0;
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+      digitalPinMap[i] = pin;
+      i++;
+      if (i == numDigitalPins) {
+        break;
       }
     }
   }
-  for (uint8_t i = 0; i < numAnaloguePins; i++) {
-    for (uint8_t pin = 0; pin < numPins; pin++) {
-      if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
-        analoguePinMap[i] = pin;
+  i = 0;
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+      analoguePinMap[i] = pin;
+      i++;
+      if (i == numAnaloguePins) {
+        break;
       }
     }
   }
