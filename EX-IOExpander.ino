@@ -92,18 +92,15 @@ pinConfig exioPins[TOTAL_PINS];
 #define I2C_ADDRESS 0x65
 #endif
 uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
+// uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
 uint8_t numPins = TOTAL_PINS;
-uint8_t numPWMPins = 0;  // Number of PWM capable pins
-uint8_t numDigitalPins = 0;    // Init with default, will be overridden by config
-uint8_t numAnaloguePins = 0;  // Init with default, will be overridden by config
-uint8_t maxPWMPins = 0;
-uint8_t maxDigitalPins = 0;
-uint8_t maxAnaloguePins = 0;
-uint8_t pwmPinBytes;  // Used for sending animation state for servos
-uint8_t digitalPinBytes;  // Used for configuring and sending/receiving digital pins
-uint8_t analoguePinBytes; // Used for sending analogue 16 bit values
+uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
+int digitalPinBytes = TOTAL_PINS / 8;  // Used for configuring and sending/receiving digital pins
+int analoguePinBytes = NUMBER_OF_ANALOGUE_PINS * 2; // Used for sending analogue 16 bit values
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
+// byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
+// byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 bool newSerialData = false;   // Flag for new serial data being received
 const byte numSerialChars = 10;   // Max number of chars for serial input
 char serialInputChars[numSerialChars];  // Char array for serial input
@@ -119,14 +116,11 @@ bool pullupTesting = false;   // Flag that digital input testing with pullups is
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
 // byte digitalPinStates[(NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8];
-byte* pwmPinStates;
-byte* digitalPinStates;  // Store digital pin states to send to device driver
-byte* analoguePinStates;  // Store analogue values to send to device driver
-// uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS];  // Map which analogue pin's value is in which byte
-uint16_t firstVpin = 0;   // Used to calculate map of Vpin to physical pin from device driver
-uint8_t* pwmPinMap;
-uint8_t* digitalPinMap;
-uint8_t* analoguePinMap;
+byte digitalPinStates[TOTAL_PINS / 8];  // Store digital pin states to send to device driver
+byte analoguePinStates[NUMBER_OF_ANALOGUE_PINS * 2];  // Store analogue values to send to device driver
+byte commandBuffer[3];    // Command buffer to interact with device driver
+uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS];  // Map which analogue pin's value is in which byte
+uint8_t numPWMPins = NUMBER_OF_PWM_PINS;  // Number of PWM capable pins
 
 // Ensure test modes defined in myConfig.h have values
 #define ANALOGUE_TEST 1
@@ -155,18 +149,6 @@ void setup() {
   USB_SERIAL.print(F("Available at I2C address 0x"));
   USB_SERIAL.println(i2cAddress, HEX);
   setVersion();
-  // Calculate maximum pin numbers per type
-  for (uint8_t pin = 0; pin < numPins; pin++) {
-    if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
-      maxPWMPins++;
-    }
-    if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-      maxDigitalPins++;
-    }
-    if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
-      maxAnaloguePins++;
-    }
-  }
 #ifdef DIAG
   diag = true;
 #endif
@@ -194,6 +176,14 @@ void setup() {
 #elif (TEST_MODE == PULLUP_TEST)
   testPullup(true);
 #endif
+  uint8_t analoguePin = 0;
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+      exioPins[pin].analogueLSBByte = analoguePin * 2;
+      analoguePinMap[analoguePin] = pin;
+      analoguePin++;
+    }            
+  }
 }
 
 /*
@@ -276,48 +266,17 @@ void receiveEvent(int numBytes) {
   switch(buffer[0]) {
     // Initial configuration start, must be 2 bytes
     case EXIOINIT:
-      if (numBytes == 6) {
-        firstVpin = (buffer[2] << 8) + buffer[1];
-        numPWMPins = buffer[3];
-        numDigitalPins = buffer[4];
-        numAnaloguePins = buffer[5];
-        if (numPWMPins + numDigitalPins + numAnaloguePins == numPins && numPWMPins <= maxPWMPins
-              && numDigitalPins <= maxDigitalPins && numAnaloguePins <= maxAnaloguePins) {
-          pwmPinBytes = numPWMPins / 8;
-          digitalPinBytes = numDigitalPins / 8;
-          analoguePinBytes = numAnaloguePins * 2;
-          pwmPinStates = (byte*) calloc(pwmPinBytes, 1);
-          digitalPinStates = (byte*) calloc(digitalPinBytes, 1);
-          analoguePinStates = (byte*) calloc(analoguePinBytes, 1);
-          pwmPinMap = (uint8_t*) calloc(numPWMPins, 1);
-          digitalPinMap = (uint8_t*) calloc(numDigitalPins, 1);
-          analoguePinMap = (uint8_t*) calloc(numAnaloguePins, 1);
-          createPinMaps();
-          initialisePins();
-          initialiseBuffers();
-          USB_SERIAL.print(F("Received valid pin allocation (PWM|Digital|Analogue): "));
-          USB_SERIAL.print(numPWMPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.print(numDigitalPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.println(numAnaloguePins);
-          displayVpinMap();
+      // if (numBytes == 3) {
+      if (numBytes == 2) {
+        initialisePins();
+        uint8_t numReceivedPins = buffer[1];
+        if (numReceivedPins == numPins) {
+          USB_SERIAL.print(F("Received correct pin count: "));
+          USB_SERIAL.println(numReceivedPins);
           setupComplete = true;
         } else {
-          USB_SERIAL.print(F("ERROR! Invalid pin allocation sent by device driver (Total|PWM|Max PWM|Digital|Max Digital|Analogue|Max Analogue): "));
-          USB_SERIAL.print(numPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.print(numPWMPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.print(maxPWMPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.print(numDigitalPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.print(maxDigitalPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.print(numAnaloguePins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.println(maxAnaloguePins);
+          USB_SERIAL.print(F("ERROR: Invalid pin count sent by device driver!: "));
+          USB_SERIAL.println(numReceivedPins);
           setupComplete = false;
         }
         outboundFlag = EXIOINIT;
@@ -443,10 +402,15 @@ void requestEvent() {
   switch(outboundFlag) {
     case EXIOINIT:
       if (setupComplete) {
-        Wire.write(EXIORDY);
+        commandBuffer[0] = EXIOINITA;
+        commandBuffer[1] = numAnaloguePins;
+        commandBuffer[2] = numPWMPins;
       } else {
-        Wire.write(0);
+        commandBuffer[0] = 0;
+        commandBuffer[1] = 0;
+        commandBuffer[2] = 0;
       }
+      Wire.write(commandBuffer, 3);
       break;
     case EXIOINITA:
       Wire.write(analoguePinMap, numAnaloguePins);
@@ -871,102 +835,10 @@ void initialisePins() {
     exioPins[pin].mode = 0;
     exioPins[pin].pullup = 0;
   }
-  /* This needs to be done separately
   for (uint8_t dPinByte = 0; dPinByte < (TOTAL_PINS) / 8; dPinByte++) {
     digitalPinStates[dPinByte] = 0;
   }
   for (uint8_t aPinByte = 0; aPinByte < NUMBER_OF_ANALOGUE_PINS * 2; aPinByte++) {
     analoguePinStates[aPinByte] = 0;
-  }
-  */
-}
-
-/*
-* Function to create pin maps to physical pins
-*/
-void createPinMaps() {
-  uint8_t i = 0;
-  for (uint8_t pin = 0; pin < numPins; pin++) {
-    if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
-      pwmPinMap[i] = pin;
-      i++;
-      if (i == numPWMPins) {
-        break;
-      }
-    }
-  }
-  i = 0;
-  for (uint8_t pin = 0; pin < numPins; pin++) {
-    if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-      digitalPinMap[i] = pin;
-      i++;
-      if (i == numDigitalPins) {
-        break;
-      }
-    }
-  }
-  i = 0;
-  for (uint8_t pin = 0; pin < numPins; pin++) {
-    if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
-      analoguePinMap[i] = pin;
-      i++;
-      if (i == numAnaloguePins) {
-        break;
-      }
-    }
-  }
-}
-
-/*
-* Function to display Vpin to physical pin map when device initialised
-*/
-void displayVpinMap() {
-  USB_SERIAL.println(F("PWM Vpin to physical pin map:"));
-  for (uint8_t i = 0; i < numPWMPins; i++) {
-    USB_SERIAL.print(firstVpin + i);
-    USB_SERIAL.print(F(" => "));
-    if (i == numPWMPins - 1) {
-      USB_SERIAL.println(pinMap[pwmPinMap[i]].physicalPin);
-    } else {
-      USB_SERIAL.print(pinMap[pwmPinMap[i]].physicalPin);
-      USB_SERIAL.print(F(", "));
-    }
-  }
-  USB_SERIAL.println(F("Digital Vpin to physical pin map:"));
-  for (uint8_t i = 0; i < numDigitalPins; i++) {
-    USB_SERIAL.print(firstVpin + i + numPWMPins);
-    USB_SERIAL.print(F(" => "));
-    if (i == numDigitalPins - 1) {
-      USB_SERIAL.println(pinMap[digitalPinMap[i]].physicalPin);
-    } else {
-      USB_SERIAL.print(pinMap[digitalPinMap[i]].physicalPin);
-      USB_SERIAL.print(F(", "));
-    }
-  }
-  USB_SERIAL.println(F("Analogue Vpin to physical pin map:"));
-  for (uint8_t i = 0; i < numAnaloguePins; i++) {
-    USB_SERIAL.print(firstVpin + i + numPWMPins + numDigitalPins);
-    USB_SERIAL.print(F(" => "));
-    if (i == numAnaloguePins - 1) {
-      USB_SERIAL.println(pinMap[analoguePinMap[i]].physicalPin);
-    } else {
-      USB_SERIAL.print(pinMap[analoguePinMap[i]].physicalPin);
-      USB_SERIAL.print(F(", "));
-    }
-  }
-}
-
-/*
-* Function to set all buffers to 0s when initialisting device
-*/
-void initialiseBuffers() {
-  for (uint8_t i = 0; i < pwmPinBytes; i++) {
-    pwmPinStates[i] = 0;
-  }
-  for (uint8_t i = 0; i < digitalPinBytes; i++) {
-    digitalPinStates[i] = 0;
-  }
-  for (uint8_t i = 0; i < analoguePinBytes; i++) {
-    analoguePinStates[i] = 0;
   }
 }
