@@ -32,8 +32,6 @@
 #endif
 #define HAS_EEPROM
 #define TOTAL_PINS 18
-#define NUMBER_OF_ANALOGUE_PINS 6
-#define NUMBER_OF_PWM_PINS 6
 pinDefinition pinMap[TOTAL_PINS] = {
   {2,DIO},{3,DIOP},{4,DIO},{5,DIOP},{6,DIOP},{7,DIO},
   {8,DIO},{9,DIOP},{10,DIOP},{11,DIOP},{12,DIO},{13,DIO},
@@ -47,8 +45,6 @@ pinDefinition pinMap[TOTAL_PINS] = {
 #define BOARD_TYPE F("Uno")
 #define HAS_EEPROM
 #define TOTAL_PINS 16
-#define NUMBER_OF_ANALOGUE_PINS 4
-#define NUMBER_OF_PWM_PINS 6
 pinDefinition pinMap[TOTAL_PINS] = {
   {2,DIO},{3,DIOP},{4,DIO},{5,DIOP},{6,DIOP},{7,DIO},
   {8,DIO},{9,DIOP},{10,DIOP},{11,DIOP},{12,DIO},{13,DIO},

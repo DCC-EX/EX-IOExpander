@@ -94,9 +94,11 @@ pinConfig exioPins[TOTAL_PINS];
 uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
 // uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
 uint8_t numPins = TOTAL_PINS;
-uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
-int digitalPinBytes = TOTAL_PINS / 8;  // Used for configuring and sending/receiving digital pins
-int analoguePinBytes = NUMBER_OF_ANALOGUE_PINS * 2; // Used for sending analogue 16 bit values
+uint8_t numAnaloguePins = 0;  // Init with default, will be overridden by config
+uint8_t numDigitalPins = 0;
+uint8_t numPWMPins = 0;  // Number of PWM capable pins
+int digitalPinBytes = 0;  // Used for configuring and sending/receiving digital pins
+int analoguePinBytes = 0; // Used for sending analogue 16 bit values
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
 // byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
@@ -116,17 +118,10 @@ bool pullupTesting = false;   // Flag that digital input testing with pullups is
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
 // byte digitalPinStates[(NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8];
-byte digitalPinStates[TOTAL_PINS / 8];  // Store digital pin states to send to device driver
-byte analoguePinStates[NUMBER_OF_ANALOGUE_PINS * 2];  // Store analogue values to send to device driver
+byte* digitalPinStates;  // Store digital pin states to send to device driver
+byte* analoguePinStates;  // Store analogue values to send to device driver
 byte commandBuffer[3];    // Command buffer to interact with device driver
-uint8_t analoguePinMap[NUMBER_OF_ANALOGUE_PINS];  // Map which analogue pin's value is in which byte
-uint8_t numPWMPins = NUMBER_OF_PWM_PINS;  // Number of PWM capable pins
-
-// Ensure test modes defined in myConfig.h have values
-#define ANALOGUE_TEST 1
-#define INPUT_TEST 2
-#define OUTPUT_TEST 3
-#define PULLUP_TEST 4
+uint8_t* analoguePinMap;  // Map which analogue pin's value is in which byte
 
 /*
 * Main setup function here.
@@ -149,6 +144,7 @@ void setup() {
   USB_SERIAL.print(F("Available at I2C address 0x"));
   USB_SERIAL.println(i2cAddress, HEX);
   setVersion();
+  setupPinDetails();
 #ifdef DIAG
   diag = true;
 #endif
@@ -835,10 +831,31 @@ void initialisePins() {
     exioPins[pin].mode = 0;
     exioPins[pin].pullup = 0;
   }
-  for (uint8_t dPinByte = 0; dPinByte < (TOTAL_PINS) / 8; dPinByte++) {
+  for (uint8_t dPinByte = 0; dPinByte < digitalPinBytes; dPinByte++) {
     digitalPinStates[dPinByte] = 0;
   }
-  for (uint8_t aPinByte = 0; aPinByte < NUMBER_OF_ANALOGUE_PINS * 2; aPinByte++) {
+  for (uint8_t aPinByte = 0; aPinByte < analoguePinBytes; aPinByte++) {
     analoguePinStates[aPinByte] = 0;
   }
+}
+
+/*
+* Get the count of analogue and PWM capable pins
+*/
+void setupPinDetails() {
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+      numAnaloguePins++;
+    }
+    if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+      numDigitalPins++;
+    }
+    if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
+      numPWMPins++;
+    }
+  }
+  analoguePinBytes = numAnaloguePins * 2;
+  digitalPinBytes = numDigitalPins / 8;
+  digitalPinStates = (byte*) calloc(digitalPinBytes, 1);
+  analoguePinStates = (byte*) calloc(analoguePinBytes, 1);
 }

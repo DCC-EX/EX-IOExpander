@@ -71,4 +71,12 @@
 #define MODE_ANALOGUE 2
 #define MODE_PWM 3
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Ensure test modes defined in myConfig.h have values
+// 
+#define ANALOGUE_TEST 1
+#define INPUT_TEST 2
+#define OUTPUT_TEST 3
+#define PULLUP_TEST 4
+
 #endif
