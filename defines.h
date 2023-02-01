@@ -26,6 +26,8 @@
 #define EXIOENAN 0xE7     // Flag to enable an analogue input pin
 #define EXIOINITA 0xE8    // Flag to send analogue pin info
 #define EXIOPINS 0xE9     // Flag we need to send pin counts
+#define EXIOWRAN 0xEA     // Flag we're receiving an analogue write (PWM)
+#define EXIOERR 0xEF      // Flag something has errored to send to device driver
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define version to store in EEPROM/FLASH in case this needs to change later

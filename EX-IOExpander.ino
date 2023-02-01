@@ -122,6 +122,7 @@ byte* digitalPinStates;  // Store digital pin states to send to device driver
 byte* analoguePinStates;  // Store analogue values to send to device driver
 byte commandBuffer[3];    // Command buffer to interact with device driver
 uint8_t* analoguePinMap;  // Map which analogue pin's value is in which byte
+uint16_t firstVpin = 0;
 
 /*
 * Main setup function here.
@@ -262,13 +263,15 @@ void receiveEvent(int numBytes) {
   switch(buffer[0]) {
     // Initial configuration start, must be 2 bytes
     case EXIOINIT:
-      // if (numBytes == 3) {
-      if (numBytes == 2) {
+      if (numBytes == 4) {
         initialisePins();
         uint8_t numReceivedPins = buffer[1];
+        firstVpin = (buffer[3] << 8) + buffer[2];
         if (numReceivedPins == numPins) {
           USB_SERIAL.print(F("Received correct pin count: "));
-          USB_SERIAL.println(numReceivedPins);
+          USB_SERIAL.print(numReceivedPins);
+          USB_SERIAL.print(F(", starting at Vpin: "));
+          USB_SERIAL.println(firstVpin);
           setupComplete = true;
         } else {
           USB_SERIAL.print(F("ERROR: Invalid pin count sent by device driver!: "));
@@ -386,6 +389,16 @@ void receiveEvent(int numBytes) {
           USB_SERIAL.println(F(" not capable of analogue input"));
         }
       }
+      break;
+    case EXIOWRAN:
+      if (numBytes == 4) {
+        uint8_t pin = buffer[1];
+        uint16_t value = (buffer[3] << 8) + buffer[2];
+        if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
+          analogWrite(pinMap[pin].physicalPin, value);
+        }
+      }
+      break;
     default:
       break;
   }
