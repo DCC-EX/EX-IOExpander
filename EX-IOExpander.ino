@@ -395,7 +395,25 @@ void receiveEvent(int numBytes) {
         uint8_t pin = buffer[1];
         uint16_t value = (buffer[3] << 8) + buffer[2];
         if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
-          analogWrite(pinMap[pin].physicalPin, value);
+          if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_PWM)) {
+            USB_SERIAL.print(F("ERROR! pin "));
+            USB_SERIAL.print(pinMap[pin].physicalPin);
+            USB_SERIAL.println(F(" already in use, cannot use as a PWM output pin"));
+            break;
+          } else {
+            exioPins[pin].enable = 1;
+            exioPins[pin].mode = MODE_PWM;
+            exioPins[pin].direction = 0;
+            USB_SERIAL.print(F("analogWrite pin|value:"));
+            USB_SERIAL.print(pinMap[pin].physicalPin);
+            USB_SERIAL.print(F("|"));
+            USB_SERIAL.println(value);
+            analogWrite(pinMap[pin].physicalPin, value);
+          }
+        } else {
+          USB_SERIAL.print(F("ERROR! Pin "));
+          USB_SERIAL.print(pinMap[pin].physicalPin);
+          USB_SERIAL.println(F(" not capable of PWM output"));
         }
       }
       break;
