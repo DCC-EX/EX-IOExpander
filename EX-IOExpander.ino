@@ -398,9 +398,9 @@ void requestEvent() {
   switch(outboundFlag) {
     case EXIOINIT:
       if (setupComplete) {
-        commandBuffer[0] = EXIOINITA;
-        commandBuffer[1] = numAnaloguePins;
-        commandBuffer[2] = numPWMPins;
+        commandBuffer[0] = EXIOPINS;
+        commandBuffer[1] = numDigitalPins;
+        commandBuffer[2] = numAnaloguePins;
       } else {
         commandBuffer[0] = 0;
         commandBuffer[1] = 0;

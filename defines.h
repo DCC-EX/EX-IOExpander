@@ -25,6 +25,7 @@
 #define EXIORDD 0xE6      // Flag a digital input is being read
 #define EXIOENAN 0xE7     // Flag to enable an analogue input pin
 #define EXIOINITA 0xE8    // Flag to send analogue pin info
+#define EXIOPINS 0xE9     // Flag we need to send pin counts
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define version to store in EEPROM/FLASH in case this needs to change later
