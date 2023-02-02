@@ -92,7 +92,6 @@ pinConfig exioPins[TOTAL_PINS];
 #define I2C_ADDRESS 0x65
 #endif
 uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
-// uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
 uint8_t numPins = TOTAL_PINS;
 uint8_t numAnaloguePins = 0;  // Init with default, will be overridden by config
 uint8_t numDigitalPins = 0;
@@ -101,8 +100,6 @@ int digitalPinBytes = 0;  // Used for configuring and sending/receiving digital 
 int analoguePinBytes = 0; // Used for sending analogue 16 bit values
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
-// byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
-// byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
 bool newSerialData = false;   // Flag for new serial data being received
 const byte numSerialChars = 10;   // Max number of chars for serial input
 char serialInputChars[numSerialChars];  // Char array for serial input
@@ -117,7 +114,6 @@ bool outputTesting = false;   // Flag that digital output testing is enabled/dis
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
-// byte digitalPinStates[(NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8];
 byte* digitalPinStates;  // Store digital pin states to send to device driver
 byte* analoguePinStates;  // Store analogue values to send to device driver
 byte commandBuffer[3];    // Command buffer to interact with device driver
@@ -499,6 +495,8 @@ void displayPins() {
           break;
         }
         case MODE_PWM: {
+          USB_SERIAL.print(F("PWM Output Pin:"));
+          USB_SERIAL.println(physicalPin);
           break;
         }
         default:
@@ -571,7 +569,7 @@ void processSerialInput() {
         } else {
           testAnalogue(true);
         }
-        break;
+        break; 
       case 'D': // Enable/disable diagnostic output
         if (diag && parameter) {
           displayDelay = parameter * 1000;
@@ -635,9 +633,9 @@ void processSerialInput() {
           USB_SERIAL.println(F("No testing in progress"));
         }
         break;
-      case 'V': // Display Vpin map
+      /*case 'V': // Display Vpin map
         displayVpinMap();
-        break;
+        break;*/
       case 'W': // Write address to EEPROM
         if (parameter > 0x07 && parameter < 0x78) {
           writeI2CAddress(parameter);
@@ -648,7 +646,6 @@ void processSerialInput() {
       case 'Z': // Software reboot
         reset();
         break;
-      
       default:
         break;
     }
