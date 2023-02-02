@@ -272,6 +272,7 @@ void receiveEvent(int numBytes) {
           USB_SERIAL.print(numReceivedPins);
           USB_SERIAL.print(F(", starting at Vpin: "));
           USB_SERIAL.println(firstVpin);
+          displayVpinMap();
           setupComplete = true;
         } else {
           USB_SERIAL.print(F("ERROR: Invalid pin count sent by device driver!: "));
@@ -634,6 +635,9 @@ void processSerialInput() {
           USB_SERIAL.println(F("No testing in progress"));
         }
         break;
+      case 'V': // Display Vpin map
+        displayVpinMap();
+        break;
       case 'W': // Write address to EEPROM
         if (parameter > 0x07 && parameter < 0x78) {
           writeI2CAddress(parameter);
@@ -889,4 +893,23 @@ void setupPinDetails() {
   digitalPinBytes = numDigitalPins / 8;
   digitalPinStates = (byte*) calloc(digitalPinBytes, 1);
   analoguePinStates = (byte*) calloc(analoguePinBytes, 1);
+}
+
+/*
+* Function to display Vpin to physical pin mappings after initialisation
+*/
+void displayVpinMap() {
+  uint16_t vpin = firstVpin;
+  USB_SERIAL.println(F("Vpin to physical pin mappings (Vpin => physical pin):"));
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    USB_SERIAL.print(vpin);
+    USB_SERIAL.print(F(" => "));
+    if (pin == numPins - 1 || (pin %9 == 0 && pin > 0)) {
+      USB_SERIAL.println(pinMap[pin].physicalPin);
+    } else {
+      USB_SERIAL.print(pinMap[pin].physicalPin);
+      USB_SERIAL.print(F(","));
+    }
+    vpin++;
+  }
 }
