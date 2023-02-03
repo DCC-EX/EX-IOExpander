@@ -369,6 +369,7 @@ void receiveEvent(int numBytes) {
     case EXIOENAN:
       if (numBytes == 2) {
         uint8_t pin = buffer[1];
+        /*
         if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
           if (exioPins[pin].enable && exioPins[pin].mode != MODE_ANALOGUE && !exioPins[pin].direction) {
             USB_SERIAL.print(F("ERROR! pin "));
@@ -385,12 +386,15 @@ void receiveEvent(int numBytes) {
           USB_SERIAL.print(pinMap[pin].physicalPin);
           USB_SERIAL.println(F(" not capable of analogue input"));
         }
+        */
+        enableAnalogue(pin);
       }
       break;
     case EXIOWRAN:
       if (numBytes == 4) {
         uint8_t pin = buffer[1];
         uint16_t value = (buffer[3] << 8) + buffer[2];
+        /*
         if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
           if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_PWM)) {
             USB_SERIAL.print(F("ERROR! pin "));
@@ -412,10 +416,53 @@ void receiveEvent(int numBytes) {
           USB_SERIAL.print(pinMap[pin].physicalPin);
           USB_SERIAL.println(F(" not capable of PWM output"));
         }
+        */
+        writeAnalogue(pin, value);
       }
       break;
     default:
       break;
+  }
+}
+
+void enableAnalogue(uint8_t pin) {
+  if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+    if (exioPins[pin].enable && exioPins[pin].mode != MODE_ANALOGUE && !exioPins[pin].direction) {
+      USB_SERIAL.print(F("ERROR! pin "));
+      USB_SERIAL.print(pinMap[pin].physicalPin);
+      USB_SERIAL.println(F(" already in use, cannot use as an analogue input pin"));
+    }
+    exioPins[pin].enable = 1;
+    exioPins[pin].mode = MODE_ANALOGUE;
+    exioPins[pin].direction = 1;
+    pinMode(pinMap[pin].physicalPin, INPUT);
+  } else {
+    USB_SERIAL.print(F("ERROR! Pin "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.println(F(" not capable of analogue input"));
+  }
+}
+
+void writeAnalogue(uint8_t pin, uint16_t value) {
+  if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
+    if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_PWM)) {
+      USB_SERIAL.print(F("ERROR! pin "));
+      USB_SERIAL.print(pinMap[pin].physicalPin);
+      USB_SERIAL.println(F(" already in use, cannot use as a PWM output pin"));
+    } else {
+      exioPins[pin].enable = 1;
+      exioPins[pin].mode = MODE_PWM;
+      exioPins[pin].direction = 0;
+      USB_SERIAL.print(F("analogWrite pin|value:"));
+      USB_SERIAL.print(pinMap[pin].physicalPin);
+      USB_SERIAL.print(F("|"));
+      USB_SERIAL.println(value);
+      analogWrite(pinMap[pin].physicalPin, value);
+    }
+  } else {
+    USB_SERIAL.print(F("ERROR! Pin "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.println(F(" not capable of PWM output"));
   }
 }
 
@@ -563,85 +610,34 @@ void processSerialInput() {
     }
     switch (activity) {
       case 'A': // Enable/disable analogue input testing
-        if (analogueTesting) {
-          testAnalogue(false);
-          USB_SERIAL.println(F("Analogue testing disabled"));
-        } else {
-          testAnalogue(true);
-        }
+        serialCaseA();
         break; 
       case 'D': // Enable/disable diagnostic output
-        if (diag && parameter) {
-          displayDelay = parameter * 1000;
-          USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
-          USB_SERIAL.println(displayDelay);
-          diag = true;
-        } else if (diag && !parameter) {
-          USB_SERIAL.println(F("Diagnostics disabled"));
-          diag = false;
-        } else {
-          USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
-          USB_SERIAL.println(displayDelay);
-          diag = true;
-        }
+        serialCaseD(parameter);
         break;
       case 'E': // Erase EEPROM
         eraseI2CAddress();
         break;
       case 'I': // Enable/disable digital input testing
-        if (inputTesting) {
-          testInput(false);
-          USB_SERIAL.println(F("Input testing (no pullups) disabled"));
-        } else {
-          testInput(true);
-        }
+        serialCaseI();
         break;
       case 'O': // Enable/disable digital output testing
-        if (outputTesting) {
-          testOutput(false);
-          USB_SERIAL.println(F("Output testing disabled"));
-        } else {
-          testOutput(true);
-        }
+        serialCaseO();
         break;
       case 'P': // Enable/disable digital input testing with pullups
-        if (pullupTesting) {
-          testPullup(false);
-          USB_SERIAL.println(F("Pullup input testing disabled"));
-        } else {
-          testPullup(true);
-        }
+        serialCaseP();
         break;
       case 'R': // Read address from EEPROM
-        if (getI2CAddress() == 0) {
-          USB_SERIAL.println(F("I2C address not stored, using myConfig.h"));
-        } else {
-          USB_SERIAL.print(F("I2C address stored is 0x"));
-          USB_SERIAL.println(getI2CAddress(), HEX);
-        }
+        serialCaseR();
         break;
       case 'T': // Display current state of test modes
-        if (analogueTesting) {
-          USB_SERIAL.println(F("Analogue testing <A> enabled"));
-        } else if (inputTesting) {
-          USB_SERIAL.println(F("Input testing <I> (no pullups) enabled"));
-        } else if (outputTesting) {
-          USB_SERIAL.println(F("Output testing <O> enabled"));
-        } else if (pullupTesting) {
-          USB_SERIAL.println(F("Pullup input <P> testing enabled"));
-        } else {
-          USB_SERIAL.println(F("No testing in progress"));
-        }
+        serialCaseT();
         break;
       /*case 'V': // Display Vpin map
         displayVpinMap();
         break;*/
       case 'W': // Write address to EEPROM
-        if (parameter > 0x07 && parameter < 0x78) {
-          writeI2CAddress(parameter);
-        } else {
-          USB_SERIAL.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
-        }
+        serialCaseW(parameter);
         break;
       case 'Z': // Software reboot
         reset();
@@ -649,6 +645,89 @@ void processSerialInput() {
       default:
         break;
     }
+  }
+}
+
+void serialCaseA() {
+  if (analogueTesting) {
+    testAnalogue(false);
+    USB_SERIAL.println(F("Analogue testing disabled"));
+  } else {
+    testAnalogue(true);
+  }
+}
+
+void serialCaseD(unsigned long parameter) {
+  if (diag && parameter) {
+    displayDelay = parameter * 1000;
+    USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
+    USB_SERIAL.println(displayDelay);
+    diag = true;
+  } else if (diag && !parameter) {
+    USB_SERIAL.println(F("Diagnostics disabled"));
+    diag = false;
+  } else {
+    USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
+    USB_SERIAL.println(displayDelay);
+    diag = true;
+  }
+}
+
+void serialCaseI() {
+  if (inputTesting) {
+    testInput(false);
+    USB_SERIAL.println(F("Input testing (no pullups) disabled"));
+  } else {
+    testInput(true);
+  }
+}
+
+void serialCaseO() {
+  if (outputTesting) {
+    testOutput(false);
+    USB_SERIAL.println(F("Output testing disabled"));
+  } else {
+    testOutput(true);
+  }
+}
+
+void serialCaseP() {
+  if (pullupTesting) {
+    testPullup(false);
+    USB_SERIAL.println(F("Pullup input testing disabled"));
+  } else {
+    testPullup(true);
+  }
+}
+
+void serialCaseR() {
+  if (getI2CAddress() == 0) {
+    USB_SERIAL.println(F("I2C address not stored, using myConfig.h"));
+  } else {
+    USB_SERIAL.print(F("I2C address stored is 0x"));
+    USB_SERIAL.println(getI2CAddress(), HEX);
+  }
+}
+
+void serialCaseT() {
+  if (analogueTesting) {
+    USB_SERIAL.println(F("Analogue testing <A> enabled"));
+  } else if (inputTesting) {
+    USB_SERIAL.println(F("Input testing <I> (no pullups) enabled"));
+  } else if (outputTesting) {
+    USB_SERIAL.println(F("Output testing <O> enabled"));
+  } else if (pullupTesting) {
+    USB_SERIAL.println(F("Pullup input <P> testing enabled"));
+  } else {
+    USB_SERIAL.println(F("No testing in progress"));
+  }
+}
+
+void serialCaseW(unsigned long parameter) {
+  if (parameter > 0x07 && parameter < 0x78) {
+    writeI2CAddress(parameter);
+  } else {
+    USB_SERIAL.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
   }
 }
 
