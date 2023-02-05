@@ -27,6 +27,27 @@
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////
+//  Define serial interfaces here
+//
+
+#undef USB_SERIAL           // Teensy has this defined by default (in case we ever support Teensy)
+#define USB_SERIAL Serial   // Standard serial port most of the time!
+#if defined(ARDUINO_ARCH_SAMD)
+#undef USB_SERIAL
+#define USB_SERIAL SerialUSB  // Most SAMD21 clones use native USB on the SAMD21G18 variants
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Include myConfig.h or use the example
+//
+#if __has_include ("myConfig.h")
+  #include "myConfig.h"
+#else
+  #warning myConfig.h not found. Using defaults from myConfig.example.h
+  #include "myConfig.example.h"
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////
 //  Define data structures here
 //
 /*

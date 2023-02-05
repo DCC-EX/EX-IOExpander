@@ -14,5 +14,8 @@ extern int analoguePinBytes;
 extern int digitalPinBytes;
 extern byte* digitalPinStates;  // Store digital pin states to send to device driver
 extern byte* analoguePinStates;
+extern uint8_t versionBuffer[3];
+extern unsigned long displayDelay;
+extern uint16_t firstVpin;
 
 #endif
