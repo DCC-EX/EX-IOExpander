@@ -17,14 +17,15 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef DISPLAY_FUNCTIONS_H
-#define DISPLAY_FUNCTIONS_H
+#ifndef DEVICE_FUNCTIONS_H
+#define DEVICE_FUNCTIONS_H
 
 #include <Arduino.h>
 #include "globals.h"
 
-void setVersion();
-void displayPins();
-void displayVpinMap();
+uint8_t getI2CAddress();
+void writeI2CAddress(int16_t eepromAddress);
+void eraseI2CAddress();
+void reset();
 
 #endif
