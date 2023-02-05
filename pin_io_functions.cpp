@@ -49,3 +49,53 @@ void initialisePins() {
     analoguePinStates[aPinByte] = 0;
   }
 }
+
+
+
+
+
+
+
+
+/*
+* Function to enable pins as analogue input pins to start reading
+*/
+void enableAnalogue(uint8_t pin) {
+  if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+    if (exioPins[pin].enable && exioPins[pin].mode != MODE_ANALOGUE && !exioPins[pin].direction) {
+      USB_SERIAL.print(F("ERROR! pin "));
+      USB_SERIAL.print(pinMap[pin].physicalPin);
+      USB_SERIAL.println(F(" already in use, cannot use as an analogue input pin"));
+    }
+    exioPins[pin].enable = 1;
+    exioPins[pin].mode = MODE_ANALOGUE;
+    exioPins[pin].direction = 1;
+    pinMode(pinMap[pin].physicalPin, INPUT);
+  } else {
+    USB_SERIAL.print(F("ERROR! Pin "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.println(F(" not capable of analogue input"));
+  }
+}
+
+/*
+* Function to write PWM output to a pin
+*/
+void writeAnalogue(uint8_t pin, uint16_t value) {
+  if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
+    if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_PWM)) {
+      USB_SERIAL.print(F("ERROR! pin "));
+      USB_SERIAL.print(pinMap[pin].physicalPin);
+      USB_SERIAL.println(F(" already in use, cannot use as a PWM output pin"));
+    } else {
+      exioPins[pin].enable = 1;
+      exioPins[pin].mode = MODE_PWM;
+      exioPins[pin].direction = 0;
+      analogWrite(pinMap[pin].physicalPin, value);
+    }
+  } else {
+    USB_SERIAL.print(F("ERROR! Pin "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.println(F(" not capable of PWM output"));
+  }
+}

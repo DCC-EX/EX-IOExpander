@@ -6,5 +6,7 @@
 
 void setupPinDetails();
 void initialisePins();
+void enableAnalogue(uint8_t pin);
+void writeAnalogue(uint8_t pin, uint16_t value);
 
 #endif

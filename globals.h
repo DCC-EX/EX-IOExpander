@@ -17,5 +17,8 @@ extern byte* analoguePinStates;
 extern uint8_t versionBuffer[3];
 extern unsigned long displayDelay;
 extern uint16_t firstVpin;
+extern bool diag;
+extern bool setupComplete;
+extern uint8_t* analoguePinMap;
 
 #endif
