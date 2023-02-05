@@ -26,22 +26,15 @@
 * Analogue I/O pins are available as digital inputs or outputs or analogue inputs (depending on architecture).
 */
 
-/*
-Struct to define the capability of each physical pin
-*/
-typedef struct {
-  uint8_t physicalPin;
-  uint8_t capability;
-} pinDefinition;
 
 /*
 * Include required files and libraries.
 */
 #include <Arduino.h>
-#include "defines.h"
-#include "SupportedDevices.h"
+#include "globals.h"
 #include "version.h"
 #include <Wire.h>
+#include "pin_io_functions.h"
 #undef USB_SERIAL           // Teensy has this defined by default (in case we ever support Teensy)
 #define USB_SERIAL Serial   // Standard serial port most of the time!
 #if defined(ARDUINO_ARCH_AVR)
@@ -60,6 +53,15 @@ typedef struct {
 #endif
 
 /*
+* Include our CPU specific file
+*/
+#if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
+#include "arduino_avr_nano.h"
+#elif defined(ARDUINO_AVR_UNO)
+#include "arduino_avr_uno.h"
+#endif
+
+/*
 If we haven't got a custom config.h, use the example.
 */
 #if __has_include ("myConfig.h")
@@ -68,19 +70,6 @@ If we haven't got a custom config.h, use the example.
   #warning myConfig.h not found. Using defaults from myConfig.example.h
   #include "myConfig.example.h"
 #endif
-
-/*
-Define the structure of the pin config and array to hold them
-*/
-typedef struct {
-  uint8_t mode;             // 1 = digital, 2 = analogue, 3 = PWM
-  bool direction;           // 0 = output, 1 = input
-  bool pullup;              // 0 = no pullup, 1 = pullup (input only)
-  bool enable;              // 0 = disabled (default), 1 = enabled
-  uint8_t analogueLSBByte;  // Stores the byte number of the LSB byte in analoguePinStates
-} pinConfig;
-
-pinConfig exioPins[TOTAL_PINS];
 
 /*
 * Global variables here
@@ -114,8 +103,8 @@ bool outputTesting = false;   // Flag that digital output testing is enabled/dis
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
-byte* digitalPinStates;  // Store digital pin states to send to device driver
-byte* analoguePinStates;  // Store analogue values to send to device driver
+// byte* digitalPinStates;  // Store digital pin states to send to device driver
+// byte* analoguePinStates;  // Store analogue values to send to device driver
 byte commandBuffer[3];    // Command buffer to interact with device driver
 uint8_t* analoguePinMap;  // Map which analogue pin's value is in which byte
 uint16_t firstVpin = 0;
@@ -927,49 +916,49 @@ void disableWire() {
 #endif
 }
 
-/*
-* Function to initialise all pins as input and initialise pin struct
-*/
-void initialisePins() {
-  for (uint8_t pin = 0; pin < TOTAL_PINS; pin++) {
-    if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
-      pinMode(pinMap[pin].physicalPin, INPUT);
-      exioPins[pin].direction = 1;
-    } else {
-      exioPins[pin].direction = 0;
-    }
-    exioPins[pin].enable = 0;
-    exioPins[pin].mode = 0;
-    exioPins[pin].pullup = 0;
-  }
-  for (uint8_t dPinByte = 0; dPinByte < digitalPinBytes; dPinByte++) {
-    digitalPinStates[dPinByte] = 0;
-  }
-  for (uint8_t aPinByte = 0; aPinByte < analoguePinBytes; aPinByte++) {
-    analoguePinStates[aPinByte] = 0;
-  }
-}
+// /*
+// * Function to initialise all pins as input and initialise pin struct
+// */
+// void initialisePins() {
+//   for (uint8_t pin = 0; pin < TOTAL_PINS; pin++) {
+//     if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+//       pinMode(pinMap[pin].physicalPin, INPUT);
+//       exioPins[pin].direction = 1;
+//     } else {
+//       exioPins[pin].direction = 0;
+//     }
+//     exioPins[pin].enable = 0;
+//     exioPins[pin].mode = 0;
+//     exioPins[pin].pullup = 0;
+//   }
+//   for (uint8_t dPinByte = 0; dPinByte < digitalPinBytes; dPinByte++) {
+//     digitalPinStates[dPinByte] = 0;
+//   }
+//   for (uint8_t aPinByte = 0; aPinByte < analoguePinBytes; aPinByte++) {
+//     analoguePinStates[aPinByte] = 0;
+//   }
+// }
 
-/*
-* Get the count of analogue and PWM capable pins
-*/
-void setupPinDetails() {
-  for (uint8_t pin = 0; pin < numPins; pin++) {
-    if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
-      numAnaloguePins++;
-    }
-    if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-      numDigitalPins++;
-    }
-    if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
-      numPWMPins++;
-    }
-  }
-  analoguePinBytes = numAnaloguePins * 2;
-  digitalPinBytes = numDigitalPins / 8;
-  digitalPinStates = (byte*) calloc(digitalPinBytes, 1);
-  analoguePinStates = (byte*) calloc(analoguePinBytes, 1);
-}
+// /*
+// * Get the count of analogue and PWM capable pins
+// */
+// void setupPinDetails() {
+//   for (uint8_t pin = 0; pin < numPins; pin++) {
+//     if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+//       numAnaloguePins++;
+//     }
+//     if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+//       numDigitalPins++;
+//     }
+//     if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
+//       numPWMPins++;
+//     }
+//   }
+//   analoguePinBytes = numAnaloguePins * 2;
+//   digitalPinBytes = numDigitalPins / 8;
+//   digitalPinStates = (byte*) calloc(digitalPinBytes, 1);
+//   analoguePinStates = (byte*) calloc(analoguePinBytes, 1);
+// }
 
 /*
 * Function to display Vpin to physical pin mappings after initialisation

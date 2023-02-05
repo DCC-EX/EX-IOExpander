@@ -14,6 +14,41 @@
 #define DEFINES_H
 
 /////////////////////////////////////////////////////////////////////////////////////
+//  Define CPU specific pin counts
+//
+#if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
+#define TOTAL_PINS 18
+#define NUM_PWM_PINS 6
+#define HAS_EEPROM
+#elif defined(ARDUINO_AVR_UNO)
+#define TOTAL_PINS 16
+#define NUM_PWM_PINS 6
+#define HAS_EEPROM
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Define data structures here
+//
+/*
+Struct to define the capability of each physical pin
+*/
+struct pinDefinition {
+  uint8_t physicalPin;      // Physical pin name/number eg. 2, A0, PC0
+  uint8_t capability;       // Defined as per the hex pin capability values below
+};
+
+/*
+Define the structure of the pin config
+*/
+struct pinConfig {
+  uint8_t mode;             // 1 = digital, 2 = analogue, 3 = PWM
+  bool direction;           // 0 = output, 1 = input
+  bool pullup;              // 0 = no pullup, 1 = pullup (input only)
+  bool enable;              // 0 = disabled (default), 1 = enabled
+  uint8_t analogueLSBByte;  // Stores the byte number of the LSB byte in analoguePinStates
+};
+
+/////////////////////////////////////////////////////////////////////////////////////
 //  Define the register hex values we need to act on or respond with
 //
 #define EXIOINIT 0xE0     // Flag to start setup procedure
