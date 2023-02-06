@@ -103,13 +103,12 @@ void displayVpinMap() {
   uint16_t vpin = firstVpin;
   USB_SERIAL.println(F("Vpin to physical pin mappings (Vpin => physical pin):"));
   for (uint8_t pin = 0; pin < numPins; pin++) {
+    USB_SERIAL.print(F("|"));
     USB_SERIAL.print(vpin);
     USB_SERIAL.print(F(" => "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
     if (pin == numPins - 1 || (pin %9 == 0 && pin > 0)) {
-      USB_SERIAL.println(pinMap[pin].physicalPin);
-    } else {
-      USB_SERIAL.print(pinMap[pin].physicalPin);
-      USB_SERIAL.print(F(","));
+      USB_SERIAL.println(F("|"));
     }
     vpin++;
   }

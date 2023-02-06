@@ -105,7 +105,9 @@ void writeAnalogue(uint8_t pin, uint16_t value) {
       exioPins[pin].enable = 1;
       exioPins[pin].mode = MODE_PWM;
       exioPins[pin].direction = 0;
-      analogWrite(pinMap[pin].physicalPin, value);
+      if (value >= 0 && value <= 255) {
+        analogWrite(pinMap[pin].physicalPin, value);
+      }
     }
   } else {
     USB_SERIAL.print(F("ERROR! Pin "));
