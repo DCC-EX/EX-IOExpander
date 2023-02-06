@@ -74,21 +74,24 @@ void initialisePins() {
 /*
 * Function to enable pins as analogue input pins to start reading
 */
-void enableAnalogue(uint8_t pin) {
+bool enableAnalogue(uint8_t pin) {
   if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
     if (exioPins[pin].enable && exioPins[pin].mode != MODE_ANALOGUE && !exioPins[pin].direction) {
       USB_SERIAL.print(F("ERROR! pin "));
       USB_SERIAL.print(pinMap[pin].physicalPin);
       USB_SERIAL.println(F(" already in use, cannot use as an analogue input pin"));
+      return false;
     }
     exioPins[pin].enable = 1;
     exioPins[pin].mode = MODE_ANALOGUE;
     exioPins[pin].direction = 1;
     pinMode(pinMap[pin].physicalPin, INPUT);
+    return true;
   } else {
     USB_SERIAL.print(F("ERROR! Pin "));
     USB_SERIAL.print(pinMap[pin].physicalPin);
     USB_SERIAL.println(F(" not capable of analogue input"));
+    return false;
   }
 }
 

@@ -30,6 +30,7 @@ uint8_t numPWMPins = 0;  // Number of PWM capable pins
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
 byte commandBuffer[3];    // Command buffer to interact with device driver
+byte responseBuffer[0];   // Buffer to send single response back to device driver
 
 /*
 * Function triggered when CommandStation is sending data to this device.
@@ -79,16 +80,25 @@ void receiveEvent(int numBytes) {
       break;
     // Flag to set digital pin pullups, 0 disabled, 1 enabled
     case EXIODPUP:
+      outboundFlag = EXIODPUP;
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
         bool pullup = buffer[2];
+        if (!bitRead(pinMap[pin].capability, DI)) {
+          USB_SERIAL.print(F("ERROR! pin "));
+          USB_SERIAL.print(pinMap[pin].physicalPin);
+          USB_SERIAL.println(F(" not capable of digital input"));
+          responseBuffer[0] = EXIOERR;
+          break;
+        }
         if (exioPins[pin].enable && exioPins[pin].mode != MODE_DIGITAL && !exioPins[pin].direction) {
           USB_SERIAL.print(F("ERROR! pin "));
           USB_SERIAL.print(pinMap[pin].physicalPin);
           USB_SERIAL.println(F(" already in use, cannot use as a digital input pin"));
+          responseBuffer[0] = EXIOERR;
           break;
         }
-        if (!exioPins[pin].enable) {
+        if (!exioPins[pin].enable || (exioPins[pin].enable && exioPins[pin].direction == 1)) {
           exioPins[pin].direction = 1;   // Must be an input if we got a pullup config
           exioPins[pin].mode = MODE_DIGITAL;        // Must be digital if we got a pullup config
           exioPins[pin].pullup = pullup;
@@ -98,11 +108,18 @@ void receiveEvent(int numBytes) {
           } else {
             pinMode(pinMap[pin].physicalPin, INPUT);
           }
+          responseBuffer[0] = EXIORDY;
+        } else {
+          USB_SERIAL.print(F("ERROR! pin "));
+          USB_SERIAL.print(pinMap[pin].physicalPin);
+          USB_SERIAL.println(F(" already in use, cannot use as a digital input pin"));
+          responseBuffer[0] = EXIOERR;
         }
       } else {
         if(diag) {
           USB_SERIAL.println(F("EXIODPUP received with incorrect number of bytes"));
         }
+        responseBuffer[0] = EXIOERR;
       }
       break;
     case EXIORDAN:
@@ -111,6 +128,7 @@ void receiveEvent(int numBytes) {
       }
       break;
     case EXIOWRD:
+      outboundFlag = EXIOWRD;
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
         bool state = buffer[2];
@@ -121,25 +139,35 @@ void receiveEvent(int numBytes) {
             USB_SERIAL.print(F("ERROR! pin "));
             USB_SERIAL.print(pinMap[pin].physicalPin);
             USB_SERIAL.println(F(" already in use, cannot use as a digital output pin"));
+            responseBuffer[0] = EXIOERR;
             break;
           }
-          if (!exioPins[pin].enable) {
+          if (!exioPins[pin].enable || (exioPins[pin].enable && exioPins[pin].direction == 0)) {
             exioPins[pin].enable = 1;
             exioPins[pin].mode = MODE_DIGITAL;
             exioPins[pin].direction = 0;
             pinMode(pinMap[pin].physicalPin, OUTPUT);
-          }
-          if (state) {
-            bitSet(digitalPinStates[pinByte], pinBit);
+            if (state) {
+              bitSet(digitalPinStates[pinByte], pinBit);
+            } else {
+              bitClear(digitalPinStates[pinByte], pinBit);
+            }
+            digitalWrite(pinMap[pin].physicalPin, state);
+            responseBuffer[0] = EXIORDY;
           } else {
-            bitClear(digitalPinStates[pinByte], pinBit);
+            responseBuffer[0] = EXIOERR;
           }
-          digitalWrite(pinMap[pin].physicalPin, state);
         } else {
           USB_SERIAL.print(F("ERROR! Pin "));
           USB_SERIAL.print(pinMap[pin].physicalPin);
           USB_SERIAL.println(F(" not capable of digital output"));
+          responseBuffer[0] = EXIOERR;
         }
+      } else {
+        if(diag) {
+          USB_SERIAL.println(F("EXIOWRD received with incorrect number of bytes"));
+        }
+        responseBuffer[0] = EXIOERR;        
       }
       break;
     case EXIORDD:
@@ -153,9 +181,17 @@ void receiveEvent(int numBytes) {
       }
       break;
     case EXIOENAN:
+      outboundFlag = EXIOENAN;
       if (numBytes == 2) {
         uint8_t pin = buffer[1];
-        enableAnalogue(pin);
+        bool response = enableAnalogue(pin);
+        if (response) {
+          responseBuffer[0] = EXIORDY;
+        } else {
+          responseBuffer[0] = EXIOERR;
+        }
+      } else {
+        responseBuffer[0] = EXIOERR;
       }
       break;
     case EXIOWRAN:
@@ -198,6 +234,12 @@ void requestEvent() {
       break;
     case EXIOVER:
       Wire.write(versionBuffer, 3);
+      break;
+    case EXIODPUP:
+      Wire.write(responseBuffer, 1);
+      break;
+    case EXIOENAN:
+      Wire.write(responseBuffer, 1);
       break;
     default:
       break;
