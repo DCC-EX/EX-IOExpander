@@ -26,11 +26,11 @@
 #define BOARD_TYPE F("NUCLEO-F411RE")
 
 pinDefinition pinMap[TOTAL_PINS] = {
-  {PC10,DIOP},{PC11,DIOP},{PC12,DIOP},{PD2,DIOP},{PA15,DIOP},{PB7,DIOP},{PC13,DIOP},{PC14,DIOP},  // CN7
-  {PC15,DIOP},{PA0,DIOP},{PA1,DIOP},{PA4,DIOP},{PB0,DIO},{PC2,DIO},{PC1,DIO},{PC3,DIO},{PC0,DIO}, // CN7
-  {PC9,DIO},{PC8,DIO},{PC6,DIO},{PC5,DIO},{PA5,DIO},{PA12,DIO},{PA6,DIO},{PA11,DIO},{PA7,DIO},    // CN10
-  {PB12,DIO},{PB6,DIO},{PC7,DIO},{PA9,DIO},{PB2,DIO},{PA8,DIO},{PB1,DIO},{PB10,DIO},{PB15,DIO},   // CN10
-  {PB4,DIO},{PB14,DIO},{PB5,DIO},{PB13,DIO},{PB3,DIO},{PA10,DIO},{PC4,DIO},                       // CN10
+  {PC10,DIO},{PC11,DIO},{PC12,DIO},{PD2,DIO},{PA15,DIOP},{PB7,DIOP},{PC13,DIO},{PC14,DIO},{PC15,DIO},  // CN7
+  {PA0,AIDIOP},{PA1,AIDIOP},{PA4,AIDIO},{PB0,AIDIOP},{PC2,AIDIO},{PC1,AIDIO},{PC3,AIDIO},{PC0,AIDIO}, // CN7
+  {PC9,DIOP},{PC8,DIOP},{PC6,DIOP},{PC5,AIDIO},{PA5,AIDIOP},{PA12,DIO},{PA6,AIDIOP},{PA11,DIOP},{PA7,DIOP},    // CN10
+  {PB12,DIO},{PB6,DIOP},{PC7,DIOP},{PA9,DIOP},{PB2,DIO},{PA8,DIOP},{PB1,AIDIOP},{PB10,DIOP},{PB15,DIOP},   // CN10
+  {PB4,DIOP},{PB14,DIOP},{PB5,DIOP},{PB13,DIOP},{PB3,DIOP},{PA10,DIOP},{PC4,AIDIO},                       // CN10
 };
 
 #define I2C_SDA PB9
@@ -43,7 +43,5 @@ CN10 (digital) - PB8|9 - (I2C)
 CN7 (analogue) - 
 Note that PC13 has a switch (blue button) with pullup, so input-only unless you disconnect SB17
 */
-
-// Why no PC13|PC14? adding these, total pins + 2?
 
 #endif

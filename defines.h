@@ -39,8 +39,8 @@
 #define NUM_PWM_PINS 12
 #define HAS_EEPROM
 #elif defined(ARDUINO_NUCLEO_F411RE)
-#define TOTAL_PINS 40
-#define NUM_PWM_PINS 12
+#define TOTAL_PINS 42
+#define NUM_PWM_PINS 25
 #elif defined(ARDUINO_NUCLEO_F412ZG)
 #define TOTAL_PINS 97
 #define NUM_PWM_PINS 12
@@ -140,10 +140,10 @@ struct pinConfig {
 #define DIP 0x09      // Digital input, PWM output
 #define DOP 0x0A      // Digital output, PWM output
 #define DIOP 0x0B     // Digital input/output, PWM output
-#define AOP 0x0C      // Analogue input, PWM output
-#define AODIP 0x0D    // Analogue input, digital input, PWM output
-#define AODOP 0x0E    // Analogue input, digital output, PWM output
-#define AODIOP 0x0F   // Analogue input, digital input/output, PWM output
+#define AIP 0x0C      // Analogue input, PWM output
+#define AIDIP 0x0D    // Analogue input, digital input, PWM output
+#define AIDOP 0x0E    // Analogue input, digital output, PWM output
+#define AIDIOP 0x0F   // Analogue input, digital input/output, PWM output
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the available pin modes
