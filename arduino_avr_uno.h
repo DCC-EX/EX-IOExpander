@@ -1,0 +1,35 @@
+/*
+ *  © 2023, Peter Cole. All rights reserved.
+ *  
+ *  This file is part of EX-IOExpander.
+ *
+ *  This is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  It is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef ARDUINO_AVR_UNO_H
+#define ARDUINO_AVR_UNO_H
+
+#include <Arduino.h>
+#include "globals.h"
+
+#define BOARD_TYPE F("Uno")
+pinDefinition pinMap[TOTAL_PINS] = {
+  {2,DIO},{3,DIOP},{4,DIO},{5,DIOP},{6,DIOP},{7,DIO},
+  {8,DIO},{9,DIOP},{10,DIOP},{11,DIOP},{12,DIO},{13,DIO},
+  {A0,AIDIO},{A1,AIDIO},{A2,AIDIO},{A3,AIDIO},
+};
+#define I2C_SDA A4
+#define I2C_SCL A5
+
+#endif

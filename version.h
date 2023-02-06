@@ -9,6 +9,7 @@
 //  - *Breaking change* to pin maps
 //  - Use EX-CommandStation v4.2.xxx or later
 //  - Add PWM support
+//  - Code restructure to multiple files
 // 0.0.13 includes:
 //  - Experimental support for SAMD21 Arduino Zero clones using native USB serial comms
 // 0.0.12 includes:
