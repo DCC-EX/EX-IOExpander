@@ -1,17 +1,80 @@
 /*
- *  © 2022 Peter Cole. All rights reserved.
- *
- *  This file is part of EX-IOExpander.
+ *  © 2023, Peter Cole. All rights reserved.
  *  
- *  This file contains the definitions required for supported devices and should not
- *  need to be edited.
- * 
- *  NOTE: Modifications to this file will be overwritten by future software updates.
- * 
+ *  This file is part of EX-IOExpander.
+ *
+ *  This is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  It is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef DEFINES_H
 #define DEFINES_H
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Define CPU specific pin counts
+//
+#if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
+#define TOTAL_PINS 18
+#define NUM_PWM_PINS 6
+#define HAS_EEPROM
+#elif defined(ARDUINO_AVR_UNO)
+#define TOTAL_PINS 16
+#define NUM_PWM_PINS 6
+#define HAS_EEPROM
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Define serial interfaces here
+//
+
+#undef USB_SERIAL           // Teensy has this defined by default (in case we ever support Teensy)
+#define USB_SERIAL Serial   // Standard serial port most of the time!
+#if defined(ARDUINO_ARCH_SAMD)
+#undef USB_SERIAL
+#define USB_SERIAL SerialUSB  // Most SAMD21 clones use native USB on the SAMD21G18 variants
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Include myConfig.h or use the example
+//
+#if __has_include ("myConfig.h")
+  #include "myConfig.h"
+#else
+  #warning myConfig.h not found. Using defaults from myConfig.example.h
+  #include "myConfig.example.h"
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////
+//  Define data structures here
+//
+/*
+Struct to define the capability of each physical pin
+*/
+struct pinDefinition {
+  uint8_t physicalPin;      // Physical pin name/number eg. 2, A0, PC0
+  uint8_t capability;       // Defined as per the hex pin capability values below
+};
+
+/*
+Define the structure of the pin config
+*/
+struct pinConfig {
+  uint8_t mode;             // 1 = digital, 2 = analogue, 3 = PWM
+  bool direction;           // 0 = output, 1 = input
+  bool pullup;              // 0 = no pullup, 1 = pullup (input only)
+  bool enable;              // 0 = disabled (default), 1 = enabled
+  uint8_t analogueLSBByte;  // Stores the byte number of the LSB byte in analoguePinStates
+};
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the register hex values we need to act on or respond with
