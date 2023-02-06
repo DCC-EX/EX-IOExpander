@@ -39,7 +39,7 @@
 #define NUM_PWM_PINS 12
 #define HAS_EEPROM
 #elif defined(ARDUINO_NUCLEO_F411RE)
-#define TOTAL_PINS 42
+#define TOTAL_PINS 40
 #define NUM_PWM_PINS 25
 #elif defined(ARDUINO_NUCLEO_F412ZG)
 #define TOTAL_PINS 97
