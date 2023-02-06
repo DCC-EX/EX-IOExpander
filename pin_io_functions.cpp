@@ -22,6 +22,8 @@
 #include "pin_io_functions.h"
 
 pinConfig exioPins[TOTAL_PINS];
+int digitalPinBytes = 0;  // Used for configuring and sending/receiving digital pins
+int analoguePinBytes = 0; // Used for sending analogue 16 bit values
 byte* digitalPinStates;  // Store digital pin states to send to device driver
 byte* analoguePinStates;
 

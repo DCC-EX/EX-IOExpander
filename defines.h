@@ -23,14 +23,30 @@
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define CPU specific pin counts
 //
+//  Arduino Nano or Pro Mini
 #if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
 #define TOTAL_PINS 18
 #define NUM_PWM_PINS 6
 #define HAS_EEPROM
+//  Arduino Uno
 #elif defined(ARDUINO_AVR_UNO)
 #define TOTAL_PINS 16
 #define NUM_PWM_PINS 6
 #define HAS_EEPROM
+//  Arduino Mega2560
+#elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
+#define TOTAL_PINS 62
+#define NUM_PWM_PINS 12
+#define HAS_EEPROM
+#elif defined(ARDUINO_NUCLEO_F411RE)
+#define TOTAL_PINS 40
+#define NUM_PWM_PINS 12
+#elif defined(ARDUINO_NUCLEO_F412ZG)
+#define TOTAL_PINS 97
+#define NUM_PWM_PINS 12
+#elif defined(ARDUINO_ARCH_SAMD)
+#define TOTAL_PINS 27
+#define NUM_PWM_PINS 12
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////

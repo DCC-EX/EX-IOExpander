@@ -51,6 +51,14 @@
 #include "arduino_avr_nano.h"
 #elif defined(ARDUINO_AVR_UNO)
 #include "arduino_avr_uno.h"
+#elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
+#include "arduino_avr-mega.h"
+#elif defined(ARDUINO_NUCLEO_F411RE)
+#include "arduino_nucleo_f411re.h"
+#elif defined(ARDUINO_NUCLEO_F412ZG)
+#include "arduino_nucleo_f412zg.h"
+#elif defined(ARDUINO_ARCH_SAMD)
+#include "arduino_arch_samd.h"
 #endif
 
 /*
@@ -64,11 +72,9 @@
 #endif
 uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
 uint8_t numPins = TOTAL_PINS;
-int digitalPinBytes = 0;  // Used for configuring and sending/receiving digital pins
-int analoguePinBytes = 0; // Used for sending analogue 16 bit values
+uint8_t* analoguePinMap;  // Map which analogue pin's value is in which byte
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
-uint8_t* analoguePinMap;  // Map which analogue pin's value is in which byte
 
 #ifdef DIAG
   diag = true;
