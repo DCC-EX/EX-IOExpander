@@ -106,8 +106,13 @@ void displayVpinMap() {
     USB_SERIAL.print(F("|"));
     USB_SERIAL.print(vpin);
     USB_SERIAL.print(F(" => "));
+    if (pinMap[pin].physicalPin < 10) {
+      USB_SERIAL.print(F("  "));
+    } else if (pinMap[pin].physicalPin < 100) {
+      USB_SERIAL.print(F(" "));
+    }
     USB_SERIAL.print(pinMap[pin].physicalPin);
-    if (pin == numPins - 1 || (pin %9 == 0 && pin > 0)) {
+    if (pin == numPins - 1 || pin % 10 == 0  && pin > 0) {
       USB_SERIAL.println(F("|"));
     }
     vpin++;

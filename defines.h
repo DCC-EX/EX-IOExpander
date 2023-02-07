@@ -43,7 +43,7 @@
 #define NUM_PWM_PINS 25
 #elif defined(ARDUINO_NUCLEO_F412ZG)
 #define TOTAL_PINS 97
-#define NUM_PWM_PINS 12
+#define NUM_PWM_PINS 40
 #elif defined(ARDUINO_ARCH_SAMD)
 #define TOTAL_PINS 27
 #define NUM_PWM_PINS 12
