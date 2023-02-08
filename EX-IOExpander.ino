@@ -52,7 +52,7 @@
 #elif defined(ARDUINO_AVR_UNO)
 #include "arduino_avr_uno.h"
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
-#include "arduino_avr-mega.h"
+#include "arduino_avr_mega.h"
 #elif defined(ARDUINO_NUCLEO_F411RE)
 #include "arduino_nucleo_f411re.h"
 #elif defined(ARDUINO_NUCLEO_F412ZG)
