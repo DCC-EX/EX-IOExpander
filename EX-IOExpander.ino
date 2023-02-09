@@ -1,5 +1,6 @@
 /*
  *  © 2022, Peter Cole. All rights reserved.
+ *  © 2023, Peter Cole. All rights reserved.
  *  
  *  This file is part of EX-IOExpander.
  *
@@ -25,67 +26,40 @@
 * Analogue I/O pins are available as digital inputs or outputs or analogue inputs (depending on architecture).
 */
 
-#include <Arduino.h>
-#include "SupportedDevices.h"
-#undef USB_SERIAL           // Teensy has this defined by default (in case we ever support Teensy)
-#define USB_SERIAL Serial   // Standard serial port most of the time!
-#if defined(ARDUINO_ARCH_AVR)
-#include <avr/wdt.h>
-#endif
-#if defined(ARDUINO_ARCH_SAMD)
-#undef USB_SERIAL
-#define USB_SERIAL SerialUSB  // Most SAMD21 clones use native USB on the SAMD21G18 variants
-#endif
-#ifdef HAS_EEPROM
-#include <EEPROM.h>
-#endif
-
-#ifdef CPU_TYPE_ERROR
-#error Unsupported microcontroller architecture detected, you need to use a type listed in defines.h
-#endif
-
-/*
-If we haven't got a custom config.h, use the example.
-*/
-#if __has_include ("myConfig.h")
-  #include "myConfig.h"
-#else
-  #warning myConfig.h not found. Using defaults from myConfig.example.h
-  #include "myConfig.example.h"
-#endif
-
-/*
-* Struct to define the digital pin parameters and keep state.
-*/
-typedef struct {
-  bool direction;       // 0 = output, 1 = input
-  bool pullup;          // 0 = no pullup, 1 = pullup (input only)
-  bool enable;          // 0 = disabled (default), set to 1 = enabled
-} digitalConfig;
-
-/*
-* Struct to define the analogue pin assignment and keep state
-*/
-typedef struct {
-  bool enable;          // Flag if it's enabled (1) or not (0)
-} analogueConfig;
-
-/*
-* Create digitalConfig array using struct.
-* Size of the array needs to be able to include analogue pins as well.
-*/
-digitalConfig digitalPins[NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS];
-
-/*
-* Create array for analogue pin assignments.
-*/
-analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
-
 /*
 * Include required files and libraries.
 */
+#include <Arduino.h>
+#include "globals.h"
 #include "version.h"
 #include <Wire.h>
+#include "pin_io_functions.h"
+#include "display_functions.h"
+#include "i2c_functions.h"
+#include "serial_functions.h"
+#include "test_functions.h"
+#include "device_functions.h"
+
+#ifdef CPU_TYPE_ERROR
+#error Unsupported microcontroller architecture detected, you need to use a type listed in SupportedDevices.h
+#endif
+
+/*
+* Include our CPU specific file
+*/
+#if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
+#include "arduino_avr_nano.h"
+#elif defined(ARDUINO_AVR_UNO)
+#include "arduino_avr_uno.h"
+#elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
+#include "arduino_avr_mega.h"
+#elif defined(ARDUINO_NUCLEO_F411RE)
+#include "arduino_nucleo_f411re.h"
+#elif defined(ARDUINO_NUCLEO_F412ZG)
+#include "arduino_nucleo_f412zg.h"
+#elif defined(ARDUINO_ARCH_SAMD)
+#include "arduino_arch_samd.h"
+#endif
 
 /*
 * Global variables here
@@ -97,36 +71,16 @@ analogueConfig analoguePins[NUMBER_OF_ANALOGUE_PINS];
 #define I2C_ADDRESS 0x65
 #endif
 uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
-uint8_t numDigitalPins = NUMBER_OF_DIGITAL_PINS;    // Init with default, will be overridden by config
-uint8_t numAnaloguePins = NUMBER_OF_ANALOGUE_PINS;  // Init with default, will be overridden by config
-int digitalPinBytes;  // Used for configuring and sending/receiving digital pins
-int analoguePinBytes; // Used for enabling/disabling analogue pins
-bool setupComplete = false;   // Flag when initial configuration/setup has been received
-uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
-byte analogueOutBuffer[2];  // Array to send requested LSB/MSB of the analogue value to the CommandStation
-byte digitalOutBuffer[1];   // Array to send digital value to CommandStation
-bool newSerialData = false;   // Flag for new serial data being received
-const byte numSerialChars = 10;   // Max number of chars for serial input
-char serialInputChars[numSerialChars];  // Char array for serial input
-char * version;   // Pointer for getting version
-uint8_t versionBuffer[3];   // Array to hold version info to send to device driver
-unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
-bool diag = false;    // Enable/disable diag outputs
-unsigned long displayDelay = DIAG_CONFIG_DELAY * 1000;    // Delay in ms between diag display updates
-bool analogueTesting = false;   // Flag that analogue input testing is enabled/disabled
-bool inputTesting = false;    // Flag that digital input testing without pullups is enabled/disabled
-bool outputTesting = false;   // Flag that digital output testing is enabled/disabled
-bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
+uint8_t numPins = TOTAL_PINS;
+uint8_t* analoguePinMap;  // Map which analogue pin's value is in which byte
 unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
-byte digitalPinStates[(NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8];
-byte analoguePinStates[NUMBER_OF_ANALOGUE_PINS * 2];
 
-// Ensure test modes defined in myConfig.h have values
-#define ANALOGUE_TEST 1
-#define INPUT_TEST 2
-#define OUTPUT_TEST 3
-#define PULLUP_TEST 4
+#ifdef DIAG
+  diag = true;
+#else
+  bool diag = false;
+#endif
 
 /*
 * Main setup function here.
@@ -149,9 +103,7 @@ void setup() {
   USB_SERIAL.print(F("Available at I2C address 0x"));
   USB_SERIAL.println(i2cAddress, HEX);
   setVersion();
-#ifdef DIAG
-  diag = true;
-#endif
+  setupPinDetails();
   Wire.begin(i2cAddress);
 // If desired and pins defined, disable I2C pullups
 #if defined(DISABLE_I2C_PULLUPS) && defined(I2C_SDA) && defined(I2C_SCL)
@@ -176,6 +128,14 @@ void setup() {
 #elif (TEST_MODE == PULLUP_TEST)
   testPullup(true);
 #endif
+  uint8_t analoguePin = 0;
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    if (bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
+      exioPins[pin].analogueLSBByte = analoguePin * 2;
+      analoguePinMap[analoguePin] = pin;
+      analoguePin++;
+    }            
+  }
 }
 
 /*
@@ -183,43 +143,56 @@ void setup() {
 */
 void loop() {
   if (setupComplete) {
-    for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
-      uint8_t pinByte = dPin / 8;
-      if (digitalPinMap[dPin]) {
-        if (digitalPins[dPin].direction == 1 && digitalPins[dPin].enable == 1) {
-          if (digitalPins[dPin].pullup == 1) {
-            pinMode(digitalPinMap[dPin], INPUT_PULLUP);
-          } else {
-            pinMode(digitalPinMap[dPin], INPUT);
+    for (uint8_t pin = 0; pin < numPins; pin++) {
+      uint8_t pinByte = pin / 8;
+      uint8_t pinBit = pin - pinByte * 8;
+      if (exioPins[pin].enable && exioPins[pin].direction) {
+        switch(exioPins[pin].mode) {
+          case MODE_DIGITAL: {
+            bool pullup = exioPins[pin].pullup;
+            if (pullup) {
+              pinMode(pinMap[pin].physicalPin, INPUT_PULLUP);
+            } else {
+              pinMode(pinMap[pin].physicalPin, INPUT);
+            }
+            bool currentState = digitalRead(pinMap[pin].physicalPin);
+            if (pullup) currentState = !currentState;
+            if (currentState) {
+              bitSet(digitalPinStates[pinByte], pinBit);
+            } else {
+              bitClear(digitalPinStates[pinByte], pinBit);
+            }
+            break;
           }
-          bool currentState = digitalRead(digitalPinMap[dPin]);
-          if (digitalPins[dPin].pullup) currentState = !currentState;
-          uint8_t pinBit = dPin - pinByte * 8;
-          if (currentState) {
-            bitSet(digitalPinStates[pinByte], pinBit);
-          } else {
-            bitClear(digitalPinStates[pinByte], pinBit);
+          case MODE_ANALOGUE: {
+            uint8_t pinLSBByte = exioPins[pin].analogueLSBByte;
+            uint8_t pinMSBByte = pinLSBByte + 1;
+            pinMode(pinMap[pin].physicalPin, INPUT);
+            uint16_t value = analogRead(pinMap[pin].physicalPin);
+            analoguePinStates[pinLSBByte] = value & 0xFF;
+            analoguePinStates[pinMSBByte] = value >> 8;
+            break;
           }
+          default:
+            break;
         }
       }
     }
-    for (uint8_t aPin = 0; aPin < numAnaloguePins; aPin++) {
-      uint8_t pinLSBByte = aPin * 2;
-      uint8_t pinMSBByte = pinLSBByte + 1;
-      if (analoguePins[aPin].enable == 1) {
-        uint16_t value = analogRead(analoguePinMap[aPin]);
-        analoguePinStates[pinLSBByte] = value & 0xFF;
-        analoguePinStates[pinMSBByte] = value >> 8;
-      }
-    }
     if (outputTesting) {
-      if (millis() - lastOutputTest > 500) {
+      if (millis() - lastOutputTest > 1000) {
         outputTestState = !outputTestState;
         lastOutputTest = millis();
-        for (uint8_t dPin = 0; dPin < numDigitalPins; dPin++) {
-          if (digitalPinMap[dPin]) {
-            pinMode(digitalPinMap[dPin], OUTPUT);
-            digitalWrite(digitalPinMap[dPin], outputTestState);
+        for (uint8_t pin = 0; pin < numPins; pin++) {
+          uint8_t pinByte = pin / 8;
+          uint8_t pinBit = pin - pinByte * 8;
+          if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+            pinMode(pinMap[pin].physicalPin, OUTPUT);
+            digitalWrite(pinMap[pin].physicalPin, outputTestState);
+            if (outputTestState) {
+              bitSet(digitalPinStates[pinByte], pinBit);
+            } else {
+              bitClear(digitalPinStates[pinByte], pinBit);
+            }
           }
         }
       }
@@ -229,555 +202,4 @@ void loop() {
     displayPins();
   }
   processSerialInput();
-}
-
-/*
-* Function triggered when CommandStation is sending data to this device.
-*/
-void receiveEvent(int numBytes) {
-  if (numBytes == 0) {
-    return;
-  }
-  byte buffer[numBytes];
-  for (uint8_t byte = 0; byte < numBytes; byte++) {
-    buffer[byte] = Wire.read();   // Read all received bytes into our buffer array
-  }
-  switch(buffer[0]) {
-    // Initial configuration start, must be 3 bytes
-    case EXIOINIT:
-      if (numBytes == 3) {
-        initialisePins();
-        numDigitalPins = buffer[1];
-        numAnaloguePins = buffer[2];
-        if (numDigitalPins + numAnaloguePins == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) {
-          // Calculate number of bytes required to cover pins
-          digitalPinBytes = (numDigitalPins + 7) / 8;
-          analoguePinBytes = numAnaloguePins * 2;
-          USB_SERIAL.print(F("Received pin configuration (digital|analogue): "));
-          USB_SERIAL.print(numDigitalPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.println(numAnaloguePins);
-          setupComplete = true;
-        } else {
-          USB_SERIAL.print(F("ERROR: Invalid pins sent by device driver! (Digital|Analogue): "));
-          USB_SERIAL.print(numDigitalPins);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.println(numAnaloguePins);
-          setupComplete = false;
-        }
-        outboundFlag = EXIOINIT;
-      } else {
-#ifdef DIAG
-        USB_SERIAL.println(F("EXIOINIT received with incorrect data"));
-#endif
-      }
-      break;
-    // Flag to set digital pin pullups, 0 disabled, 1 enabled
-    case EXIODPUP:
-      if (numBytes == 3) {
-        uint8_t pin = buffer[1];
-        if (digitalPins[pin].enable == 1 && digitalPins[pin].direction == 0) {
-          USB_SERIAL.print(F("ERROR! pin *"));
-          USB_SERIAL.print(digitalPinMap[pin]);
-          USB_SERIAL.println(F(" already defined as output pin, cannot use as input"));
-          break;
-        }
-        if (digitalPins[pin].enable == 0) {
-          digitalPins[pin].direction = 1;   // Must be an input if we got a pullup config
-          digitalPins[pin].pullup = buffer[2];
-          digitalPins[pin].enable = 1;
-          if (digitalPins[pin].pullup == 1) {
-            pinMode(digitalPinMap[pin], INPUT_PULLUP);
-          } else {
-            pinMode(digitalPinMap[pin], INPUT);
-          }
-        }
-      } else {
-#ifdef DIAG
-      USB_SERIAL.println(F("EXIODPUP received with incorrect number of bytes"));
-#endif
-      }
-      break;
-    case EXIORDAN:
-      if (numBytes == 1) {
-        outboundFlag = EXIORDAN;
-      }
-      break;
-    case EXIOWRD:
-      if (numBytes == 3) {
-        uint8_t dPin = buffer[1];
-        bool state = buffer[2];
-        uint8_t dPinByte = dPin / 8;
-        uint8_t dPinBit = dPin - dPinByte * 8;
-        if (digitalPins[dPin].enable == 1 && digitalPins[dPin].direction == 1) {
-          USB_SERIAL.print(F("ERROR! pin "));
-          USB_SERIAL.print(digitalPinMap[dPin]);
-          USB_SERIAL.println(F(" already defined as input pin, cannot use as output"));
-          break;
-        }
-        if (digitalPins[dPin].enable == 0) {
-          digitalPins[dPin].enable = 1;
-          pinMode(digitalPinMap[dPin], OUTPUT);
-          digitalPins[dPin].direction = 0;
-        }
-        if (state) {
-          bitSet(digitalPinStates[dPinByte], dPinBit);
-        } else {
-          bitClear(digitalPinStates[dPinByte], dPinBit);
-        }
-        digitalWrite(digitalPinMap[dPin], state);
-      }
-      break;
-    case EXIORDD:
-      if (numBytes == 1) {
-        outboundFlag = EXIORDD;
-      }
-      break;
-    case EXIOVER:
-      if (numBytes == 1) {
-        outboundFlag = EXIOVER;
-      }
-      break;
-    case EXIOENAN:
-      if (numBytes == 2) {
-        uint8_t pin = buffer[1] - NUMBER_OF_DIGITAL_PINS;
-        analoguePins[pin].enable = 1;
-      }
-    default:
-      break;
-  }
-}
-
-/*
-* Function triggered when CommandStation polls for inputs on this device.
-*/
-void requestEvent() {
-  switch(outboundFlag) {
-    case EXIOINIT:
-      if (setupComplete) {
-        Wire.write(EXIORDY);
-      } else {
-        Wire.write(0);
-      }
-      break;
-    case EXIORDAN:
-      Wire.write(analoguePinStates, analoguePinBytes);
-      break;
-    case EXIORDD:
-      Wire.write(digitalPinStates, digitalPinBytes);
-      break;
-    case EXIOVER:
-      Wire.write(versionBuffer, 3);
-      break;
-    default:
-      break;
-  }
-}
-
-/*
-* Function to display pin configuration and states when DIAG enabled
-*/
-void displayPins() {
-  if (millis() - lastPinDisplay > displayDelay) {
-    lastPinDisplay = millis();
-    USB_SERIAL.println(F("Digital Pin|Enable|Direction|Pullup|State:"));
-    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-      uint8_t dPinByte = pin / 8;
-      uint8_t dPinBit = pin - dPinByte * 8;
-      USB_SERIAL.print(digitalPinMap[pin]);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.print(digitalPins[pin].enable);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.print(digitalPins[pin].direction);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.print(digitalPins[pin].pullup);
-      USB_SERIAL.print(F("|"));
-      if (pin == NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS - 1 || (pin % 15 == 0 && pin > 0)) {
-        USB_SERIAL.println(bitRead(digitalPinStates[dPinByte], dPinBit));
-      } else {
-        USB_SERIAL.print(bitRead(digitalPinStates[dPinByte], dPinBit));
-        USB_SERIAL.print(F(","));
-      }
-    }
-    USB_SERIAL.println(F("Analogue Pin|Enable|Value|LSB|MSB:"));
-    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
-      uint8_t lsbByte = pin * 2;
-      uint8_t msbByte = lsbByte + 1;
-      USB_SERIAL.print(analoguePinMap[pin]);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.print(analoguePins[pin].enable);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.print((analoguePinStates[msbByte] << 8) + analoguePinStates[lsbByte]);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.print(analoguePinStates[lsbByte]);
-      USB_SERIAL.print(F("|"));
-      if (pin == NUMBER_OF_ANALOGUE_PINS - 1) {
-        USB_SERIAL.println(analoguePinStates[msbByte]);
-      } else {
-        USB_SERIAL.print(analoguePinStates[msbByte]);
-        USB_SERIAL.print(F(","));
-      }
-    }
-  }
-}
-
-/*
-* Function to get the version from version.h char array to bytes nicely
-*/
-void setVersion() {
-  const String versionString = VERSION;
-  char versionArray[versionString.length() + 1];
-  versionString.toCharArray(versionArray, versionString.length() + 1);
-  version = strtok(versionArray, "."); // Split version on .
-  versionBuffer[0] = atoi(version);  // Major first
-  version = strtok(NULL, ".");
-  versionBuffer[1] = atoi(version);  // Minor next
-  version = strtok(NULL, ".");
-  versionBuffer[2] = atoi(version);  // Patch last
-}
-
-/*
-* Function to read and process serial input for I2C address config
-*/
-void processSerialInput() {
-  static bool serialInProgress = false;
-  static byte serialIndex = 0;
-  char startMarker = '<';
-  char endMarker = '>';
-  char serialChar;
-  while (Serial.available() > 0 && newSerialData == false) {
-    serialChar = Serial.read();
-    if (serialInProgress == true) {
-      if (serialChar != endMarker) {
-        serialInputChars[serialIndex] = serialChar;
-        serialIndex++;
-        if (serialIndex >= numSerialChars) {
-          serialIndex = numSerialChars - 1;
-        }
-      } else {
-        serialInputChars[serialIndex] = '\0';
-        serialInProgress = false;
-        serialIndex = 0;
-        newSerialData = true;
-      }
-    } else if (serialChar == startMarker) {
-      serialInProgress = true;
-    }
-  }
-  if (newSerialData == true) {
-    newSerialData = false;
-    char * strtokIndex;
-    strtokIndex = strtok(serialInputChars," ");
-    char activity = strtokIndex[0];    // activity is our first parameter
-    strtokIndex = strtok(NULL," ");       // space is null, separator
-    unsigned long parameter;
-    if (activity == 'W') {
-      parameter = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
-    } else {
-      parameter = strtol(strtokIndex, NULL, 10);
-    }
-    switch (activity) {
-      case 'A': // Enable/disable analogue input testing
-        if (analogueTesting) {
-          testAnalogue(false);
-          USB_SERIAL.println(F("Analogue testing disabled"));
-        } else {
-          testAnalogue(true);
-        }
-        break;
-      case 'D': // Enable/disable diagnostic output
-        if (diag && parameter) {
-          displayDelay = parameter * 1000;
-          USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
-          USB_SERIAL.println(displayDelay);
-          diag = true;
-        } else if (diag && !parameter) {
-          USB_SERIAL.println(F("Diagnostics disabled"));
-          diag = false;
-        } else {
-          USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
-          USB_SERIAL.println(displayDelay);
-          diag = true;
-        }
-        break;
-      case 'E': // Erase EEPROM
-        eraseI2CAddress();
-        break;
-      case 'I': // Enable/disable digital input testing
-        if (inputTesting) {
-          testInput(false);
-          USB_SERIAL.println(F("Input testing (no pullups) disabled"));
-        } else {
-          testInput(true);
-        }
-        break;
-      case 'O': // Enable/disable digital output testing
-        if (outputTesting) {
-          testOutput(false);
-          USB_SERIAL.println(F("Output testing disabled"));
-        } else {
-          testOutput(true);
-        }
-        break;
-      case 'P': // Enable/disable digital input testing with pullups
-        if (pullupTesting) {
-          testPullup(false);
-          USB_SERIAL.println(F("Pullup input testing disabled"));
-        } else {
-          testPullup(true);
-        }
-        break;
-      case 'R': // Read address from EEPROM
-        if (getI2CAddress() == 0) {
-          USB_SERIAL.println(F("I2C address not stored, using myConfig.h"));
-        } else {
-          USB_SERIAL.print(F("I2C address stored is 0x"));
-          USB_SERIAL.println(getI2CAddress(), HEX);
-        }
-        break;
-      case 'T': // Display current state of test modes
-        if (analogueTesting) {
-          USB_SERIAL.println(F("Analogue testing enabled"));
-        } else if (inputTesting) {
-          USB_SERIAL.println(F("Input testing (no pullups) enabled"));
-        } else if (outputTesting) {
-          USB_SERIAL.println(F("Output testing enabled"));
-        } else if (pullupTesting) {
-          USB_SERIAL.println(F("Pullup input testing enabled"));
-        } else {
-          USB_SERIAL.println(F("No testing in progress"));
-        }
-        break;
-      case 'W': // Write address to EEPROM
-        if (parameter > 0x07 && parameter < 0x78) {
-          writeI2CAddress(parameter);
-        } else {
-          USB_SERIAL.println(F("Invalid I2C address, must be between 0x08 and 0x77"));
-        }
-        break;
-      case 'Z': // Software reboot
-        reset();
-        break;
-      
-      default:
-        break;
-    }
-  }
-}
-
-// EEPROM functions here, only for uCs with EEPROM support
-#if defined(HAS_EEPROM)
-/*
-* Function to read I2C address from EEPROM
-* Look for "EXIO" and the version EEPROM_VERSION at 0 to 5, address at 6
-*/
-uint8_t getI2CAddress() {
-  char data[5];
-  char eepromData[5] = {'E', 'X', 'I', 'O', EEPROM_VERSION};
-  uint8_t eepromAddress;
-  bool addressSet = true;
-  for (uint8_t i = 0; i < 5; i ++) {
-    data[i] = EEPROM.read(i);
-    if (data[i] != eepromData[i]) {
-      addressSet = false;
-      break;
-    }
-  }
-  if (addressSet) {
-    eepromAddress = EEPROM.read(5);
-#ifdef DIAG
-      USB_SERIAL.print(F("I2C address defined in EEPROM: 0x"));
-      USB_SERIAL.println(eepromAddress, HEX);
-#endif
-    return eepromAddress;
-  } else {
-#ifdef DIAG
-    USB_SERIAL.println(F("I2C address not defined in EEPROM"));
-#endif
-    return 0;
-  }
-}
-
-/*
-* Function to store I2C address in EEPROM
-*/
-void writeI2CAddress(int16_t eepromAddress) {
-  char eepromData[5] = {'E', 'X', 'I', 'O', EEPROM_VERSION};
-  for (uint8_t i = 0; i < 5; i++) {
-    EEPROM.write(i, eepromData[i]);
-  }
-  USB_SERIAL.print(F("Saving address 0x"));
-  USB_SERIAL.print(eepromAddress, HEX);
-  USB_SERIAL.println(F(" to EEPROM, reboot to activate"));
-  EEPROM.write(5, eepromAddress);
-}
-
-/*
-* Function to erase EEPROM contents
-*/
-void eraseI2CAddress() {
-  for (uint8_t i = 0; i < 6; i++) {
-    EEPROM.write(i, 0);
-  }
-  USB_SERIAL.println(F("Erased EEPROM, reboot to revert to myConfig.h"));
-}
-
-#else
-// Placeholders for no EEPROM support
-uint8_t getI2CAddress() {
-  USB_SERIAL.println(F("No EEPROM support, use myConfig.h"));
-  return 0;
-}
-
-void writeI2CAddress(int16_t notRequired) {
-  USB_SERIAL.println(F("No EEPROM support, use myConfig.h"));
-}
-
-void eraseI2CAddress() {
-  USB_SERIAL.println(F("No EEPROM support, use myConfig.h"));
-}
-
-#endif
-
-void reset() {
-#if defined(ARDUINO_ARCH_AVR)
-  wdt_enable(WDTO_15MS);
-  delay(50);
-#elif defined(ARDUINO_ARCH_STM32)
-  __disable_irq();
-  NVIC_SystemReset();
-  while(true) {};
-#endif
-}
-
-/*
-* Testing functions below, just pass true/false to enable/disable the appropriate testing
-* Note enabling any of these will disable Wire() (providing the library supports it) so the
-* device will need to be rebooted once testing is completed to enable it again.
-*/
-void testAnalogue(bool enable) {
-  if (enable) {
-    USB_SERIAL.println(F("Analogue input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
-    setupComplete = true;
-    disableWire();
-    testInput(false);
-    testOutput(false);
-    testPullup(false);
-    diag = true;
-    analogueTesting = true;
-    for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
-      analoguePins[pin].enable = 1;
-    }
-  } else {
-    analogueTesting = false;
-    diag = false;
-    initialisePins();
-  }
-}
-
-void testInput(bool enable) {
-  if (enable) {
-    USB_SERIAL.println(F("Input testing (no pullups) enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
-    setupComplete = true;
-    disableWire();
-    testAnalogue(false);
-    testOutput(false);
-    testPullup(false);
-    diag = true;
-    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
-    inputTesting = true;
-    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-      if (digitalPinMap[pin]) {
-        digitalPins[pin].direction = 1;
-        digitalPins[pin].pullup = 0;
-        digitalPins[pin].enable = 1;
-      }
-    }
-  } else {
-    inputTesting = false;
-    diag = false;
-    initialisePins();
-  }
-}
-
-void testOutput(bool enable) {
-  if (enable) {
-    USB_SERIAL.println(F("Output testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
-    setupComplete = true;
-    disableWire();
-    testAnalogue(false);
-    testInput(false);
-    testPullup(false);
-    diag = true;
-    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
-    outputTesting = true;
-    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-      if (digitalPinMap[pin]) {
-        digitalPins[pin].direction = 0;
-      }
-    }
-  } else {
-    outputTesting = false;
-    diag = false;
-    initialisePins();
-  }
-}
-
-void testPullup(bool enable) {
-  if (enable) {
-    USB_SERIAL.println(F("Pullup input testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
-    setupComplete = true;
-    disableWire();
-    testAnalogue(false);
-    testOutput(false);
-    testInput(false);
-    diag = true;
-    numDigitalPins = NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS;
-    pullupTesting = true;
-    for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-      if (digitalPinMap[pin]) {
-        digitalPins[pin].direction = 1;
-        digitalPins[pin].pullup = 1;
-        digitalPins[pin].enable = 1;
-      }
-    }
-  } else {
-    pullupTesting = false;
-    diag = false;
-    initialisePins();
-  }
-}
-
-void disableWire() {
-#ifdef WIRE_HAS_END
-  Wire.end();
-#else
-  USB_SERIAL.println(F("WARNING! The Wire.h library has no end() function, ensure EX-IOExpander is disconnected from your CommandStation"));
-#endif
-}
-
-/*
-* Function to initialise all pins as input and initialise pin struct
-*/
-void initialisePins() {
-  for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS; pin++) {
-    pinMode(digitalPinMap[pin], INPUT);
-  }
-  for (uint8_t pin = 0; pin < NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS; pin++) {
-    if (digitalPinMap[pin]) {
-      digitalPins[pin].direction = 1;
-      digitalPins[pin].enable = 0;
-      digitalPins[pin].pullup = 0;
-    }
-  }
-  for (uint8_t dPinByte = 0; dPinByte < (NUMBER_OF_DIGITAL_PINS + NUMBER_OF_ANALOGUE_PINS) / 8; dPinByte++) {
-    digitalPinStates[dPinByte] = 0;
-  }
-  for (uint8_t pin = 0; pin < NUMBER_OF_ANALOGUE_PINS; pin++) {
-    pinMode(analoguePinMap[pin], INPUT);
-    analoguePins[pin].enable = 0;
-  }
-  for (uint8_t aPinByte = 0; aPinByte < NUMBER_OF_ANALOGUE_PINS * 2; aPinByte++) {
-    analoguePinStates[aPinByte] = 0;
-  }
 }
