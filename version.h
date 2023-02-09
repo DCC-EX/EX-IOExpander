@@ -7,8 +7,8 @@
 // 0.0.14 includes:
 //  - *Breaking change* to interaction with device driver
 //  - *Breaking change* to pin maps
-//  - Use EX-CommandStation v4.2.xxx or later
-//  - Add PWM support
+//  - Use EX-CommandStation v4.2.15 or later
+//  - Add experimental PWM support
 //  - Code restructure to multiple files
 // 0.0.13 includes:
 //  - Experimental support for SAMD21 Arduino Zero clones using native USB serial comms
