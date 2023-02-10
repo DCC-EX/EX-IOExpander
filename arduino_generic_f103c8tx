@@ -1,0 +1,34 @@
+/*
+ *  © 2023, Peter Cole. All rights reserved.
+ *  
+ *  This file is part of EX-IOExpander.
+ *
+ *  This is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  It is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef ARDUINO_GENERIC_F103C8TX_H
+#define ARDUINO_GENERIC_F103C8TX_H
+
+#include <Arduino.h>
+#include "globals.h"
+
+#define BOARD_TYPE F("STM32F103C8Tx")
+pinDefinition pinMap[TOTAL_PINS] = {
+  {PB11,DIOP},{PB10,DIOP},{PB1,AIDIOP},{PB0,AIDIOP},{PA7,AIDIOP},{PA6,AIDIOP},
+  {PA5,AIDIO},{PA4,AIDIO}
+};
+#define I2C_SDA A4
+#define I2C_SCL A5
+
+#endif
