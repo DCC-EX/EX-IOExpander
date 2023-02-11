@@ -1,5 +1,5 @@
 /*
- *  © 2023, Peter Cole. All rights reserved.
+ *  © 2023, Paul Antoine. All rights reserved.
  *  
  *  This file is part of EX-IOExpander.
  *

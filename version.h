@@ -2,8 +2,10 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.14"
+#define VERSION "0.0.15"
 
+// 0.0.15 includes:
+//  - Add initial STM32F103C8T6 Bluepill support (untested)
 // 0.0.14 includes:
 //  - *Breaking change* to interaction with device driver
 //  - *Breaking change* to pin maps

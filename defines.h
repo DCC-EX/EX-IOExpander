@@ -47,6 +47,9 @@
 #elif defined(ARDUINO_ARCH_SAMD)
 #define TOTAL_PINS 27
 #define NUM_PWM_PINS 12
+#elif defined(ARDUINO_GENERIC_F103C8TX)
+#define TOTAL_PINS 30
+#define NUM_PWM_PINS 20
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////

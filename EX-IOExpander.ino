@@ -59,6 +59,8 @@
 #include "arduino_nucleo_f412zg.h"
 #elif defined(ARDUINO_ARCH_SAMD)
 #include "arduino_arch_samd.h"
+#elif defined(ARDUINO_GENERIC_F103C8TX)
+#include "arduino_generic_f103c8tx"
 #endif
 
 /*
