@@ -2,8 +2,10 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.16"
+#define VERSION "0.0.17"
 
+// 0.0.17 includes:
+//  - Bug fix for WAITFOR() not waiting
 // 0.0.16 includes:
 //  - Move servo animations from device driver to EX-IOExpander software
 // 0.0.15 includes:

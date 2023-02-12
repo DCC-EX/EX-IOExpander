@@ -114,6 +114,10 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
       exioPins[pin].mode = MODE_PWM;
       exioPins[pin].direction = 0;
 
+      uint8_t pinByte = pin / 8;
+      uint8_t pinBit = pin - pinByte * 8;
+      bitSet(digitalPinStates[pinByte], pinBit);
+
       if (value > 4095) value = 4095;
       else if (value < 0) value = 0;
 

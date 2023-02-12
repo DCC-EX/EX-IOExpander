@@ -257,6 +257,9 @@ void requestEvent() {
     case EXIOWRAN:
       Wire.write(responseBuffer, 1);
       break;
+    case EXIOWRD:
+      Wire.write(responseBuffer, 1);
+      break;
     default:
       break;
   }
