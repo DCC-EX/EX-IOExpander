@@ -84,35 +84,10 @@ void receiveEvent(int numBytes) {
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
         bool pullup = buffer[2];
-        if (!bitRead(pinMap[pin].capability, DI)) {
-          USB_SERIAL.print(F("ERROR! pin "));
-          USB_SERIAL.print(pinMap[pin].physicalPin);
-          USB_SERIAL.println(F(" not capable of digital input"));
-          responseBuffer[0] = EXIOERR;
-          break;
-        }
-        if (exioPins[pin].enable && exioPins[pin].mode != MODE_DIGITAL && !exioPins[pin].direction) {
-          USB_SERIAL.print(F("ERROR! pin "));
-          USB_SERIAL.print(pinMap[pin].physicalPin);
-          USB_SERIAL.println(F(" already in use, cannot use as a digital input pin"));
-          responseBuffer[0] = EXIOERR;
-          break;
-        }
-        if (!exioPins[pin].enable || (exioPins[pin].enable && exioPins[pin].direction == 1)) {
-          exioPins[pin].direction = 1;   // Must be an input if we got a pullup config
-          exioPins[pin].mode = MODE_DIGITAL;        // Must be digital if we got a pullup config
-          exioPins[pin].pullup = pullup;
-          exioPins[pin].enable = 1;
-          if (exioPins[pin].pullup) {
-            pinMode(pinMap[pin].physicalPin, INPUT_PULLUP);
-          } else {
-            pinMode(pinMap[pin].physicalPin, INPUT);
-          }
+        bool response = enableDigitalInput(pin, pullup);
+        if (response) {
           responseBuffer[0] = EXIORDY;
         } else {
-          USB_SERIAL.print(F("ERROR! pin "));
-          USB_SERIAL.print(pinMap[pin].physicalPin);
-          USB_SERIAL.println(F(" already in use, cannot use as a digital input pin"));
           responseBuffer[0] = EXIOERR;
         }
       } else {
@@ -132,35 +107,10 @@ void receiveEvent(int numBytes) {
       if (numBytes == 3) {
         uint8_t pin = buffer[1];
         bool state = buffer[2];
-        uint8_t pinByte = pin / 8;
-        uint8_t pinBit = pin - pinByte * 8;
-        if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-          if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_DIGITAL)) {
-            USB_SERIAL.print(F("ERROR! pin "));
-            USB_SERIAL.print(pinMap[pin].physicalPin);
-            USB_SERIAL.println(F(" already in use, cannot use as a digital output pin"));
-            responseBuffer[0] = EXIOERR;
-            break;
-          }
-          if (!exioPins[pin].enable || (exioPins[pin].enable && exioPins[pin].direction == 0)) {
-            exioPins[pin].enable = 1;
-            exioPins[pin].mode = MODE_DIGITAL;
-            exioPins[pin].direction = 0;
-            pinMode(pinMap[pin].physicalPin, OUTPUT);
-            if (state) {
-              bitSet(digitalPinStates[pinByte], pinBit);
-            } else {
-              bitClear(digitalPinStates[pinByte], pinBit);
-            }
-            digitalWrite(pinMap[pin].physicalPin, state);
-            responseBuffer[0] = EXIORDY;
-          } else {
-            responseBuffer[0] = EXIOERR;
-          }
+        bool response = writeDigitalOutput(pin, state);
+        if (response) {
+          responseBuffer[0] = EXIORDY;
         } else {
-          USB_SERIAL.print(F("ERROR! Pin "));
-          USB_SERIAL.print(pinMap[pin].physicalPin);
-          USB_SERIAL.println(F(" not capable of digital output"));
           responseBuffer[0] = EXIOERR;
         }
       } else {
@@ -255,6 +205,9 @@ void requestEvent() {
       Wire.write(responseBuffer, 1);
       break;
     case EXIOWRAN:
+      Wire.write(responseBuffer, 1);
+      break;
+    case EXIOWRD:
       Wire.write(responseBuffer, 1);
       break;
     default:
