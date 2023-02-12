@@ -122,10 +122,10 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
       if (value > 4095) value = 4095;
       else if (value < 0) value = 0;
 
-      struct ServoData *s = servoData[pin];
+      struct ServoData *s = servoDataArray[pin];
       if (s == NULL) {
         // Servo pin not configured, so configure now using defaults
-        s = servoData[pin] = (struct ServoData *) calloc(sizeof(struct ServoData), 1);
+        s = servoDataArray[pin] = (struct ServoData *) calloc(sizeof(struct ServoData), 1);
         if (s == NULL) return false;  // Check for memory allocation failure
         s->activePosition = 4095;
         s->inactivePosition = 0;

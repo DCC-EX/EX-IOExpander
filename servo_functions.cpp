@@ -22,19 +22,19 @@
 #include "servo_functions.h"
 #include "pin_io_functions.h"
 
-// static const uint8_t _catchupSteps = 5;   // number of steps to wait before switching servo off
-// const unsigned int refreshInterval = 50;  // refresh every 50ms
-// unsigned long lastRefresh = 0;
+const unsigned int refreshInterval = 50;
+unsigned long lastRefresh = 0;
 
-// Profile for a bouncing signal or turnout
-// The profile below is in the range 0-100% and should be combined with the desired limits
-// of the servo set by _activePosition and _inactivePosition.  The profile is symmetrical here,
-// i.e. the bounce is the same on the down action as on the up action.  First entry isn't used.
-// const byte bounceProfile[30] = 
-  // {0,2,3,7,13,33,50,83,100,83,75,70,65,60,60,65,74,84,100,83,75,70,70,72,75,80,87,92,97,100};
+void processServos() {
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    if (servoDataArray[pin] != NULL) {
+      updatePosition(pin);
+    }
+  }
+}
 
 void updatePosition(uint8_t pin) {
-  struct ServoData *s = servoData[pin];
+  struct ServoData *s = servoDataArray[pin];
   if (s == NULL) return; // No pin configuration/state data
 
   if (s->numSteps == 0) return; // No animation in progress
@@ -49,7 +49,7 @@ void updatePosition(uint8_t pin) {
     s->stepNumber++;
     if ((s->currentProfile & ~SERVO_NOPOWEROFF) == SERVO_BOUNCE) {
       // Retrieve step positions from array in flash
-      uint8_t profileValue = &bounceProfile[s->stepNumber];
+      uint8_t profileValue = bounceProfile[s->stepNumber];
       s->currentPosition = map(profileValue, 0, 100, s->fromPosition, s->toPosition);
     } else {
       // All other profiles - calculate step by linear interpolation between from and to positions.

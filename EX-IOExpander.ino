@@ -39,9 +39,10 @@
 #include "serial_functions.h"
 #include "test_functions.h"
 #include "device_functions.h"
+#include "servo_functions.h"
 
 #ifdef CPU_TYPE_ERROR
-#error Unsupported microcontroller architecture detected, you need to use a type listed in SupportedDevices.h
+#error Unsupported microcontroller architecture detected, you need to use a supported microcontroller. Refer to the documentation.
 #endif
 
 /*
@@ -106,6 +107,7 @@ void setup() {
   USB_SERIAL.println(i2cAddress, HEX);
   setVersion();
   setupPinDetails();
+  servoDataArray = (ServoData**) calloc(numPins, sizeof(ServoData*));
   Wire.begin(i2cAddress);
 // If desired and pins defined, disable I2C pullups
 #if defined(DISABLE_I2C_PULLUPS) && defined(I2C_SDA) && defined(I2C_SCL)
@@ -147,6 +149,9 @@ void loop() {
   if (setupComplete) {
     processInputs();
     outputTestState = processOutputTest(outputTestState);
+    if (lastRefresh - millis() > refreshInterval) {
+      processServos();
+    }
     // for (uint8_t pin = 0; pin < numPins; pin++) {
     //   uint8_t pinByte = pin / 8;
     //   uint8_t pinBit = pin - pinByte * 8;
