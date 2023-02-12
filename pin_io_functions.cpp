@@ -110,14 +110,6 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
       exioPins[pin].enable = 1;
       exioPins[pin].mode = MODE_PWM;
       exioPins[pin].direction = 0;
-      USB_SERIAL.print(F("Servo: Pin|Value|Profile|Duration"));
-      USB_SERIAL.print(pin);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.print(value);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.print(profile);
-      USB_SERIAL.print(F("|"));
-      USB_SERIAL.println(duration);
 
       if (value > 4095) value = 4095;
       else if (value < 0) value = 0;
@@ -144,12 +136,6 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
       s->stepNumber = 0;
       s->toPosition = value;
       s->fromPosition = s->currentPosition;
-
-
-
-      // if (value >= 0 && value <= 255) {
-      //   analogWrite(pinMap[pin].physicalPin, value);
-      // }
       return true;
     }
   } else {

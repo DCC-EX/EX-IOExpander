@@ -76,7 +76,6 @@
 uint8_t i2cAddress = I2C_ADDRESS;   // Assign address to a variable for validation and serial input
 uint8_t numPins = TOTAL_PINS;
 uint8_t* analoguePinMap;  // Map which analogue pin's value is in which byte
-// unsigned long lastOutputTest = 0;   // Last time in millis we swapped output test state
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
 
 #ifdef DIAG
@@ -149,63 +148,7 @@ void loop() {
   if (setupComplete) {
     processInputs();
     outputTestState = processOutputTest(outputTestState);
-    if (lastRefresh - millis() > refreshInterval) {
-      processServos();
-    }
-    // for (uint8_t pin = 0; pin < numPins; pin++) {
-    //   uint8_t pinByte = pin / 8;
-    //   uint8_t pinBit = pin - pinByte * 8;
-    //   if (exioPins[pin].enable && exioPins[pin].direction) {
-    //     switch(exioPins[pin].mode) {
-    //       case MODE_DIGITAL: {
-    //         bool pullup = exioPins[pin].pullup;
-    //         if (pullup) {
-    //           pinMode(pinMap[pin].physicalPin, INPUT_PULLUP);
-    //         } else {
-    //           pinMode(pinMap[pin].physicalPin, INPUT);
-    //         }
-    //         bool currentState = digitalRead(pinMap[pin].physicalPin);
-    //         if (pullup) currentState = !currentState;
-    //         if (currentState) {
-    //           bitSet(digitalPinStates[pinByte], pinBit);
-    //         } else {
-    //           bitClear(digitalPinStates[pinByte], pinBit);
-    //         }
-    //         break;
-    //       }
-    //       case MODE_ANALOGUE: {
-    //         uint8_t pinLSBByte = exioPins[pin].analogueLSBByte;
-    //         uint8_t pinMSBByte = pinLSBByte + 1;
-    //         pinMode(pinMap[pin].physicalPin, INPUT);
-    //         uint16_t value = analogRead(pinMap[pin].physicalPin);
-    //         analoguePinStates[pinLSBByte] = value & 0xFF;
-    //         analoguePinStates[pinMSBByte] = value >> 8;
-    //         break;
-    //       }
-    //       default:
-    //         break;
-    //     }
-    //   }
-    // }
-    // if (outputTesting) {
-    //   if (millis() - lastOutputTest > 1000) {
-    //     outputTestState = !outputTestState;
-    //     lastOutputTest = millis();
-    //     for (uint8_t pin = 0; pin < numPins; pin++) {
-    //       uint8_t pinByte = pin / 8;
-    //       uint8_t pinBit = pin - pinByte * 8;
-    //       if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-    //         pinMode(pinMap[pin].physicalPin, OUTPUT);
-    //         digitalWrite(pinMap[pin].physicalPin, outputTestState);
-    //         if (outputTestState) {
-    //           bitSet(digitalPinStates[pinByte], pinBit);
-    //         } else {
-    //           bitClear(digitalPinStates[pinByte], pinBit);
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
+    processServos();
   }
   if (diag) {
     displayPins();

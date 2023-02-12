@@ -24,11 +24,15 @@
 
 const unsigned int refreshInterval = 50;
 unsigned long lastRefresh = 0;
+ServoData** servoDataArray;
 
 void processServos() {
-  for (uint8_t pin = 0; pin < numPins; pin++) {
-    if (servoDataArray[pin] != NULL) {
-      updatePosition(pin);
+  if (millis() - lastRefresh > refreshInterval) {
+    lastRefresh = millis();
+    for (uint8_t pin = 0; pin < numPins; pin++) {
+      if (servoDataArray[pin] != NULL) {
+        updatePosition(pin);
+      }
     }
   }
 }

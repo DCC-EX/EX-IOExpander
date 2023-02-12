@@ -213,11 +213,6 @@ void receiveEvent(int numBytes) {
         }
         responseBuffer[0] = EXIOERR;
       }
-      // if (numBytes == 4) {
-      //   uint8_t pin = buffer[1];
-      //   uint16_t value = (buffer[3] << 8) + buffer[2];
-      //   writeAnalogue(pin, value);
-      // }
       break;
     default:
       break;
