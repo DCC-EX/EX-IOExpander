@@ -40,15 +40,22 @@ void processServos() {
 void updatePosition(uint8_t pin) {
   struct ServoData *s = servoDataArray[pin];
   if (s == NULL) return; // No pin configuration/state data
-
-  if (s->numSteps == 0) return; // No animation in progress
+  
+  uint8_t pinByte = pin / 8;
+  uint8_t pinBit = pin - pinByte * 8;
+  if (s->numSteps == 0) {
+    bitClear(digitalPinStates[pinByte], pinBit);
+    return; // No animation in progress
+  }
 
   if (s->stepNumber == 0 && s->fromPosition == s->toPosition) {
     // Go straight to end of sequence, output final position.
+    bitSet(digitalPinStates[pinByte], pinBit);
     s->stepNumber = s->numSteps-1;
   }
 
   if (s->stepNumber < s->numSteps) {
+    bitSet(digitalPinStates[pinByte], pinBit);
     // Animation in progress, reposition servo
     s->stepNumber++;
     if ((s->currentProfile & ~SERVO_NOPOWEROFF) == SERVO_BOUNCE) {
@@ -62,10 +69,12 @@ void updatePosition(uint8_t pin) {
     // Send servo command
     writePWM(pin, s->currentPosition);
   } else if (s->stepNumber < s->numSteps + _catchupSteps) {
+    bitSet(digitalPinStates[pinByte], pinBit);
     // We've finished animation, wait a little to allow servo to catch up
     s->stepNumber++;
   } else if (s->stepNumber == s->numSteps + _catchupSteps 
             && s->currentPosition != 0) {
+    bitClear(digitalPinStates[pinByte], pinBit);
     s->numSteps = 0;  // Done now.
   }
 }

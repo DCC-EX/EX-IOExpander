@@ -53,7 +53,7 @@ void setupPinDetails() {
 * Function to initialise all pins as input and initialise pin struct
 */
 void initialisePins() {
-  for (uint8_t pin = 0; pin < TOTAL_PINS; pin++) {
+  for (uint8_t pin = 0; pin < numPins; pin++) {
     if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
       pinMode(pinMap[pin].physicalPin, INPUT);
       exioPins[pin].direction = 1;
@@ -69,6 +69,9 @@ void initialisePins() {
   }
   for (uint8_t aPinByte = 0; aPinByte < analoguePinBytes; aPinByte++) {
     analoguePinStates[aPinByte] = 0;
+  }
+  for (uint8_t pin = 0; pin < numPins; pin++) {
+    servoDataArray[pin] = NULL;
   }
 }
 
