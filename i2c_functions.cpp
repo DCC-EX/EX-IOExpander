@@ -195,10 +195,23 @@ void receiveEvent(int numBytes) {
       }
       break;
     case EXIOWRAN:
-      if (numBytes == 4) {
+      outboundFlag = EXIOWRAN;
+      if (numBytes == 7) {
         uint8_t pin = buffer[1];
         uint16_t value = (buffer[3] << 8) + buffer[2];
-        writeAnalogue(pin, value);
+        uint8_t profile = buffer[4];
+        uint16_t duration = (buffer[6] << 8) + buffer[5];
+        bool response = writeAnalogue(pin, value, profile, duration);
+        if (response) {
+          responseBuffer[0] = EXIORDY;
+        } else {
+          responseBuffer[0] = EXIOERR;
+        }
+      } else {
+        if(diag) {
+          USB_SERIAL.println(F("EXIOWRD received with incorrect number of bytes"));
+        }
+        responseBuffer[0] = EXIOERR;
       }
       break;
     default:
@@ -239,6 +252,9 @@ void requestEvent() {
       Wire.write(responseBuffer, 1);
       break;
     case EXIOENAN:
+      Wire.write(responseBuffer, 1);
+      break;
+    case EXIOWRAN:
       Wire.write(responseBuffer, 1);
       break;
     default:

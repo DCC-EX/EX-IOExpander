@@ -43,5 +43,6 @@ extern bool analogueTesting;
 extern bool inputTesting;
 extern bool outputTesting;
 extern bool pullupTesting;
+extern ServoData** servoDataArray;
 
 #endif

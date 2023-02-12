@@ -17,18 +17,19 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PIN_IO_FUNCTIONS_H
-#define PIN_IO_FUNCTIONS_H
+#ifndef SERVO_FUNCTIONS_H
+#define SERVO_FUNCTIONS_H
 
 #include <Arduino.h>
 #include "globals.h"
 
-void setupPinDetails();
-void initialisePins();
-bool enableAnalogue(uint8_t pin);
-bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t duration);
-void writePWM(uint8_t pin, uint16_t value);
-void processInputs();
-bool processOutputTest(bool testState);
+static const uint8_t _catchupSteps = 5;
+extern const unsigned int refreshInterval;
+extern unsigned long lastRefresh;
+const uint8_t bounceProfile[30] = 
+  {0,2,3,7,13,33,50,83,100,83,75,70,65,60,60,65,74,84,100,83,75,70,70,72,75,80,87,92,97,100};
+
+void processServos();
+void updatePosition(uint8_t pin);
 
 #endif
