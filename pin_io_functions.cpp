@@ -76,6 +76,77 @@ void initialisePins() {
 }
 
 /*
+* Function to enable pins as digital input pins to start reading
+*/
+bool enableDigitalInput(uint8_t pin, bool pullup) {
+  if (!bitRead(pinMap[pin].capability, DI)) {
+    USB_SERIAL.print(F("ERROR! pin "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.println(F(" not capable of digital input"));
+    return false;
+  }
+  if (exioPins[pin].enable && exioPins[pin].mode != MODE_DIGITAL && !exioPins[pin].direction) {
+    USB_SERIAL.print(F("ERROR! pin "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.println(F(" already in use, cannot use as a digital input pin"));
+    return false;
+  }
+  if (!exioPins[pin].enable || (exioPins[pin].enable && exioPins[pin].direction == 1)) {
+    exioPins[pin].direction = 1;   // Must be an input if we got a pullup config
+    exioPins[pin].mode = MODE_DIGITAL;        // Must be digital if we got a pullup config
+    exioPins[pin].pullup = pullup;
+    exioPins[pin].enable = 1;
+    if (exioPins[pin].pullup) {
+      pinMode(pinMap[pin].physicalPin, INPUT_PULLUP);
+    } else {
+      pinMode(pinMap[pin].physicalPin, INPUT);
+    }
+    return true;
+  } else {
+    USB_SERIAL.print(F("ERROR! pin "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.println(F(" already in use, cannot use as a digital input pin"));
+    return false;
+  }
+}
+
+/* 
+* Function to write to a digital output pint
+*/
+bool writeDigitalOutput(uint8_t pin, bool state) {
+  uint8_t pinByte = pin / 8;
+  uint8_t pinBit = pin - pinByte * 8;
+  if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+    if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_DIGITAL)) {
+      USB_SERIAL.print(F("ERROR! pin "));
+      USB_SERIAL.print(pinMap[pin].physicalPin);
+      USB_SERIAL.println(F(" already in use, cannot use as a digital output pin"));
+      return false;
+    }
+    if (!exioPins[pin].enable || (exioPins[pin].enable && exioPins[pin].direction == 0)) {
+      exioPins[pin].enable = 1;
+      exioPins[pin].mode = MODE_DIGITAL;
+      exioPins[pin].direction = 0;
+      pinMode(pinMap[pin].physicalPin, OUTPUT);
+      if (state) {
+        bitSet(digitalPinStates[pinByte], pinBit);
+      } else {
+        bitClear(digitalPinStates[pinByte], pinBit);
+      }
+      digitalWrite(pinMap[pin].physicalPin, state);
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    USB_SERIAL.print(F("ERROR! Pin "));
+    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.println(F(" not capable of digital output"));
+    return false;
+  }
+}
+
+/*
 * Function to enable pins as analogue input pins to start reading
 */
 bool enableAnalogue(uint8_t pin) {
