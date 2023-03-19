@@ -23,6 +23,8 @@
 #include <Arduino.h>
 #include "globals.h"
 
+extern uint8_t numReceivedPins;
+
 void receiveEvent(int numBytes);
 void requestEvent();
 void disableWire();

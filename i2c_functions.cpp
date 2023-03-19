@@ -31,6 +31,7 @@ bool setupComplete = false;   // Flag when initial configuration/setup has been 
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
 byte commandBuffer[3];    // Command buffer to interact with device driver
 byte responseBuffer[0];   // Buffer to send single response back to device driver
+uint8_t numReceivedPins = 0;
 
 /*
 * Function triggered when CommandStation is sending data to this device.
@@ -48,34 +49,26 @@ void receiveEvent(int numBytes) {
     case EXIOINIT:
       if (numBytes == 4) {
         initialisePins();
-        uint8_t numReceivedPins = buffer[1];
+        numReceivedPins = buffer[1];
         firstVpin = (buffer[3] << 8) + buffer[2];
         if (numReceivedPins == numPins) {
-          USB_SERIAL.print(F("Received correct pin count: "));
-          USB_SERIAL.print(numReceivedPins);
-          USB_SERIAL.print(F(", starting at Vpin: "));
-          USB_SERIAL.println(firstVpin);
-          displayVpinMap();
+          displayEventFlag = 0;
           setupComplete = true;
         } else {
-          USB_SERIAL.print(F("ERROR: Invalid pin count sent by device driver!: "));
-          USB_SERIAL.println(numReceivedPins);
+          displayEventFlag = 1;
           setupComplete = false;
         }
         outboundFlag = EXIOINIT;
+        displayEvent = EXIOINIT;
       } else {
-        if (diag) {
-          USB_SERIAL.println(F("EXIOINIT received with incorrect data"));
-        }
+        displayEventFlag = 2;
       }
       break;
     case EXIOINITA:
       if (numBytes == 1) {
         outboundFlag = EXIOINITA;
       } else {
-        if (diag) {
-          USB_SERIAL.println(F("EXIOINITA received with incorrect data"));
-        }
+        displayEvent = EXIOINITA;
       }
       break;
     // Flag to set digital pin pullups, 0 disabled, 1 enabled
@@ -91,9 +84,7 @@ void receiveEvent(int numBytes) {
           responseBuffer[0] = EXIOERR;
         }
       } else {
-        if(diag) {
-          USB_SERIAL.println(F("EXIODPUP received with incorrect number of bytes"));
-        }
+        displayEvent = EXIODPUP;
         responseBuffer[0] = EXIOERR;
       }
       break;
@@ -114,9 +105,7 @@ void receiveEvent(int numBytes) {
           responseBuffer[0] = EXIOERR;
         }
       } else {
-        if(diag) {
-          USB_SERIAL.println(F("EXIOWRD received with incorrect number of bytes"));
-        }
+        displayEvent = EXIOWRD;
         responseBuffer[0] = EXIOERR;        
       }
       break;
@@ -158,9 +147,7 @@ void receiveEvent(int numBytes) {
           responseBuffer[0] = EXIOERR;
         }
       } else {
-        if(diag) {
-          USB_SERIAL.println(F("EXIOWRD received with incorrect number of bytes"));
-        }
+        displayEvent = EXIOWRAN;
         responseBuffer[0] = EXIOERR;
       }
       break;

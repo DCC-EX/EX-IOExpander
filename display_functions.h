@@ -23,8 +23,12 @@
 #include <Arduino.h>
 #include "globals.h"
 
+extern uint8_t displayEvent;
+extern uint8_t displayEventFlag;
+
 void setVersion();
 void displayPins();
 void displayVpinMap();
+void processDisplayOutput();
 
 #endif

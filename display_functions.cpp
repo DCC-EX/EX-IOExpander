@@ -21,12 +21,15 @@
 #include "globals.h"
 #include "version.h"
 #include "display_functions.h"
+#include "i2c_functions.h"
 
 char * version;   // Pointer for getting version
 uint8_t versionBuffer[3];   // Array to hold version info to send to device driver
 unsigned long lastPinDisplay = 0;   // Last time in millis we displayed DIAG input states
 unsigned long displayDelay = DIAG_CONFIG_DELAY * 1000;    // Delay in ms between diag display updates
 uint16_t firstVpin = 0;
+uint8_t displayEvent = 0x00;
+uint8_t displayEventFlag = 0;
 
 /*
 * Function to get the version from version.h char array to bytes nicely
@@ -116,5 +119,58 @@ void displayVpinMap() {
       USB_SERIAL.println(F("|"));
     }
     vpin++;
+  }
+}
+
+void processDisplayOutput() {
+  switch (displayEvent) {
+    case EXIOINIT:
+      if (displayEventFlag == 0) {
+        USB_SERIAL.print(F("Received correct pin count: "));
+        USB_SERIAL.print(numReceivedPins);
+        USB_SERIAL.print(F(", starting at Vpin: "));
+        USB_SERIAL.println(firstVpin);
+        displayVpinMap();
+      } else if (displayEventFlag == 1) {
+        USB_SERIAL.print(F("ERROR: Invalid pin count sent by device driver!: "));
+        USB_SERIAL.println(numReceivedPins);
+      } else if (displayEventFlag == 2) {
+        if (diag) {
+          USB_SERIAL.println(F("EXIOINIT received with incorrect data"));
+        }
+      }
+      displayEvent = 0x00;
+      displayEventFlag = 0;
+      break;
+    case EXIOINITA:
+      if (diag) {
+        USB_SERIAL.println(F("EXIOINITA received with incorrect data"));
+      }
+      displayEvent = 0x00;
+      displayEventFlag = 0;
+      break;
+    case EXIODPUP:
+      if(diag) {
+        USB_SERIAL.println(F("EXIODPUP received with incorrect number of bytes"));
+      }
+      displayEvent = 0x00;
+      displayEventFlag = 0;
+      break;
+    case EXIOWRD:
+      if(diag) {
+        USB_SERIAL.println(F("EXIOWRD received with incorrect number of bytes"));
+      }
+      displayEvent = 0x00;
+      displayEventFlag = 0;
+      break;
+    case EXIOWRAN:
+      if(diag) {
+        USB_SERIAL.println(F("EXIOWRD received with incorrect number of bytes"));
+      }
+      displayEvent = 0x00;
+      displayEventFlag = 0;
+      break;
+    default:
+      break;
   }
 }
