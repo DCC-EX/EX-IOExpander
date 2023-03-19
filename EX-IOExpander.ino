@@ -154,4 +154,5 @@ void loop() {
     displayPins();
   }
   processSerialInput();
+  processDisplayOutput();
 }

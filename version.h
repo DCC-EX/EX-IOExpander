@@ -2,8 +2,10 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.17"
+#define VERSION "0.0.18"
 
+// 0.0.18 includes:
+//  - Move all serial output away from I2C receiveEvent() to avoid slowing events down
 // 0.0.17 includes:
 //  - Bug fix for WAITFOR() not waiting
 // 0.0.16 includes:
