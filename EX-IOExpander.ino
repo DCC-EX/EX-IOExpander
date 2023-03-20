@@ -79,7 +79,7 @@ uint8_t* analoguePinMap;  // Map which analogue pin's value is in which byte
 bool outputTestState = LOW;   // Flag to set outputs high or low for testing
 
 #ifdef DIAG
-  diag = true;
+  bool diag = true;
 #else
   bool diag = false;
 #endif

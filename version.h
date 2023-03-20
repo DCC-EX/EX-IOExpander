@@ -2,8 +2,11 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.18"
+#define VERSION "0.0.19"
 
+// 0.0.19 includes:
+//  - Fix bug where "diag" was not declared correctly causing compiler error when diags enabled
+//  - Fix bug where the analogue inputs were not working
 // 0.0.18 includes:
 //  - Move all serial output away from I2C receiveEvent() to avoid slowing events down
 // 0.0.17 includes:

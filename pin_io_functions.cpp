@@ -47,6 +47,7 @@ void setupPinDetails() {
   digitalPinBytes = numDigitalPins / 8;
   digitalPinStates = (byte*) calloc(digitalPinBytes, 1);
   analoguePinStates = (byte*) calloc(analoguePinBytes, 1);
+  analoguePinMap = (uint8_t*) calloc(numAnaloguePins, 1);
 }
 
 /*
