@@ -2,8 +2,10 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.19"
+#define VERSION "0.0.20"
 
+// 0.0.20 includes:
+//  - Fix bug for digital inputs due to incorrect memory allocation
 // 0.0.19 includes:
 //  - Fix bug where "diag" was not declared correctly causing compiler error when diags enabled
 //  - Fix bug where the analogue inputs were not working
