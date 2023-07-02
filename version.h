@@ -7,6 +7,9 @@
 // 0.0.21 includes:
 //  - Fix bug in output testing where LEDs weren't turning on/off at the correct interval
 //  - Add pin label map for diagnostic output to show pin labels instead of raw numbers
+//  - Enable Vpin map command <V>
+//  - Change testing command to parameters <T A>, <T I>, <T O>, <T P>
+//  - Fix <D delay> command so enabling when providing delay interval actually sets the interval
 //  - Disable STM32F103C8 Bluepill
 // 0.0.20 includes:
 //  - Fix bug for digital inputs due to incorrect memory allocation

@@ -109,13 +109,22 @@ void displayVpinMap() {
   for (uint8_t pin = 0; pin < numPins; pin++) {
     USB_SERIAL.print(F("|"));
     USB_SERIAL.print(vpin);
-    USB_SERIAL.print(F(" => "));
-    if (pinMap[pin].physicalPin < 10) {
+    if (String(vpin).length() == 1) {
+      USB_SERIAL.print(F("    => "));
+    } else if (String(vpin).length() == 2) {
+      USB_SERIAL.print(F("   => "));
+    } else if (String(vpin).length() == 3) {
+      USB_SERIAL.print(F("  => "));
+    } else {
+      USB_SERIAL.print(F(" => "));
+    }
+    String pinLabel = pinNameMap[pin].pinLabel;
+    if (pinLabel.length() < 3) {
       USB_SERIAL.print(F("  "));
-    } else if (pinMap[pin].physicalPin < 100) {
+    } else if (pinLabel.length() < 4) {
       USB_SERIAL.print(F(" "));
     }
-    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.print(pinLabel);
     if (pin == numPins - 1 || (pin + 1) % 8 == 0) {
       USB_SERIAL.println(F("|"));
     }
