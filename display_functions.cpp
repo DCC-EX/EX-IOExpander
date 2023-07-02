@@ -52,12 +52,14 @@ void setVersion() {
 void displayPins() {
   if (millis() - lastPinDisplay > displayDelay) {
     lastPinDisplay = millis();
+    USB_SERIAL.println("Current pin states:");
     for (uint8_t pin = 0; pin < numPins; pin++) {
       uint8_t physicalPin = pinMap[pin].physicalPin;
+      String pinLabel = pinNameMap[pin].pinLabel;
       switch(exioPins[pin].mode) {
         case MODE_UNUSED: {
           USB_SERIAL.print(F("Pin "));
-          USB_SERIAL.print(physicalPin);
+          USB_SERIAL.print(pinLabel);
           USB_SERIAL.println(F(" not in use"));
           break;
         }
@@ -65,7 +67,7 @@ void displayPins() {
           uint8_t dPinByte = pin / 8;
           uint8_t dPinBit = pin - dPinByte * 8;
           USB_SERIAL.print(F("Digital Pin|Direction|Pullup|State:"));
-          USB_SERIAL.print(physicalPin);
+          USB_SERIAL.print(pinLabel);
           USB_SERIAL.print(F("|"));
           USB_SERIAL.print(exioPins[pin].direction);
           USB_SERIAL.print(F("|"));
@@ -78,7 +80,7 @@ void displayPins() {
           uint8_t lsbByte = exioPins[pin].analogueLSBByte;
           uint8_t msbByte = lsbByte + 1;
           USB_SERIAL.print(F("Analogue Pin|Value|LSB|MSB:"));
-          USB_SERIAL.print(physicalPin);
+          USB_SERIAL.print(pinLabel);
           USB_SERIAL.print(F("|"));
           USB_SERIAL.print((analoguePinStates[msbByte] << 8) + analoguePinStates[lsbByte]);
           USB_SERIAL.print(F("|"));
@@ -89,7 +91,7 @@ void displayPins() {
         }
         case MODE_PWM: {
           USB_SERIAL.print(F("PWM Output Pin:"));
-          USB_SERIAL.println(physicalPin);
+          USB_SERIAL.println(pinLabel);
           break;
         }
         default:

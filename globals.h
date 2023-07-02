@@ -24,6 +24,7 @@
 #include "defines.h"
 
 extern pinDefinition pinMap[TOTAL_PINS];
+extern pinName pinNameMap[TOTAL_PINS];
 extern pinConfig exioPins[TOTAL_PINS];
 extern uint8_t numPins;
 extern uint8_t numDigitalPins;

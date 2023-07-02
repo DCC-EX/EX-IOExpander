@@ -27,6 +27,7 @@ int digitalPinBytes = 0;  // Used for configuring and sending/receiving digital 
 int analoguePinBytes = 0; // Used for sending analogue 16 bit values
 byte* digitalPinStates;  // Store digital pin states to send to device driver
 byte* analoguePinStates;
+unsigned long lastOutputTest = 0;
 
 /*
 * Get the count of analogue and PWM capable pins
@@ -271,7 +272,6 @@ void processInputs() {
 
 bool processOutputTest(bool testState) {
   if (outputTesting) {
-    unsigned long lastOutputTest;
     if (millis() - lastOutputTest > 1000) {
       testState = !testState;
       lastOutputTest = millis();
