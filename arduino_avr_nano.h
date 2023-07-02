@@ -36,4 +36,10 @@ pinDefinition pinMap[TOTAL_PINS] = {
 #define I2C_SDA A4
 #define I2C_SCL A5
 
+pinName pinNameMap[TOTAL_PINS] = {
+  {2,"D2"},{3,"D3"},{4,"D4"},{5,"D5"},{6,"D6"},{7,"D7"},
+  {8,"D8"},{9,"D9"},{10,"D10"},{11,"D11"},{12,"D12"},{13,"D13"},
+  {A0,"A0"},{A1,"A1"},{A2,"A2"},{A3,"A3"},{A6,"A6"},{A7,"A7"},
+};
+
 #endif
