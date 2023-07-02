@@ -60,8 +60,8 @@
 #include "arduino_nucleo_f412zg.h"
 #elif defined(ARDUINO_ARCH_SAMD)
 #include "arduino_arch_samd.h"
-// #elif defined(ARDUINO_GENERIC_F103C8TX)
-// #include "arduino_generic_f103c8tx"
+#elif defined(ARDUINO_BLUEPILL_F103C8)
+#include "arduino_bluepill_f103c8.h"
 #endif
 
 /*
@@ -88,6 +88,9 @@ bool outputTestState = LOW;   // Flag to set outputs high or low for testing
 * Main setup function here.
 */
 void setup() {
+#if defined(ARDUINO_BLUEPILL_F103C8)
+  disableJTAG();
+#endif
   Serial.begin(115200);
   USB_SERIAL.print(F("DCC-EX EX-IOExpander v"));
   USB_SERIAL.println(VERSION);

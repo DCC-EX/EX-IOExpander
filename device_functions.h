@@ -27,5 +27,8 @@ uint8_t getI2CAddress();
 void writeI2CAddress(int16_t eepromAddress);
 void eraseI2CAddress();
 void reset();
+#if defined(ARDUINO_BLUEPILL_F103C8)
+void disableJTAG();
+#endif
 
 #endif

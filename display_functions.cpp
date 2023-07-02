@@ -55,6 +55,13 @@ void displayPins() {
     USB_SERIAL.println("Current pin states:");
     for (uint8_t pin = 0; pin < numPins; pin++) {
       String pinLabel = pinNameMap[pin].pinLabel;
+      if (pinLabel.length() == 1) {
+        pinLabel += "   ";
+      } else if (pinLabel.length() == 2) {
+        pinLabel += "  ";
+      } else if (pinLabel.length() == 3) {
+        pinLabel += " ";
+      }
       switch(exioPins[pin].mode) {
         case MODE_UNUSED: {
           USB_SERIAL.print(F("Pin "));
