@@ -42,6 +42,20 @@ pinDefinition pinMap[TOTAL_PINS] = {
 #define I2C_SDA PB9
 #define I2C_SCL PB8
 
+pinName pinNameMap[TOTAL_PINS] = {
+  {PC10,"PC10"},{PC11,"PC11"},{PC12,"PC12"},{PD2,"PD2"},{PF6,"PF6"},{PF7,"PF7"},{PA15,"PA15"},{PB7,"PB7"},                        // CN11
+  {PC13,"PC13"},{PA0,"PA0"},{PA1,"PA1"},{PA4,"PA4"},{PB0,"PB0"},{PC2,"PC2"},{PC1,"PC1"},{PC3,"PC3"},{PC0,"PC0"},                  // CN11
+  {PD4,"PD4"},{PD3,"PD3"},{PD5,"PD5"},{PG2,"PG2"},{PD6,"PD6"},{PG3,"PG3"},{PD7,"PD7"},{PE2,"PE2"},{PE3,"PE3"},{PE4,"PE4"},        // CN11
+  {PE5,"PE5"},{PF1,"PF1"},{PF2,"PF2"},{PF0,"PF0"},{PF8,"PF8"},{PD1,"PD1"},{PF9,"PF9"},{PD0,"PD0"},{PG1,"PG1"},{PG0,"PG0"},        // CN11
+  {PE1,"PE1"},{PE6,"PE6"},{PG9,"PG9"},{PG15,"PG15"},{PG12,"PG12"},{PG10,"PG10"},{PG13,"PG13"},{PG11,"PG11"},                      // CN11
+  {PC9,"PC9"},{PC8,"PC8"},{PC6,"PC6"},{PC5,"PC5"},{PA5,"PA5"},{PA6,"PA6"},{PA7,"PA7"},{PB12,"PB12"},{PB6,"PB6"},                  // CN12
+  {PB11,"PB11"},{PC7,"PC7"},{PB2,"PB2"},{PB1,"PB1"},{PB10,"PB10"},{PB15,"PB15"},{PB4,"PB4"},{PB14,"PB14"},{PB5,"PB5"},            // CN12
+  {PB13,"PB13"},{PB3,"PB3"},{PC4,"PC4"},{PA2,"PA2"},{PF5,"PF5"},{PA3,"PA3"},{PF4,"PF4"},{PE8,"PE8"},{PD13,"PD13"},                // CN12
+  {PF10,"PF10"},{PD12,"PD12"},{PE7,"PE7"},{PD11,"PD11"},{PD14,"PD14"},{PE10,"PE10"},{PD15,"PD15"},{PE12,"PE12"},{PF14,"PF14"},    // CN12
+  {PE14,"PE14"},{PE9,"PE9"},{PE15,"PE15"},{PE13,"PE13"},{PE11,"PE11"},{PF13,"PF13"},{PF3,"PF3"},{PF12,"PF12"},{PF15,"PF15"},      // CN12
+  {PG14,"PG14"},{PF11,"PF11"},{PE0,"PE0"},{PD10,"PD10"},{PG8,"PG8"},{PG5,"PG5"},{PG4,"PG4"},                                      // CN12
+};
+
 /*
 Pins not available for use:
 CN11 (digital) - PB_8|9 (I2C),PD_9|8 (serial),PH_0|1 (clock),PA_13|14,PC_14|15, PH_2 (N/C)

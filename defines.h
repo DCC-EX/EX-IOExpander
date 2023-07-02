@@ -96,6 +96,14 @@ struct pinConfig {
 };
 
 /*
+Define structure for a reverse pin map to display pin friendly names
+*/
+struct pinName {
+  uint8_t pinNumber;        // Pin number
+  String pinLabel;           // Pin name
+};
+
+/*
 Servo data struct
 */
 struct ServoData {

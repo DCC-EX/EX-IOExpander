@@ -24,11 +24,11 @@
 #include "globals.h"
 
 void processSerialInput();
-void serialCaseA();
+void setAnalogueTesting();
 void serialCaseD(unsigned long parameter);
-void serialCaseI();
-void serialCaseO();
-void serialCaseP();
+void setInputTesting();
+void setOutputTesting();
+void setPullupTesting();
 void serialCaseR();
 void serialCaseT();
 void serialCaseW(unsigned long parameter);

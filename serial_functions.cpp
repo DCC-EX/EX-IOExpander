@@ -22,6 +22,7 @@
 #include "serial_functions.h"
 #include "test_functions.h"
 #include "device_functions.h"
+#include "display_functions.h"
 
 bool newSerialData = false;   // Flag for new serial data being received
 const byte numSerialChars = 10;   // Max number of chars for serial input
@@ -64,37 +65,37 @@ void processSerialInput() {
     unsigned long parameter;
     if (activity == 'W') {
       parameter = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
+    } else if (activity == 'T') {
+      parameter = strtokIndex[0];
     } else {
       parameter = strtol(strtokIndex, NULL, 10);
     }
     switch (activity) {
-      case 'A': // Enable/disable analogue input testing
-        serialCaseA();
-        break; 
       case 'D': // Enable/disable diagnostic output
         serialCaseD(parameter);
         break;
       case 'E': // Erase EEPROM
         eraseI2CAddress();
         break;
-      case 'I': // Enable/disable digital input testing
-        serialCaseI();
-        break;
-      case 'O': // Enable/disable digital output testing
-        serialCaseO();
-        break;
-      case 'P': // Enable/disable digital input testing with pullups
-        serialCaseP();
-        break;
       case 'R': // Read address from EEPROM
         serialCaseR();
         break;
       case 'T': // Display current state of test modes
-        serialCaseT();
+        if (parameter == 'A') {
+          setAnalogueTesting();
+        } else if (parameter == 'I') {
+          setInputTesting();
+        } else if (parameter == 'O') {
+          setOutputTesting();
+        } else if (parameter == 'P') {
+          setPullupTesting();
+        } else {
+          serialCaseT();
+        }
         break;
-      /*case 'V': // Display Vpin map
+      case 'V': // Display Vpin map
         displayVpinMap();
-        break;*/
+        break;
       case 'W': // Write address to EEPROM
         serialCaseW(parameter);
         break;
@@ -107,7 +108,7 @@ void processSerialInput() {
   }
 }
 
-void serialCaseA() {
+void setAnalogueTesting() {
   if (analogueTesting) {
     testAnalogue(false);
     USB_SERIAL.println(F("Analogue testing disabled"));
@@ -126,13 +127,16 @@ void serialCaseD(unsigned long parameter) {
     USB_SERIAL.println(F("Diagnostics disabled"));
     diag = false;
   } else {
+    if (parameter) {
+      displayDelay = parameter * 1000;
+    }
     USB_SERIAL.print(F("Diagnostics enabled, delay set to "));
     USB_SERIAL.println(displayDelay);
     diag = true;
   }
 }
 
-void serialCaseI() {
+void setInputTesting() {
   if (inputTesting) {
     testInput(false);
     USB_SERIAL.println(F("Input testing (no pullups) disabled"));
@@ -141,7 +145,7 @@ void serialCaseI() {
   }
 }
 
-void serialCaseO() {
+void setOutputTesting() {
   if (outputTesting) {
     testOutput(false);
     USB_SERIAL.println(F("Output testing disabled"));
@@ -150,7 +154,7 @@ void serialCaseO() {
   }
 }
 
-void serialCaseP() {
+void setPullupTesting() {
   if (pullupTesting) {
     testPullup(false);
     USB_SERIAL.println(F("Pullup input testing disabled"));

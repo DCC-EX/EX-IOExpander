@@ -36,6 +36,14 @@ pinDefinition pinMap[TOTAL_PINS] = {
 #define I2C_SDA PB9
 #define I2C_SCL PB8
 
+pinName pinNameMap[TOTAL_PINS] = {
+  {PC10,"PC10"},{PC11,"PC11"},{PC12,"PC12"},{PD2,"PD2"},{PA15,"PA15"},{PB7,"PB7"},{PC15,"PC15"},  // CN7
+  {PA0,"PA0"},{PA1,"PA1"},{PA4,"PA4"},{PB0,"PB0"},{PC2,"PC2"},{PC1,"PC1"},{PC3,"PC3"},{PC0,"PC0"}, // CN7
+  {PC9,"PC9"},{PC8,"PC8"},{PC6,"PC6"},{PC5,"PC5"},{PA5,"PA5"},{PA12,"PA12"},{PA6,"PA6"},{PA11,"PA11"},{PA7,"PA7"},    // CN10
+  {PB12,"PB12"},{PB6,"PB6"},{PC7,"PC7"},{PA9,"PA9"},{PB2,"PB2"},{PA8,"PA8"},{PB1,"PB1"},{PB10,"PB10"},{PB15,"PB15"},   // CN10
+  {PB4,"PB4"},{PB14,"PB14"},{PB5,"PB5"},{PB13,"PB13"},{PB3,"PB3"},{PA10,"PA10"},{PC4,"PC4"},                       // CN10
+};
+
 /*
 Pins not available for use:
 CN7 (digital) - PA13|14 (debugger),PH0|1 (clock), PC13|14 (used by oscillator)
