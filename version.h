@@ -2,8 +2,11 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.20"
+#define VERSION "0.0.21"
 
+// 0.0.21 includes:
+//  - Fix bug in output testing where LEDs weren't turning on/off at the correct interval
+//  - Add pin label map for diagnostic output to show pin labels instead of raw numbers
 // 0.0.20 includes:
 //  - Fix bug for digital inputs due to incorrect memory allocation
 // 0.0.19 includes:
