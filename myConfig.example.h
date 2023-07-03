@@ -31,10 +31,10 @@
 //  Enable test mode - ensure only one test mode is active at one time.
 //  This is handy if serial input doesn't work for commands for some reason. 
 // 
-//  ANALOGUE - equivalent of <A>
-//  INPUT - equivalent of <I>
-//  OUTPUT - equivalent of <O>
-//  PULLUP - equivalent of <P>
+//  ANALOGUE - equivalent of <T A>
+//  INPUT - equivalent of <T I>
+//  OUTPUT - equivalent of <T O>
+//  PULLUP - equivalent of <T P>
 // 
 // #define TEST_MODE ANALOGUE_TEST
 // #define TEST_MODE INPUT_TEST
