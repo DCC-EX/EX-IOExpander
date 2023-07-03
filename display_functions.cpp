@@ -191,3 +191,42 @@ void processDisplayOutput() {
       break;
   }
 }
+
+/*
+* Function to display startup info
+*/
+void startupDisplay() {
+  USB_SERIAL.print(F("DCC-EX EX-IOExpander v"));
+  USB_SERIAL.println(VERSION);
+  USB_SERIAL.print(F("Detected device: "));
+  USB_SERIAL.println(BOARD_TYPE);
+  if (i2cAddress < 0x08 || i2cAddress > 0x77) {
+    USB_SERIAL.print(F("ERROR: Invalid I2C address configured: 0x"));
+    USB_SERIAL.print(i2cAddress, HEX);
+    USB_SERIAL.println(F(", using myConfig.h instead"));
+    i2cAddress = I2C_ADDRESS;
+  }
+  USB_SERIAL.print(F("Available at I2C address 0x"));
+  USB_SERIAL.println(i2cAddress, HEX);
+  #if defined(HAS_SERVO_LIB)
+  USB_SERIAL.print(F("Servo library support for up to "));
+  USB_SERIAL.print(MAX_SERVOS);
+  USB_SERIAL.println(F(" servos"));
+#endif
+#if defined(HAS_DIMMER_LIB)
+  USB_SERIAL.print(F("Dimmer library support for up to "));
+  USB_SERIAL.print(MAX_DIMMERS);
+  USB_SERIAL.println(F(" LEDs"));
+#endif
+#if !defined(HAS_SERVO_LIB)
+  USB_SERIAL.print(F("Use hardware PWM pins for up to "));
+  USB_SERIAL.print(numPWMPins);
+  USB_SERIAL.println(F(" servos/LEDs"));
+#endif
+#if defined(DISABLE_I2C_PULLUPS) && defined(I2C_SDA) && defined(I2C_SCL)
+  USB_SERIAL.print(F("Disabling I2C pullups on pins SDA|SCL: "));
+  USB_SERIAL.print(I2C_SDA);
+  USB_SERIAL.print(F("|"));
+  USB_SERIAL.println(I2C_SCL);
+#endif
+}

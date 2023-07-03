@@ -120,6 +120,7 @@ void setup() {
   digitalWrite(I2C_SDA, LOW);
   digitalWrite(I2C_SCL, LOW);
 #endif
+  startupDisplay();
 // Need to intialise every pin in INPUT mode (no pull ups) for safe start
   initialisePins();
   USB_SERIAL.println(F("Initialised all pins as input only"));

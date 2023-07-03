@@ -23,8 +23,6 @@
 #include <Arduino.h>
 #include "globals.h"
 
-#define BOARD_TYPE F("Arduino Zero or Clone")
-
 pinDefinition pinMap[TOTAL_PINS] = {
   {2,DIOP},{3,DIOP},{4,DIOP},{5,DIOP},{6,DIOP},{7,DIOP},{8,DIOP},{9,DIOP},{10,DIOP},{11,DIOP},
   {12,DIOP},{13,DIOP},{14,DIO},{15,DIO},{16,DIO},{17,DIO},{18,DIO},{19,DIO},{22,DIO},{23,DIO},

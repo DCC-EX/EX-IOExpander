@@ -23,8 +23,6 @@
 #include <Arduino.h>
 #include "globals.h"
 
-#define BOARD_TYPE F("NUCLEO-F412ZG")
-
 pinDefinition pinMap[TOTAL_PINS] = {
   {PC10,DIO},{PC11,DIO},{PC12,DIO},{PD2,DIO},{PF6,DIOP},{PF7,DIOP},{PA15,DIOP},{PB7,DIOP},{PC13,DIO},         // CN11
   {PA0,AIDIOP},{PA1,AIDIOP},{PA4,AIDIO},{PB0,AIDIOP},{PC2,AIDIO},{PC1,AIDIO},{PC3,AIDIO},{PC0,AIDIO},         // CN11
