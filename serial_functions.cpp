@@ -94,6 +94,7 @@ void processSerialInput() {
         }
         break;
       case 'V': // Display Vpin map
+        startupDisplay();
         displayVpinMap();
         break;
       case 'W': // Write address to EEPROM

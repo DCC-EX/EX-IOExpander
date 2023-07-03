@@ -30,5 +30,6 @@ void setVersion();
 void displayPins();
 void displayVpinMap();
 void processDisplayOutput();
+void startupDisplay();
 
 #endif

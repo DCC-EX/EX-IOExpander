@@ -30,7 +30,7 @@ uint8_t numPWMPins = 0;  // Number of PWM capable pins
 bool setupComplete = false;   // Flag when initial configuration/setup has been received
 uint8_t outboundFlag;   // Used to determine what data to send back to the CommandStation
 byte commandBuffer[3];    // Command buffer to interact with device driver
-byte responseBuffer[0];   // Buffer to send single response back to device driver
+byte responseBuffer[1];   // Buffer to send single response back to device driver
 uint8_t numReceivedPins = 0;
 
 /*

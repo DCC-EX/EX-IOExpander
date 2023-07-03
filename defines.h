@@ -25,31 +25,42 @@
 //
 //  Arduino Nano or Pro Mini
 #if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO)
+#if defined(ARDUINO_AVR_NANO)
+#define BOARD_TYPE F("Nano")
+#elif defined(ARDUINO_AVR_PRO)
+#define BOARD_TYPE F("Pro Mini")
+#endif
 #define TOTAL_PINS 18
 #define NUM_PWM_PINS 6
 #define HAS_EEPROM
 //  Arduino Uno
 #elif defined(ARDUINO_AVR_UNO)
+#define BOARD_TYPE F("Uno")
 #define TOTAL_PINS 16
 #define NUM_PWM_PINS 6
 #define HAS_EEPROM
 //  Arduino Mega2560
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
+#define BOARD_TYPE F("Mega")
 #define TOTAL_PINS 62
 #define NUM_PWM_PINS 12
 #define HAS_EEPROM
 #elif defined(ARDUINO_NUCLEO_F411RE)
+#define BOARD_TYPE F("Nucleo-F411RE")
 #define TOTAL_PINS 40
 #define NUM_PWM_PINS 25
 #elif defined(ARDUINO_NUCLEO_F412ZG)
+#define BOARD_TYPE F("Nucleo-F412ZG")
 #define TOTAL_PINS 97
 #define NUM_PWM_PINS 40
 #elif defined(ARDUINO_ARCH_SAMD)
+#define BOARD_TYPE F("Arduino Zero or Clone")
 #define TOTAL_PINS 27
 #define NUM_PWM_PINS 12
-#elif defined(ARDUINO_GENERIC_F103C8TX)
-#define TOTAL_PINS 30
-#define NUM_PWM_PINS 20
+#elif defined(ARDUINO_BLUEPILL_F103C8)
+#define BOARD_TYPE F("BLUEPILL-STM32F103C8")
+#define TOTAL_PINS 28
+#define NUM_PWM_PINS 19
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////
