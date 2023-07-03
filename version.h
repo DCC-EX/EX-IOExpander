@@ -2,8 +2,11 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.21"
+#define VERSION "0.0.22"
 
+// 0.0.22 includes:
+//  - Add experimental support for Bluepill STM32F103C8
+//  - Enhance <V> command to show board type, I2C address as well as Vpin map
 // 0.0.21 includes:
 //  - Fix bug in output testing where LEDs weren't turning on/off at the correct interval
 //  - Add pin label map for diagnostic output to show pin labels instead of raw numbers
