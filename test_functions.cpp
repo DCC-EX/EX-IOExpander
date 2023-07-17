@@ -23,7 +23,7 @@
 #include "i2c_functions.h"
 #include "pin_io_functions.h"
 
-bool analogueTesting = false;   // Flag that analogue input testing is enabled/disabled
+bool analogueTesting = false; // Flag that analogue input testing is enabled/disabled
 bool inputTesting = false;    // Flag that digital input testing without pullups is enabled/disabled
 bool outputTesting = false;   // Flag that digital output testing is enabled/disabled
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
@@ -128,5 +128,19 @@ void testPullup(bool enable) {
     pullupTesting = false;
     diag = false;
     initialisePins();
+  }
+}
+
+void testServo(bool enable) {
+  if (enable) {
+    USB_SERIAL.println(F("Servo/LED testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+    setupComplete = true;
+    disableWire();
+    testAnalogue(false);
+    testOutput(false);
+    testInput(false);
+    testPullup(false);
+  } else {
+    USB_SERIAL.println(F("Disable servo testing"));
   }
 }

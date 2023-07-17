@@ -63,10 +63,23 @@ void processSerialInput() {
     char activity = strtokIndex[0];    // activity is our first parameter
     strtokIndex = strtok(NULL," ");       // space is null, separator
     unsigned long parameter;
+    uint8_t vpin, profile;
+    uint16_t value;
     if (activity == 'W') {
       parameter = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
     } else if (activity == 'T') {
       parameter = strtokIndex[0];
+      if (parameter == 'S') {
+        strtokIndex = strtok(NULL," ");
+        USB_SERIAL.println(strtokIndex);
+        vpin = strtoul(strtokIndex, NULL, 10); // get Vpin, this needs to be disconnected from CS
+        strtokIndex = strtok(NULL, " ");
+        USB_SERIAL.println(strtokIndex);
+        value = strtoul(strtokIndex, NULL, 10); // get value of the angle or dimming
+        strtokIndex = strtok(NULL, " ");
+        USB_SERIAL.println(strtokIndex);
+        profile = strtoul(strtokIndex, NULL, 10);  // get the profile
+      }
     } else {
       parameter = strtol(strtokIndex, NULL, 10);
     }
@@ -89,6 +102,13 @@ void processSerialInput() {
           setOutputTesting();
         } else if (parameter == 'P') {
           setPullupTesting();
+        } else if (parameter == 'S') {
+          USB_SERIAL.print(F("Test a servo vpin|value|profile: "));
+          USB_SERIAL.print(vpin);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.print(value);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.println(profile);
         } else {
           serialCaseT();
         }
