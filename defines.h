@@ -31,7 +31,6 @@
 #define BOARD_TYPE F("Pro Mini")
 #endif
 #define TOTAL_PINS 18
-// #define NUM_PWM_PINS 6
 #define HAS_SERVO_LIB
 #define HAS_DIMMER_LIB
 #define HAS_EEPROM
@@ -39,7 +38,6 @@
 #elif defined(ARDUINO_AVR_UNO)
 #define BOARD_TYPE F("Uno")
 #define TOTAL_PINS 16
-// #define NUM_PWM_PINS 6
 #define HAS_SERVO_LIB
 #define HAS_DIMMER_LIB
 #define HAS_EEPROM
@@ -47,7 +45,6 @@
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
 #define BOARD_TYPE F("Mega")
 #define TOTAL_PINS 62
-// #define NUM_PWM_PINS 12
 #define HAS_SERVO_LIB
 #define HAS_DIMMER_LIB
 #define HAS_EEPROM

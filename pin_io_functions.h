@@ -29,7 +29,6 @@ bool enableDigitalInput(uint8_t pin, bool pullup);
 bool writeDigitalOutput(uint8_t pin, bool state);
 bool enableAnalogue(uint8_t pin);
 bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t duration);
-// void writePWM(uint8_t pin, uint16_t value);
 void processInputs();
 bool processOutputTest(bool testState);
 

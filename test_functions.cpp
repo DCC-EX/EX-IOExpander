@@ -131,16 +131,24 @@ void testPullup(bool enable) {
   }
 }
 
-void testServo(bool enable) {
-  if (enable) {
-    USB_SERIAL.println(F("Servo/LED testing enabled, I2C connection disabled, diags enabled, reboot once testing complete"));
+void testServo(uint8_t vpin, uint16_t value, uint8_t profile) {
+  if (firstVpin > 0) {
+    USB_SERIAL.println(F("EX-IOExpander has been connected and configured, please disconnect from EX-CommandStation and reboot"));
+  } else {
+    USB_SERIAL.print(F("Test move servo or dim LED - vpin|physicalPin|value|profile:"));
+    USB_SERIAL.print(vpin);
+    USB_SERIAL.print(F("|"));
+    USB_SERIAL.print(pinMap[vpin].physicalPin);
+    USB_SERIAL.print(F("|"));
+    USB_SERIAL.print(value);
+    USB_SERIAL.print(F("|"));
+    USB_SERIAL.println(profile);
     setupComplete = true;
     disableWire();
     testAnalogue(false);
     testOutput(false);
     testInput(false);
     testPullup(false);
-  } else {
-    USB_SERIAL.println(F("Disable servo testing"));
+    writeAnalogue(vpin, value, profile, 0);
   }
 }

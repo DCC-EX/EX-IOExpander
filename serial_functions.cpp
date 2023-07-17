@@ -25,7 +25,7 @@
 #include "display_functions.h"
 
 bool newSerialData = false;   // Flag for new serial data being received
-const byte numSerialChars = 10;   // Max number of chars for serial input
+const byte numSerialChars = 20;   // Max number of chars for serial input
 char serialInputChars[numSerialChars];  // Char array for serial input
 
 /*
@@ -71,13 +71,10 @@ void processSerialInput() {
       parameter = strtokIndex[0];
       if (parameter == 'S') {
         strtokIndex = strtok(NULL," ");
-        USB_SERIAL.println(strtokIndex);
         vpin = strtoul(strtokIndex, NULL, 10); // get Vpin, this needs to be disconnected from CS
         strtokIndex = strtok(NULL, " ");
-        USB_SERIAL.println(strtokIndex);
         value = strtoul(strtokIndex, NULL, 10); // get value of the angle or dimming
         strtokIndex = strtok(NULL, " ");
-        USB_SERIAL.println(strtokIndex);
         profile = strtoul(strtokIndex, NULL, 10);  // get the profile
       }
     } else {
@@ -103,12 +100,7 @@ void processSerialInput() {
         } else if (parameter == 'P') {
           setPullupTesting();
         } else if (parameter == 'S') {
-          USB_SERIAL.print(F("Test a servo vpin|value|profile: "));
-          USB_SERIAL.print(vpin);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.print(value);
-          USB_SERIAL.print(F("|"));
-          USB_SERIAL.println(profile);
+          testServo(vpin, value, profile);
         } else {
           serialCaseT();
         }

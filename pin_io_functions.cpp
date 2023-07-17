@@ -250,12 +250,6 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
   }
 }
 
-// void writePWM(uint8_t pin, uint16_t value) {
-//   if (value >= 0 && value <= 255) {
-//     analogWrite(pinMap[pin].physicalPin, value);
-//   }
-// }
-
 void processInputs() {
   for (uint8_t pin = 0; pin < numPins; pin++) {
     uint8_t pinByte = pin / 8;

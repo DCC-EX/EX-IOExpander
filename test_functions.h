@@ -27,5 +27,6 @@ void testAnalogue(bool enable);
 void testInput(bool enable);
 void testOutput(bool enable);
 void testPullup(bool enable);
+void testServo(uint8_t vpin, uint16_t value, uint8_t profile);
 
 #endif

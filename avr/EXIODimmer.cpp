@@ -1,7 +1,7 @@
 #if defined(ARDUINO_ARCH_AVR)
 
 #include <Arduino.h>
-#include "../../EXIODimmer.h"
+#include "EXIODimmer.h"
 
 /* 
   Variables
