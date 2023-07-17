@@ -27,7 +27,7 @@ int digitalPinBytes = 0;  // Used for configuring and sending/receiving digital 
 int analoguePinBytes = 0; // Used for sending analogue 16 bit values
 byte* digitalPinStates;   // Store digital pin states to send to device driver
 byte* analoguePinStates;  // Store analogue pin states to send to device driver
-unsigned long lastOutputTest = 0;
+unsigned long lastOutputTest = 0; // Delay for output testing
 
 /*
 * Get the count of analogue and PWM capable pins

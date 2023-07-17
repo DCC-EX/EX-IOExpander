@@ -2,7 +2,7 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.22"
+#define VERSION "0.0.23"
 
 // 0.0.22 includes:
 //  - Add experimental support for Bluepill STM32F103C8

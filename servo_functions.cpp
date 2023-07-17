@@ -76,7 +76,6 @@ void updatePosition(uint8_t pin) {
     }
     // Send servo command
     bitSet(digitalPinStates[pinByte], pinBit);
-    // writePWM(pin, s->currentPosition);
     writeServo(pin, s->currentPosition);
   } else if (s->stepNumber < s->numSteps + _catchupSteps) {
     bitSet(digitalPinStates[pinByte], pinBit);
