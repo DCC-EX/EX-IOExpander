@@ -96,8 +96,25 @@ void displayPins() {
           break;
         }
         case MODE_PWM: {
-          USB_SERIAL.print(F("PWM Output Pin:"));
-          USB_SERIAL.println(pinLabel);
+          uint8_t dPinByte = pin / 8;
+          uint8_t dPinBit = pin - dPinByte * 8;
+          USB_SERIAL.print(F("PWM Output Pin|Servo|State:"));
+          USB_SERIAL.print(pinLabel);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.print(exioPins[pin].servoIndex);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.println(bitRead(digitalPinStates[dPinByte], dPinBit));
+          break;
+        }
+        case MODE_PWM_LED: {
+          uint8_t dPinByte = pin / 8;
+          uint8_t dPinBit = pin - dPinByte * 8;
+          USB_SERIAL.print(F("LED Output Pin|Servo|State:"));
+          USB_SERIAL.print(pinLabel);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.print(exioPins[pin].servoIndex);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.println(bitRead(digitalPinStates[dPinByte], dPinBit));
           break;
         }
         default:

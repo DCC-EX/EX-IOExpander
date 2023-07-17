@@ -37,4 +37,45 @@ pinName pinNameMap[TOTAL_PINS] = {
   {A0,"A0"},{A1,"A1"},{A2,"A2"},{A3,"A3"},
 };
 
+// Servo support here
+Servo servo1;
+Servo servo2;
+Servo servo3;
+Servo servo4;
+Servo servo5;
+Servo servo6;
+Servo servo7;
+Servo servo8;
+Servo servo9;
+Servo servo10;
+Servo servo11;
+Servo servo12;
+
+Servo servoMap[MAX_SERVOS] = {
+  servo1, servo2, servo3, servo4, servo5, servo6, servo7, servo8, servo9, servo10, servo11, servo12,
+};
+
+// Dimmer support here
+EXIODimmer dimmer1;
+EXIODimmer dimmer2;
+EXIODimmer dimmer3;
+EXIODimmer dimmer4;
+EXIODimmer dimmer5;
+EXIODimmer dimmer6;
+EXIODimmer dimmer7;
+EXIODimmer dimmer8;
+EXIODimmer dimmer9;
+EXIODimmer dimmer10;
+EXIODimmer dimmer11;
+EXIODimmer dimmer12;
+EXIODimmer dimmer13;
+EXIODimmer dimmer14;
+EXIODimmer dimmer15;
+EXIODimmer dimmer16;
+
+EXIODimmer dimmerMap[MAX_DIMMERS] = {
+  dimmer1,dimmer2,dimmer3,dimmer4,dimmer5,dimmer6,dimmer7,dimmer8,
+  dimmer9,dimmer10,dimmer11,dimmer12,dimmer13,dimmer14,dimmer15,dimmer16,
+};
+
 #endif

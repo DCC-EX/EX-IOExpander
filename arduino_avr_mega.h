@@ -43,4 +43,134 @@ pinName pinNameMap[TOTAL_PINS] = {
   {A12,"A12"},{A13,"A13"},{A14,"A14"},{A15,"A15"},
 };
 
+// Servo support here
+Servo servo1;
+Servo servo2;
+Servo servo3;
+Servo servo4;
+Servo servo5;
+Servo servo6;
+Servo servo7;
+Servo servo8;
+Servo servo9;
+Servo servo10;
+Servo servo11;
+Servo servo12;
+Servo servo13;
+Servo servo14;
+Servo servo15;
+Servo servo16;
+Servo servo17;
+Servo servo18;
+Servo servo19;
+Servo servo20;
+Servo servo21;
+Servo servo22;
+Servo servo23;
+Servo servo24;
+Servo servo25;
+Servo servo26;
+Servo servo27;
+Servo servo28;
+Servo servo29;
+Servo servo30;
+Servo servo31;
+Servo servo32;
+Servo servo33;
+Servo servo34;
+Servo servo35;
+Servo servo36;
+Servo servo37;
+Servo servo38;
+Servo servo39;
+Servo servo40;
+Servo servo41;
+Servo servo42;
+Servo servo43;
+Servo servo44;
+Servo servo45;
+Servo servo46;
+Servo servo47;
+Servo servo48;
+
+Servo servoMap[MAX_SERVOS] = {
+  servo1,servo2,servo3,servo4,servo5,servo6,servo7,servo8,servo9,servo10,servo11,servo12,
+  servo13,servo14,servo15,servo16,servo17,servo18,servo19,servo20,servo21,servo22,servo23,servo24,
+  servo25,servo26,servo27,servo28,servo29,servo30,servo31,servo32,servo33,servo34,servo35,servo36,
+  servo37,servo38,servo39,servo40,servo41,servo42,servo43,servo44,servo45,servo46,servo47,servo48,
+};
+
+// Dimmer support here
+EXIODimmer dimmer1;
+EXIODimmer dimmer2;
+EXIODimmer dimmer3;
+EXIODimmer dimmer4;
+EXIODimmer dimmer5;
+EXIODimmer dimmer6;
+EXIODimmer dimmer7;
+EXIODimmer dimmer8;
+EXIODimmer dimmer9;
+EXIODimmer dimmer10;
+EXIODimmer dimmer11;
+EXIODimmer dimmer12;
+EXIODimmer dimmer13;
+EXIODimmer dimmer14;
+EXIODimmer dimmer15;
+EXIODimmer dimmer16;
+EXIODimmer dimmer17;
+EXIODimmer dimmer18;
+EXIODimmer dimmer19;
+EXIODimmer dimmer20;
+EXIODimmer dimmer21;
+EXIODimmer dimmer22;
+EXIODimmer dimmer23;
+EXIODimmer dimmer24;
+EXIODimmer dimmer25;
+EXIODimmer dimmer26;
+EXIODimmer dimmer27;
+EXIODimmer dimmer28;
+EXIODimmer dimmer29;
+EXIODimmer dimmer30;
+EXIODimmer dimmer31;
+EXIODimmer dimmer32;
+EXIODimmer dimmer33;
+EXIODimmer dimmer34;
+EXIODimmer dimmer35;
+EXIODimmer dimmer36;
+EXIODimmer dimmer37;
+EXIODimmer dimmer38;
+EXIODimmer dimmer39;
+EXIODimmer dimmer40;
+EXIODimmer dimmer41;
+EXIODimmer dimmer42;
+EXIODimmer dimmer43;
+EXIODimmer dimmer44;
+EXIODimmer dimmer45;
+EXIODimmer dimmer46;
+EXIODimmer dimmer47;
+EXIODimmer dimmer48;
+EXIODimmer dimmer49;
+EXIODimmer dimmer50;
+EXIODimmer dimmer51;
+EXIODimmer dimmer52;
+EXIODimmer dimmer53;
+EXIODimmer dimmer54;
+EXIODimmer dimmer55;
+EXIODimmer dimmer56;
+EXIODimmer dimmer57;
+EXIODimmer dimmer58;
+EXIODimmer dimmer59;
+EXIODimmer dimmer60;
+EXIODimmer dimmer61;
+EXIODimmer dimmer62;
+
+EXIODimmer dimmerMap[MAX_DIMMERS] = {
+  dimmer1,dimmer2,dimmer3,dimmer4,dimmer5,dimmer6,dimmer7,dimmer8,dimmer9,dimmer10,dimmer11,dimmer12,
+  dimmer13,dimmer14,dimmer15,dimmer16,dimmer17,dimmer18,dimmer19,dimmer20,dimmer21,dimmer22,dimmer23,dimmer24,
+  dimmer25,dimmer26,dimmer27,dimmer28,dimmer29,dimmer30,dimmer31,dimmer32,dimmer33,dimmer34,dimmer35,dimmer36,
+  dimmer37,dimmer38,dimmer39,dimmer40,dimmer41,dimmer42,dimmer43,dimmer44,dimmer45,dimmer46,dimmer47,dimmer48,
+  dimmer49,dimmer50,dimmer51,dimmer52,dimmer53,dimmer54,dimmer55,dimmer56,dimmer57,dimmer58,dimmer59,dimmer60,
+  dimmer61,dimmer62,
+};
+
 #endif

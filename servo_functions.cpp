@@ -21,6 +21,14 @@
 #include "globals.h"
 #include "servo_functions.h"
 #include "pin_io_functions.h"
+#if defined(HAS_SERVO_LIB)
+#include "Servo.h"
+uint8_t nextServoObject = 0;
+#endif
+#if defined(HAS_DIMMER_LIB)
+#include "EXIODimmer.h"
+uint8_t nextDimmerObject = 0;
+#endif
 
 const unsigned int refreshInterval = 50;
 unsigned long lastRefresh = 0;
@@ -58,7 +66,7 @@ void updatePosition(uint8_t pin) {
     bitSet(digitalPinStates[pinByte], pinBit);
     // Animation in progress, reposition servo
     s->stepNumber++;
-    if ((s->currentProfile & ~SERVO_NOPOWEROFF) == SERVO_BOUNCE) {
+    if ((s->currentProfile & ~USE_DIMMER) == SERVO_BOUNCE) {
       // Retrieve step positions from array in flash
       uint8_t profileValue = bounceProfile[s->stepNumber];
       s->currentPosition = map(profileValue, 0, 100, s->fromPosition, s->toPosition);
@@ -67,7 +75,9 @@ void updatePosition(uint8_t pin) {
       s->currentPosition = map(s->stepNumber, 0, s->numSteps, s->fromPosition, s->toPosition);
     }
     // Send servo command
-    writePWM(pin, s->currentPosition);
+    bitSet(digitalPinStates[pinByte], pinBit);
+    // writePWM(pin, s->currentPosition);
+    writeServo(pin, s->currentPosition);
   } else if (s->stepNumber < s->numSteps + _catchupSteps) {
     bitSet(digitalPinStates[pinByte], pinBit);
     // We've finished animation, wait a little to allow servo to catch up
@@ -77,4 +87,46 @@ void updatePosition(uint8_t pin) {
     bitClear(digitalPinStates[pinByte], pinBit);
     s->numSteps = 0;  // Done now.
   }
+}
+
+#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
+bool configureServo(uint8_t pin, bool isLED) {
+  if (exioPins[pin].servoIndex == 255) {
+    if (((!isLED && nextServoObject < MAX_SERVOS) || (isLED && nextDimmerObject < MAX_DIMMERS)) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+      if (isLED) {
+        exioPins[pin].servoIndex = nextDimmerObject;
+        nextDimmerObject++;
+      } else {
+        exioPins[pin].servoIndex = nextServoObject;
+        nextServoObject++;
+      }
+    } else {
+      return false;
+    }
+  }
+  if (isLED) {
+    if (!dimmerMap[exioPins[pin].servoIndex].attached()) {
+      dimmerMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
+    }
+  } else {
+    if (!servoMap[exioPins[pin].servoIndex].attached()) {
+      servoMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
+    }
+  }
+  return true;
+}
+#endif
+
+void writeServo(uint8_t pin, uint16_t value) {
+#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
+  if (exioPins[pin].mode == MODE_PWM) {
+    servoMap[exioPins[pin].servoIndex].writeMicroseconds(value);
+  } else if (exioPins[pin].mode == MODE_PWM_LED) {
+    dimmerMap[exioPins[pin].servoIndex].write(value);
+  }
+#else
+  if (value >= 0 && value <= 255) {
+    analogWrite(pinMap[pin].physicalPin, value);
+  }
+#endif
 }

@@ -25,8 +25,8 @@
 pinConfig exioPins[TOTAL_PINS];
 int digitalPinBytes = 0;  // Used for configuring and sending/receiving digital pins
 int analoguePinBytes = 0; // Used for sending analogue 16 bit values
-byte* digitalPinStates;  // Store digital pin states to send to device driver
-byte* analoguePinStates;
+byte* digitalPinStates;   // Store digital pin states to send to device driver
+byte* analoguePinStates;  // Store analogue pin states to send to device driver
 unsigned long lastOutputTest = 0;
 
 /*
@@ -56,6 +56,11 @@ void setupPinDetails() {
 */
 void initialisePins() {
   for (uint8_t pin = 0; pin < numPins; pin++) {
+#if defined(HAS_SERVO_LIB)
+    if (exioPins[pin].servoIndex != 255 && servoMap[exioPins[pin].servoIndex].attached()) {
+      servoMap[exioPins[pin].servoIndex].detach();
+    }
+#endif
     if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
       pinMode(pinMap[pin].physicalPin, INPUT);
       exioPins[pin].direction = 1;
@@ -65,6 +70,7 @@ void initialisePins() {
     exioPins[pin].enable = 0;
     exioPins[pin].mode = 0;
     exioPins[pin].pullup = 0;
+    exioPins[pin].servoIndex = 255;
   }
   for (uint8_t dPinByte = 0; dPinByte < digitalPinBytes; dPinByte++) {
     digitalPinStates[dPinByte] = 0;
@@ -75,6 +81,9 @@ void initialisePins() {
   for (uint8_t pin = 0; pin < numPins; pin++) {
     servoDataArray[pin] = NULL;
   }
+#if defined(HAS_SERVO_LIB)
+  nextServoObject = 0;
+#endif
 }
 
 /*
@@ -176,16 +185,31 @@ bool enableAnalogue(uint8_t pin) {
 * Function to write PWM output to a pin
 */
 bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t duration) {
+#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
+  if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+#else
   if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
-    if (exioPins[pin].enable && (exioPins[pin].direction || exioPins[pin].mode != MODE_PWM)) {
+#endif
+    if (exioPins[pin].enable && (exioPins[pin].direction ||
+        (exioPins[pin].mode != MODE_PWM && exioPins[pin].mode != MODE_PWM_LED))) {
       USB_SERIAL.print(F("ERROR! pin "));
       USB_SERIAL.print(pinMap[pin].physicalPin);
       USB_SERIAL.println(F(" already in use, cannot use as a PWM output pin"));
       return false;
     } else {
-      exioPins[pin].enable = 1;
-      exioPins[pin].mode = MODE_PWM;
-      exioPins[pin].direction = 0;
+      bool isLED = bitRead(profile, 7);
+#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
+      if (!configureServo(pin, isLED)) return false;
+#endif
+      if (!exioPins[pin].enable) {
+        exioPins[pin].enable = 1;
+        if (isLED) {
+          exioPins[pin].mode = MODE_PWM_LED;
+        } else {
+          exioPins[pin].mode = MODE_PWM;
+        }
+        exioPins[pin].direction = 0;
+      }
 
       uint8_t pinByte = pin / 8;
       uint8_t pinBit = pin - pinByte * 8;
@@ -202,12 +226,12 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
         s->activePosition = 4095;
         s->inactivePosition = 0;
         s->currentPosition = value;
-        s->profile = SERVO_INSTANT | SERVO_NOPOWEROFF;  // Use instant profile (but not this time)
+        s->profile = SERVO_INSTANT | USE_DIMMER;  // Use instant profile (but not this time)
       }
 
       // Animated profile.  Initiate the appropriate action.
       s->currentProfile = profile;
-      uint8_t profileValue = profile & ~SERVO_NOPOWEROFF;  // Mask off 'don't-power-off' bit.
+      uint8_t profileValue = profile & ~USE_DIMMER;  // Mask off 'don't-power-off' bit.
       s->numSteps = profileValue==SERVO_FAST ? 10 :   // 0.5 seconds
                     profileValue==SERVO_MEDIUM ? 20 : // 1.0 seconds
                     profileValue==SERVO_SLOW ? 40 :   // 2.0 seconds
@@ -226,11 +250,11 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
   }
 }
 
-void writePWM(uint8_t pin, uint16_t value) {
-  if (value >= 0 && value <= 255) {
-    analogWrite(pinMap[pin].physicalPin, value);
-  }
-}
+// void writePWM(uint8_t pin, uint16_t value) {
+//   if (value >= 0 && value <= 255) {
+//     analogWrite(pinMap[pin].physicalPin, value);
+//   }
+// }
 
 void processInputs() {
   for (uint8_t pin = 0; pin < numPins; pin++) {

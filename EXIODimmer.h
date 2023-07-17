@@ -17,29 +17,41 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SERVO_FUNCTIONS_H
-#define SERVO_FUNCTIONS_H
+#ifndef EXIO_DIMMER_H
+#define EXIO_DIMMER_H
 
 #include <Arduino.h>
-#include "globals.h"
 
-static const uint8_t _catchupSteps = 5;
-extern const unsigned int refreshInterval;
-extern unsigned long lastRefresh;
-const uint8_t bounceProfile[30] = 
-  {0,2,3,7,13,33,50,83,100,83,75,70,65,60,60,65,74,84,100,83,75,70,70,72,75,80,87,92,97,100};
-#if defined(HAS_SERVO_LIB)
-extern uint8_t nextServoObject;
-#endif
-#if defined(HAS_DIMMER_LIB)
-extern uint8_t nextDimmerObject;
+#if !defined(ARDUINO_ARCH_AVR)
+#error "This library only works with AVR."
 #endif
 
-void processServos();
-void updatePosition(uint8_t pin);
-void writeServo(uint8_t pin, uint16_t value);
-#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
-bool configureServo(uint8_t pin, bool isLED);
+#if defined(ARDUINO_AVR_NANO) || defined(ARDUINO_AVR_PRO) || defined(ARDUINO_AVR_UNO)
+#define MAX_DIMMERS 16
+#elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
+#define MAX_DIMMERS 62
 #endif
+#define INVALID_DIMMER 255
+
+#define MIN_ON 0
+#define MAX_ON 255
+
+typedef struct {
+  uint8_t physicalPin;
+  bool isActive;
+  uint8_t onValue;
+} dimmerDefinition;
+
+class EXIODimmer {
+  public:
+    EXIODimmer();
+    uint8_t attach(uint8_t pin);
+    bool attached();
+    void detach();
+    void write(uint8_t value);
+
+  private:
+    uint8_t dimmerIndex;
+};
 
 #endif
