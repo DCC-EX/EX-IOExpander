@@ -145,7 +145,9 @@ void testServo(uint8_t vpin, uint16_t value, uint8_t profile) {
     USB_SERIAL.print(value);
     USB_SERIAL.print(F("|"));
     USB_SERIAL.println(profile);
-    setupComplete = true;
+    if (!setupComplete) {
+      setupComplete = true;
+    }
     disableWire();
     writeAnalogue(vpin, value, profile);
   }
