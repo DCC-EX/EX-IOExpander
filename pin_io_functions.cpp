@@ -56,11 +56,11 @@ void setupPinDetails() {
 */
 void initialisePins() {
   for (uint8_t pin = 0; pin < numPins; pin++) {
-#if defined(HAS_SERVO_LIB)
-    if (exioPins[pin].servoIndex != 255 && servoMap[exioPins[pin].servoIndex].attached()) {
-      servoMap[exioPins[pin].servoIndex].detach();
+    if (useServoLib) {
+      if (exioPins[pin].servoIndex != 255 && servoMap[exioPins[pin].servoIndex].attached()) {
+        servoMap[exioPins[pin].servoIndex].detach();
+      }
     }
-#endif
     if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
       pinMode(pinMap[pin].physicalPin, INPUT);
       exioPins[pin].direction = 1;
@@ -81,9 +81,9 @@ void initialisePins() {
   for (uint8_t pin = 0; pin < numPins; pin++) {
     servoDataArray[pin] = NULL;
   }
-#if defined(HAS_SERVO_LIB)
-  nextServoObject = 0;
-#endif
+  if (useServoLib) {
+    nextServoObject = 0;
+  }
 }
 
 /*
@@ -185,11 +185,9 @@ bool enableAnalogue(uint8_t pin) {
 * Function to write PWM output to a pin
 */
 bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t duration) {
-#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
-  if (bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-#else
-  if (bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
-#endif
+  bool useSuperPin = bitRead(profile, 7); // if bit 7 is set, we're using FADE, therefore use SuperPin
+  if (((useServoLib || useSuperPin) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) ||
+      bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
     if (exioPins[pin].enable && (exioPins[pin].direction ||
         (exioPins[pin].mode != MODE_PWM && exioPins[pin].mode != MODE_PWM_LED))) {
       USB_SERIAL.print(F("ERROR! pin "));
@@ -197,13 +195,12 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
       USB_SERIAL.println(F(" already in use, cannot use as a PWM output pin"));
       return false;
     } else {
-      bool isLED = bitRead(profile, 7);
-#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
-      if (!configureServo(pin, isLED)) return false;
-#endif
+      if (useServoLib || useSuperPin) {
+        if (!configureServo(pin, useSuperPin)) return false;
+      }
       if (!exioPins[pin].enable) {
         exioPins[pin].enable = 1;
-        if (isLED) {
+        if (useSuperPin) {
           exioPins[pin].mode = MODE_PWM_LED;
         } else {
           exioPins[pin].mode = MODE_PWM;
@@ -226,12 +223,12 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
         s->activePosition = 4095;
         s->inactivePosition = 0;
         s->currentPosition = value;
-        s->profile = SERVO_INSTANT | USE_DIMMER;  // Use instant profile (but not this time)
+        s->profile = SERVO_INSTANT | USE_SUPERPIN;  // Use instant profile (but not this time)
       }
 
       // Animated profile.  Initiate the appropriate action.
       s->currentProfile = profile;
-      uint8_t profileValue = profile & ~USE_DIMMER;  // Mask off 'don't-power-off' bit.
+      uint8_t profileValue = profile & ~USE_SUPERPIN;  // Mask off 'don't-power-off' bit.
       s->numSteps = profileValue==SERVO_FAST ? 10 :   // 0.5 seconds
                     profileValue==SERVO_MEDIUM ? 20 : // 1.0 seconds
                     profileValue==SERVO_SLOW ? 40 :   // 2.0 seconds

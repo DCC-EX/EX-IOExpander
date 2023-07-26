@@ -24,6 +24,9 @@
 #if defined(HAS_SERVO_LIB)
 #include "Servo.h"
 uint8_t nextServoObject = 0;
+bool useServoLib = 1;
+#else
+bool useServoLib = 0;
 #endif
 #if defined(HAS_DIMMER_LIB)
 #include "EXIODimmer.h"
@@ -66,7 +69,7 @@ void updatePosition(uint8_t pin) {
     bitSet(digitalPinStates[pinByte], pinBit);
     // Animation in progress, reposition servo
     s->stepNumber++;
-    if ((s->currentProfile & ~USE_DIMMER) == SERVO_BOUNCE) {
+    if ((s->currentProfile & ~USE_SUPERPIN) == SERVO_BOUNCE) {
       // Retrieve step positions from array in flash
       uint8_t profileValue = bounceProfile[s->stepNumber];
       s->currentPosition = map(profileValue, 0, 100, s->fromPosition, s->toPosition);
@@ -88,7 +91,6 @@ void updatePosition(uint8_t pin) {
   }
 }
 
-#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
 bool configureServo(uint8_t pin, bool isLED) {
   if (exioPins[pin].servoIndex == 255) {
     if (((!isLED && nextServoObject < MAX_SERVOS) || (isLED && nextDimmerObject < MAX_DIMMERS)) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
@@ -114,7 +116,6 @@ bool configureServo(uint8_t pin, bool isLED) {
   }
   return true;
 }
-#endif
 
 void writeServo(uint8_t pin, uint16_t value) {
 #if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
