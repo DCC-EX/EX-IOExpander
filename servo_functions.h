@@ -37,9 +37,7 @@ extern uint8_t nextDimmerObject;
 
 void processServos();
 void updatePosition(uint8_t pin);
-void writeServo(uint8_t pin, uint16_t value);
-#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
-bool configureServo(uint8_t pin, bool isLED);
-#endif
+void writeServo(uint8_t pin, uint16_t value, bool useSuperPin);
+bool configureServo(uint8_t pin, bool useSuperPin);
 
 #endif

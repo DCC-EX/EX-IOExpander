@@ -69,6 +69,7 @@ void updatePosition(uint8_t pin) {
     bitSet(digitalPinStates[pinByte], pinBit);
     // Animation in progress, reposition servo
     s->stepNumber++;
+    bool useSuperPin = s->currentProfile & USE_SUPERPIN;
     if ((s->currentProfile & ~USE_SUPERPIN) == SERVO_BOUNCE) {
       // Retrieve step positions from array in flash
       uint8_t profileValue = bounceProfile[s->stepNumber];
@@ -79,7 +80,7 @@ void updatePosition(uint8_t pin) {
     }
     // Send servo command
     bitSet(digitalPinStates[pinByte], pinBit);
-    writeServo(pin, s->currentPosition);
+    writeServo(pin, s->currentPosition, useSuperPin);
   } else if (s->stepNumber < s->numSteps + _catchupSteps) {
     bitSet(digitalPinStates[pinByte], pinBit);
     // We've finished animation, wait a little to allow servo to catch up
@@ -91,10 +92,10 @@ void updatePosition(uint8_t pin) {
   }
 }
 
-bool configureServo(uint8_t pin, bool isLED) {
+bool configureServo(uint8_t pin, bool useSuperPin) {
   if (exioPins[pin].servoIndex == 255) {
-    if (((!isLED && nextServoObject < MAX_SERVOS) || (isLED && nextDimmerObject < MAX_DIMMERS)) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-      if (isLED) {
+    if (((!useSuperPin && nextServoObject < MAX_SERVOS) || (useSuperPin && nextDimmerObject < MAX_DIMMERS)) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+      if (useSuperPin) {
         exioPins[pin].servoIndex = nextDimmerObject;
         nextDimmerObject++;
       } else {
@@ -105,7 +106,7 @@ bool configureServo(uint8_t pin, bool isLED) {
       return false;
     }
   }
-  if (isLED) {
+  if (useSuperPin) {
     if (!dimmerMap[exioPins[pin].servoIndex].attached()) {
       dimmerMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
     }
@@ -117,16 +118,16 @@ bool configureServo(uint8_t pin, bool isLED) {
   return true;
 }
 
-void writeServo(uint8_t pin, uint16_t value) {
-#if defined(HAS_SERVO_LIB) || defined(HAS_DIMMER_LIB)
-  if (exioPins[pin].mode == MODE_PWM) {
-    servoMap[exioPins[pin].servoIndex].writeMicroseconds(value);
-  } else if (exioPins[pin].mode == MODE_PWM_LED) {
-    dimmerMap[exioPins[pin].servoIndex].write(value);
+void writeServo(uint8_t pin, uint16_t value, bool useSuperPin) {
+  if (useServoLib || useSuperPin) {
+    if (exioPins[pin].mode == MODE_PWM) {
+      servoMap[exioPins[pin].servoIndex].writeMicroseconds(value);
+    } else if (exioPins[pin].mode == MODE_PWM_LED) {
+      dimmerMap[exioPins[pin].servoIndex].write(value);
+    }
+  } else {
+    if (value >= 0 && value <= 255) {
+      analogWrite(pinMap[pin].physicalPin, value);
+    }
   }
-#else
-  if (value >= 0 && value <= 255) {
-    analogWrite(pinMap[pin].physicalPin, value);
-  }
-#endif
 }
