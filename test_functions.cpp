@@ -137,10 +137,11 @@ void testServo(uint8_t vpin, uint16_t value, uint8_t profile) {
   } else if (analogueTesting || inputTesting || outputTesting || pullupTesting) {
     USB_SERIAL.println(F("Please disable all other testing first"));
   } else {
+    String pinLabel = pinNameMap[vpin].pinLabel;
     USB_SERIAL.print(F("Test move servo or dim LED - vpin|physicalPin|value|profile:"));
     USB_SERIAL.print(vpin);
     USB_SERIAL.print(F("|"));
-    USB_SERIAL.print(pinMap[vpin].physicalPin);
+    USB_SERIAL.print(pinLabel);
     USB_SERIAL.print(F("|"));
     USB_SERIAL.print(value);
     USB_SERIAL.print(F("|"));
