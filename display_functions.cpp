@@ -235,7 +235,7 @@ void startupDisplay() {
     USB_SERIAL.println(F(" servos/LEDs"));
   }
   USB_SERIAL.print(F("SuperPin support to dim up to "));
-  USB_SERIAL.print(NUM_SUPERPINS);
+  USB_SERIAL.print(MAX_SUPERPINS);
   USB_SERIAL.println(F(" LEDs"));
 #if defined(DISABLE_I2C_PULLUPS) && defined(I2C_SDA) && defined(I2C_SCL)
   USB_SERIAL.print(F("Disabling I2C pullups on pins SDA|SCL: "));

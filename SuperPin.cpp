@@ -1,8 +1,5 @@
 /*
- *  © 2023, Chris Harlow.
- *  © 2023, Peter Cole.
- *
- *  All rights reserved.
+ *  © 2023, Peter Cole. All rights reserved.
  *  
  *  This file is part of EX-IOExpander.
  *
@@ -20,70 +17,99 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <Arduino.h>
 #include "SuperPin.h"
 
-SuperPin* SuperPin::firstPin=NULL;
+/* 
+  Variables
+*/
+static superPinDefinition superPins[MAX_SUPERPINS];
+uint8_t superPinCount = 0;
+static volatile uint8_t counter = 0;
 
-
-// create a superpin for you to set 
-// e.g. SuperPin p=new SuperPin(15);
-// then set the pattern when required with p->setPattern(....)
- 
-SuperPin::SuperPin(byte _pinId) {
-  next=firstPin;
-  firstPin=this;
-  pinId=_pinId;
-  onCount=0;
-  runningCount=255;
-  pinMode(_pinId, OUTPUT);
-  pinState=LOW;
-  digitalWrite(pinId,pinState); 
-}
-
-void SuperPin::setOn(byte _onCount) {
-  onCount=_onCount;
-  offCount = 255 - onCount;
-  runningCount=0;
-  pinState=LOW;  
-}
-
-void SuperPin::tick() {
-  if (runningCount) {
-    runningCount--;
-    return;
-  }
-  if (pinState) {
-    // pin is HIGH... switch to LOW unless locked
-    if (offCount==0) {
-      // pin is locked on
-      runningCount=onCount;
-      return; 
+/*
+  Static functions
+*/
+static inline void handle_interrupts() {
+  for (uint8_t i = 0; i < MAX_SUPERPINS; i++) {
+    if (superPins[i].isActive) {
+      if (counter < superPins[i].onValue) {
+        digitalWrite(superPins[i].physicalPin, HIGH);
+      } else {
+        digitalWrite(superPins[i].physicalPin, LOW);
+      }
     }
-    runningCount=offCount;
-    pinState=LOW;
   }
-  else {
-    // pin is LOW switch to HIGH unless locked 
-    if (onCount==0) {
-      // pin is locked off
-      runningCount=offCount;
-      return; 
+  counter++;
+}
+
+SIGNAL (TIMER2_COMPA_vect) {
+  handle_interrupts();
+}
+
+static void initISR() {
+  TCCR2A = 0x00;
+  TCCR2B = (1<<CS21);
+  TCNT2 = 0;
+  TIFR2 = (1<<OCF2A);   // Clear pending interrupts
+  TIMSK2 = (1<<OCIE2A); // Interrupt when hitting OCR2A
+  OCR2A = 1;
+}
+
+static bool isTimerActive(uint8_t channel) {
+  if (superPins[channel].isActive == true) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/*
+  Constructor and functions
+*/
+SuperPin::SuperPin() {
+  if (superPinCount < MAX_SUPERPINS) {
+    this->superPinIndex = superPinCount++;
+  } else {
+    this->superPinIndex = INVALID_SUPERPIN;
+  }
+}
+
+uint8_t SuperPin::attach(uint8_t pin) {
+  if (this->superPinIndex < MAX_SUPERPINS) {
+    if (isTimerActive(this->superPinIndex) == false) {
+      initISR();
+      superPins[this->superPinIndex].isActive = true;
+      superPins[this->superPinIndex].physicalPin = pin;
+      pinMode(superPins[this->superPinIndex].physicalPin, OUTPUT);
     }
-    runningCount=onCount;
-    pinState=HIGH;
   }
-  digitalWrite(pinId,pinState);
-  runningCount--; 
+  return this->superPinIndex;
 }
 
-void SuperPin::interrupt() {
-    for (SuperPin* p=firstPin; p; p=p->next) p->tick();
+bool SuperPin::attached() {
+  if (superPins[this->superPinIndex].isActive) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
-void SuperPin::start() {
+void SuperPin::detach() {
+  superPins[this->superPinIndex].isActive = false;
+}
 
-  // OK... have to put some HW specific code here, taken from the CS
-  // to make the timer of your choice call interrupt() at the frequency
-  // of your choice.  
-  // Timer1.attachInterrupt(interrupt,1); 
+void SuperPin::write(uint8_t value) {
+  uint8_t channel = this->superPinIndex;
+  if (channel < MAX_SUPERPINS) {
+    if (value < MIN_ON) {
+      value = MIN_ON;
+    } else if (value > MAX_ON) {
+      value = MAX_ON;
+    }
+    uint8_t oldSREG = SREG;
+    cli();
+    superPins[channel].onValue = value;
+    SREG = oldSREG;
+  }
 }

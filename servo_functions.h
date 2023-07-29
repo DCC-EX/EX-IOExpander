@@ -31,9 +31,7 @@ const uint8_t bounceProfile[30] =
 #if defined(HAS_SERVO_LIB)
 extern uint8_t nextServoObject;
 #endif
-#if defined(HAS_DIMMER_LIB)
-extern uint8_t nextDimmerObject;
-#endif
+extern uint8_t nextSuperPinObject;
 
 void processServos();
 void updatePosition(uint8_t pin);

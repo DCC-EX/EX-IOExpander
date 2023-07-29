@@ -1,8 +1,5 @@
 /*
- *  © 2023, Chris Harlow.
- *  © 2023, Peter Cole.
- *
- *  All rights reserved.
+ *  © 2023, Peter Cole. All rights reserved.
  *  
  *  This file is part of EX-IOExpander.
  *
@@ -20,29 +17,33 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SuperPin_h
-#define SuperPin_h
+#ifndef SUPERPIN_H
+#define SUPERPIN_H
 
 #include <Arduino.h>
+#include "defines.h"
 
-// The variables all need to be marked volatile because they may be accessed by loop and interrupt code.
-// The constructor and setpattern routines should really use nointerrupt() ... or there is a small risk of lost values. 
-// It would be worth creating a static setPattern(pinid, oncount, offcount)  so the caller didn't have to remember the pointers.
+#define INVALID_SUPERPIN 255
 
-class SuperPin  {
-    public:
-      static void start();
-      SuperPin(byte _pinid);
-      void setOn(byte _onCount);
-      static void interrupt();
+#define MIN_ON 0
+#define MAX_ON 255
 
-    private:
-      // static void interrupt();
-      void tick();
-      static SuperPin* firstPin;
-      SuperPin* next;
-      volatile byte onCount, offCount, runningCount;
-      volatile bool pinState;
-      volatile byte pinId;
+typedef struct {
+  uint8_t physicalPin;
+  bool isActive;
+  uint8_t onValue;
+} superPinDefinition;
+
+class SuperPin {
+  public:
+    SuperPin();
+    uint8_t attach(uint8_t pin);
+    bool attached();
+    void detach();
+    void write(uint8_t value);
+
+  private:
+    uint8_t superPinIndex;
 };
+
 #endif

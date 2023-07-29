@@ -28,10 +28,8 @@ bool useServoLib = 1;
 #else
 bool useServoLib = 0;
 #endif
-#if defined(HAS_DIMMER_LIB)
-#include "EXIODimmer.h"
-uint8_t nextDimmerObject = 0;
-#endif
+#include "SuperPin.h"
+uint8_t nextSuperPinObject = 0;
 
 const unsigned int refreshInterval = 50;
 unsigned long lastRefresh = 0;
@@ -94,10 +92,10 @@ void updatePosition(uint8_t pin) {
 
 bool configureServo(uint8_t pin, bool useSuperPin) {
   if (exioPins[pin].servoIndex == 255) {
-    if (((!useSuperPin && nextServoObject < MAX_SERVOS) || (useSuperPin && nextDimmerObject < MAX_DIMMERS)) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+    if (((!useSuperPin && nextServoObject < MAX_SERVOS) || (useSuperPin && nextSuperPinObject < MAX_SUPERPINS)) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
       if (useSuperPin) {
-        exioPins[pin].servoIndex = nextDimmerObject;
-        nextDimmerObject++;
+        exioPins[pin].servoIndex = nextSuperPinObject;
+        nextSuperPinObject++;
       } else {
         exioPins[pin].servoIndex = nextServoObject;
         nextServoObject++;
@@ -107,8 +105,8 @@ bool configureServo(uint8_t pin, bool useSuperPin) {
     }
   }
   if (useSuperPin) {
-    if (!dimmerMap[exioPins[pin].servoIndex].attached()) {
-      dimmerMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
+    if (!superPinMap[exioPins[pin].servoIndex].attached()) {
+      superPinMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
     }
   } else {
     if (!servoMap[exioPins[pin].servoIndex].attached()) {
@@ -123,7 +121,7 @@ void writeServo(uint8_t pin, uint16_t value, bool useSuperPin) {
     if (exioPins[pin].mode == MODE_PWM) {
       servoMap[exioPins[pin].servoIndex].writeMicroseconds(value);
     } else if (exioPins[pin].mode == MODE_PWM_LED) {
-      dimmerMap[exioPins[pin].servoIndex].write(value);
+      superPinMap[exioPins[pin].servoIndex].write(value);
     }
   } else {
     if (value >= 0 && value <= 255) {

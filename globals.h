@@ -26,9 +26,7 @@
 #if defined(HAS_SERVO_LIB)
 #include "Servo.h"
 #endif
-#if defined(HAS_DIMMER_LIB)
-#include "EXIODimmer.h"
-#endif
+#include "SuperPin.h"
 
 extern pinDefinition pinMap[TOTAL_PINS];
 extern pinName pinNameMap[TOTAL_PINS];
@@ -57,8 +55,6 @@ extern ServoData** servoDataArray;
 #if defined(HAS_SERVO_LIB)
 extern Servo servoMap[MAX_SERVOS];
 #endif
-#if defined(HAS_DIMMER_LIB)
-extern EXIODimmer dimmerMap[MAX_DIMMERS];
-#endif
+extern SuperPin superPinMap[MAX_SUPERPINS];
 
 #endif
