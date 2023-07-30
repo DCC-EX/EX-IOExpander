@@ -1,5 +1,5 @@
 /*
- *  © 2023, Peter Cole. All rights reserved.
+ *  © 2023, Chris Harlow and Peter Cole. All rights reserved.
  *  
  *  This file is part of EX-IOExpander.
  *
@@ -23,6 +23,23 @@
 #include <Arduino.h>
 #include "defines.h"
 
+class SuperPin  {
+    public:
+      static void setPattern(byte pinId, byte _onCount, byte _offCount);
+      static void set(byte pinId, bool high);
+      static void loop();
+      
+    private:
+      SuperPin(byte _pinid);
+      void setPattern(byte _onCount, byte _offCount);
+      void tick();
+      static SuperPin* volatile firstPin;
+      SuperPin* volatile next;
+      volatile byte pinId, onCount, offCount, runningCount;
+      volatile bool pinState;
+};
+
+/*
 #define INVALID_SUPERPIN 255
 
 #define MIN_ON 0
@@ -45,5 +62,6 @@ class SuperPin {
   private:
     uint8_t superPinIndex;
 };
+*/
 
 #endif
