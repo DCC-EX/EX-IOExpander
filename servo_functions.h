@@ -35,7 +35,8 @@ extern uint8_t nextSuperPinObject;
 
 void processServos();
 void updatePosition(uint8_t pin);
-void writeServo(uint8_t pin, uint16_t value, bool useSuperPin);
 bool configureServo(uint8_t pin, bool useSuperPin);
+void writeServo(uint8_t pin, uint16_t value, bool useSuperPin);
+void setSuperPin(uint8_t pin, uint16_t value);
 
 #endif

@@ -39,29 +39,4 @@ class SuperPin  {
       volatile bool pinState;
 };
 
-/*
-#define INVALID_SUPERPIN 255
-
-#define MIN_ON 0
-#define MAX_ON 255
-
-typedef struct {
-  uint8_t physicalPin;
-  bool isActive;
-  uint8_t onValue;
-} superPinDefinition;
-
-class SuperPin {
-  public:
-    SuperPin();
-    uint8_t attach(uint8_t pin);
-    bool attached();
-    void detach();
-    void write(uint8_t value);
-
-  private:
-    uint8_t superPinIndex;
-};
-*/
-
 #endif

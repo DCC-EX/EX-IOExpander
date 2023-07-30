@@ -30,6 +30,7 @@ bool useServoLib = 0;
 #endif
 #include "SuperPin.h"
 uint8_t nextSuperPinObject = 0;
+const uint8_t superPinMax = 255;
 
 const unsigned int refreshInterval = 50;
 unsigned long lastRefresh = 0;
@@ -104,15 +105,10 @@ bool configureServo(uint8_t pin, bool useSuperPin) {
       return false;
     }
   }
-  if (useSuperPin) {
-    if (!superPinMap[exioPins[pin].servoIndex].attached()) {
-      superPinMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
-    }
-  } else {
-    if (!servoMap[exioPins[pin].servoIndex].attached()) {
-      servoMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
-    }
+  if (!useSuperPin && !servoMap[exioPins[pin].servoIndex].attached()) {
+    servoMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
   }
+  // }
   return true;
 }
 
@@ -121,11 +117,20 @@ void writeServo(uint8_t pin, uint16_t value, bool useSuperPin) {
     if (exioPins[pin].mode == MODE_PWM) {
       servoMap[exioPins[pin].servoIndex].writeMicroseconds(value);
     } else if (exioPins[pin].mode == MODE_PWM_LED) {
-      superPinMap[exioPins[pin].servoIndex].write(value);
+      setSuperPin(pin, value);
     }
   } else {
     if (value >= 0 && value <= 255) {
       analogWrite(pinMap[pin].physicalPin, value);
     }
   }
+}
+
+void setSuperPin(uint8_t pin, uint16_t value) {
+  uint8_t physicalPin = pinMap[pin].physicalPin;
+  if (value > superPinMax) {
+    value = superPinMax;
+  }
+  uint8_t off = superPinMax - value;
+  SuperPin::setPattern(physicalPin, value, off);
 }

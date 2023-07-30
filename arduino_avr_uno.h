@@ -55,27 +55,4 @@ Servo servoMap[MAX_SERVOS] = {
   servo1, servo2, servo3, servo4, servo5, servo6, servo7, servo8, servo9, servo10, servo11, servo12,
 };
 
-// SuperPin support here
-SuperPin sPin1;
-SuperPin sPin2;
-SuperPin sPin3;
-SuperPin sPin4;
-SuperPin sPin5;
-SuperPin sPin6;
-SuperPin sPin7;
-SuperPin sPin8;
-SuperPin sPin9;
-SuperPin sPin10;
-SuperPin sPin11;
-SuperPin sPin12;
-SuperPin sPin13;
-SuperPin sPin14;
-SuperPin sPin15;
-SuperPin sPin16;
-
-SuperPin superPinMap[MAX_SUPERPINS] = {
-  sPin1,sPin2,sPin3,sPin4,sPin5,sPin6,sPin7,sPin8,
-  sPin9,sPin10,sPin11,sPin12,sPin13,sPin14,sPin15,sPin16,
-};
-
 #endif
