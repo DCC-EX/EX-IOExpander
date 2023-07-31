@@ -24,9 +24,6 @@
 #if defined(HAS_SERVO_LIB)
 #include "Servo.h"
 uint8_t nextServoObject = 0;
-bool useServoLib = 1;
-#else
-bool useServoLib = 0;
 #endif
 #include "SuperPin.h"
 uint8_t nextSuperPinObject = 0;
@@ -93,32 +90,37 @@ void updatePosition(uint8_t pin) {
 
 bool configureServo(uint8_t pin, bool useSuperPin) {
   if (exioPins[pin].servoIndex == 255) {
-    if (((!useSuperPin && nextServoObject < MAX_SERVOS) || (useSuperPin && nextSuperPinObject < MAX_SUPERPINS)) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
-      if (useSuperPin) {
-        exioPins[pin].servoIndex = nextSuperPinObject;
-        nextSuperPinObject++;
-      } else {
-        exioPins[pin].servoIndex = nextServoObject;
-        nextServoObject++;
-      }
+    if (useSuperPin && nextSuperPinObject < MAX_SUPERPINS && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+      exioPins[pin].servoIndex = nextSuperPinObject;
+      nextSuperPinObject++;
+#if defined(HAS_SERVO_LIB)
+    } else if (nextServoObject < MAX_SERVOS && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+      exioPins[pin].servoIndex = nextServoObject;
+      nextServoObject++;
+#endif
     } else {
       return false;
     }
   }
+#if defined(HAS_SERVO_LIB)
   if (!useSuperPin && !servoMap[exioPins[pin].servoIndex].attached()) {
     servoMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
   }
-  // }
+#endif
   return true;
 }
 
 void writeServo(uint8_t pin, uint16_t value, bool useSuperPin) {
-  if (useServoLib || useSuperPin) {
-    if (exioPins[pin].mode == MODE_PWM) {
-      servoMap[exioPins[pin].servoIndex].writeMicroseconds(value);
-    } else if (exioPins[pin].mode == MODE_PWM_LED) {
-      setSuperPin(pin, value);
-    }
+  bool useServoLib = false;
+#if defined(HAS_SERVO_LIB)
+  useServoLib = true;
+#endif
+  if (useServoLib && exioPins[pin].mode == MODE_PWM) {
+#if defined(HAS_SERVO_LIB)
+    servoMap[exioPins[pin].servoIndex].writeMicroseconds(value);
+#endif
+  } else if (useSuperPin && exioPins[pin].mode == MODE_PWM_LED) {
+    setSuperPin(pin, value);
   } else {
     if (value >= 0 && value <= 255) {
       analogWrite(pinMap[pin].physicalPin, value);

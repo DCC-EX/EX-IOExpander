@@ -225,15 +225,15 @@ void startupDisplay() {
   }
   USB_SERIAL.print(F("Available at I2C address 0x"));
   USB_SERIAL.println(i2cAddress, HEX);
-  if (useServoLib) {
-    USB_SERIAL.print(F("Servo library support for up to "));
-    USB_SERIAL.print(MAX_SERVOS);
-    USB_SERIAL.println(F(" servos"));
-  } else {
-    USB_SERIAL.print(F("Use hardware PWM pins for up to "));
-    USB_SERIAL.print(numPWMPins);
-    USB_SERIAL.println(F(" servos/LEDs"));
-  }
+#if defined(HAS_SERVO_LIB)
+  USB_SERIAL.print(F("Servo library support for up to "));
+  USB_SERIAL.print(MAX_SERVOS);
+  USB_SERIAL.println(F(" servos"));
+#else
+  USB_SERIAL.print(F("Use hardware PWM pins for up to "));
+  USB_SERIAL.print(numPWMPins);
+  USB_SERIAL.println(F(" servos/LEDs"));
+#endif
   USB_SERIAL.print(F("SuperPin support to dim up to "));
   USB_SERIAL.print(MAX_SUPERPINS);
   USB_SERIAL.println(F(" LEDs"));

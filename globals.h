@@ -50,7 +50,6 @@ extern bool analogueTesting;
 extern bool inputTesting;
 extern bool outputTesting;
 extern bool pullupTesting;
-extern bool useServoLib;
 extern ServoData** servoDataArray;
 #if defined(HAS_SERVO_LIB)
 extern Servo servoMap[MAX_SERVOS];

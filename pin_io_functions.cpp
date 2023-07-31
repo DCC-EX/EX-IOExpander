@@ -56,11 +56,11 @@ void setupPinDetails() {
 */
 void initialisePins() {
   for (uint8_t pin = 0; pin < numPins; pin++) {
-    if (useServoLib) {
-      if (exioPins[pin].servoIndex != 255 && servoMap[exioPins[pin].servoIndex].attached()) {
-        servoMap[exioPins[pin].servoIndex].detach();
-      }
+#if defined(HAS_SERVO_LIB)
+    if (exioPins[pin].servoIndex != 255 && servoMap[exioPins[pin].servoIndex].attached()) {
+      servoMap[exioPins[pin].servoIndex].detach();
     }
+#endif
     if (bitRead(pinMap[pin].capability, DIGITAL_INPUT) || bitRead(pinMap[pin].capability, ANALOGUE_INPUT)) {
       pinMode(pinMap[pin].physicalPin, INPUT);
       exioPins[pin].direction = 1;
@@ -81,9 +81,9 @@ void initialisePins() {
   for (uint8_t pin = 0; pin < numPins; pin++) {
     servoDataArray[pin] = NULL;
   }
-  if (useServoLib) {
-    nextServoObject = 0;
-  }
+#if defined(HAS_SERVO_LIB)
+  nextServoObject = 0;
+#endif
 }
 
 /*
@@ -185,6 +185,10 @@ bool enableAnalogue(uint8_t pin) {
 * Function to write PWM output to a pin
 */
 bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t duration) {
+  bool useServoLib = false;
+#if defined(HAS_SERVO_LIB)
+  useServoLib = true;
+#endif
   bool useSuperPin = bitRead(profile, 7); // if bit 7 is set, we're using FADE, therefore use SuperPin
   if (((useServoLib || useSuperPin) && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) ||
       bitRead(pinMap[pin].capability, PWM_OUTPUT)) {
@@ -241,7 +245,7 @@ bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile, uint16_t durati
     }
   } else {
     USB_SERIAL.print(F("ERROR! Pin "));
-    USB_SERIAL.print(pinMap[pin].physicalPin);
+    USB_SERIAL.print(pinNameMap[pin].pinLabel);
     USB_SERIAL.println(F(" not capable of PWM output"));
     return false;
   }
