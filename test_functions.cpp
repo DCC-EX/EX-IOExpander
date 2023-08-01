@@ -23,7 +23,7 @@
 #include "i2c_functions.h"
 #include "pin_io_functions.h"
 
-bool analogueTesting = false;   // Flag that analogue input testing is enabled/disabled
+bool analogueTesting = false; // Flag that analogue input testing is enabled/disabled
 bool inputTesting = false;    // Flag that digital input testing without pullups is enabled/disabled
 bool outputTesting = false;   // Flag that digital output testing is enabled/disabled
 bool pullupTesting = false;   // Flag that digital input testing with pullups is enabled/disabled
@@ -128,5 +128,28 @@ void testPullup(bool enable) {
     pullupTesting = false;
     diag = false;
     initialisePins();
+  }
+}
+
+void testServo(uint8_t vpin, uint16_t value, uint8_t profile) {
+  if (firstVpin > 0) {
+    USB_SERIAL.println(F("EX-IOExpander has been connected and configured, please disconnect from EX-CommandStation and reboot"));
+  } else if (analogueTesting || inputTesting || outputTesting || pullupTesting) {
+    USB_SERIAL.println(F("Please disable all other testing first"));
+  } else {
+    String pinLabel = pinNameMap[vpin].pinLabel;
+    USB_SERIAL.print(F("Test move servo or dim LED - vpin|physicalPin|value|profile:"));
+    USB_SERIAL.print(vpin);
+    USB_SERIAL.print(F("|"));
+    USB_SERIAL.print(pinLabel);
+    USB_SERIAL.print(F("|"));
+    USB_SERIAL.print(value);
+    USB_SERIAL.print(F("|"));
+    USB_SERIAL.println(profile);
+    if (!setupComplete) {
+      setupComplete = true;
+    }
+    disableWire();
+    writeAnalogue(vpin, value, profile);
   }
 }

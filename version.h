@@ -2,8 +2,13 @@
 #define VERSION_H
 
 // Version must only ever be numeric in order to be able to send it to the CommandStation
-#define VERSION "0.0.22"
+#define VERSION "0.0.23"
 
+// 0.0.23 includes:
+//  - Add use of Servo library for controlling servos for supported platforms
+//  - Add SuperPin class for neat dimming of LEDs without needing hardware PWM pins
+//  - Adjust pin maps for F411RE and F412ZG for more logical Vpin to physical pin mapping
+//  - Enable fast digital writes for SuperPin on AVR platforms
 // 0.0.22 includes:
 //  - Add experimental support for Bluepill STM32F103C8
 //  - Enhance <V> command to show board type, I2C address as well as Vpin map

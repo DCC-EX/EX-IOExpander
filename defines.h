@@ -31,36 +31,48 @@
 #define BOARD_TYPE F("Pro Mini")
 #endif
 #define TOTAL_PINS 18
-#define NUM_PWM_PINS 6
+#define HAS_SERVO_LIB
+#define MAX_SUPERPINS 16
 #define HAS_EEPROM
+#define USE_FAST_WRITES
 //  Arduino Uno
 #elif defined(ARDUINO_AVR_UNO)
 #define BOARD_TYPE F("Uno")
 #define TOTAL_PINS 16
-#define NUM_PWM_PINS 6
+#define HAS_SERVO_LIB
+#define MAX_SUPERPINS 16
 #define HAS_EEPROM
+#define USE_FAST_WRITES
 //  Arduino Mega2560
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
 #define BOARD_TYPE F("Mega")
 #define TOTAL_PINS 62
-#define NUM_PWM_PINS 12
+#define HAS_SERVO_LIB
+#define MAX_SUPERPINS 62
 #define HAS_EEPROM
+#define USE_FAST_WRITES
 #elif defined(ARDUINO_NUCLEO_F411RE)
 #define BOARD_TYPE F("Nucleo-F411RE")
 #define TOTAL_PINS 40
 #define NUM_PWM_PINS 25
+#define MAX_SUPERPINS 40
 #elif defined(ARDUINO_NUCLEO_F412ZG)
 #define BOARD_TYPE F("Nucleo-F412ZG")
 #define TOTAL_PINS 97
 #define NUM_PWM_PINS 40
+#define MAX_SUPERPINS 97
 #elif defined(ARDUINO_ARCH_SAMD)
 #define BOARD_TYPE F("Arduino Zero or Clone")
 #define TOTAL_PINS 27
 #define NUM_PWM_PINS 12
+#define MAX_SUPERPINS 27
 #elif defined(ARDUINO_BLUEPILL_F103C8)
 #define BOARD_TYPE F("BLUEPILL-STM32F103C8")
 #define TOTAL_PINS 28
 #define NUM_PWM_PINS 19
+#define MAX_SUPERPINS 28
+#else
+#define CPU_TYPE_ERROR
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -99,11 +111,12 @@ struct pinDefinition {
 Define the structure of the pin config
 */
 struct pinConfig {
-  uint8_t mode;             // 1 = digital, 2 = analogue, 3 = PWM
+  uint8_t mode;             // 1 = digital, 2 = analogue, 3 = PWM, 4 = PWM LED
   bool direction;           // 0 = output, 1 = input
   bool pullup;              // 0 = no pullup, 1 = pullup (input only)
   bool enable;              // 0 = disabled (default), 1 = enabled
   uint8_t analogueLSBByte;  // Stores the byte number of the LSB byte in analoguePinStates
+  uint8_t servoIndex;       // Stores the servo or dimmer object array index used by the pin
 };
 
 /*
@@ -133,13 +146,13 @@ struct ServoData {
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the servo profile type values
 //
-#define SERVO_INSTANT 0x00        // Moves immediately between positions (if duration not specified)
-#define SERVO_USEDURATION 0x00    // Use specified duration
+#define SERVO_INSTANT 0x00      // Moves immediately between positions (if duration not specified)
+#define SERVO_USEDURATION 0x00  // Use specified duration
 #define SERVO_FAST 0x01         // Takes around 500ms end-to-end
 #define SERVO_MEDIUM 0x02       // 1 second end-to-end
 #define SERVO_SLOW 0x03         // 2 seconds end-to-end
 #define SERVO_BOUNCE 0x04       // For semaphores/turnouts with a bit of bounce!!
-#define SERVO_NOPOWEROFF 0x80   // Flag to power off after move complete
+#define USE_SUPERPIN 0x80       // Flag to use SuperPin for dimming rather than servo (NoPowerOff in device driver)
 
 /////////////////////////////////////////////////////////////////////////////////////
 //  Define the register hex values we need to act on or respond with
@@ -201,6 +214,7 @@ struct ServoData {
 #define MODE_DIGITAL 1
 #define MODE_ANALOGUE 2
 #define MODE_PWM 3
+#define MODE_PWM_LED 4
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Ensure test modes defined in myConfig.h have values

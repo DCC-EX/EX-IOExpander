@@ -153,6 +153,7 @@ void loop() {
     processInputs();
     outputTestState = processOutputTest(outputTestState);
     processServos();
+    SuperPin::loop();
   }
   if (diag) {
     displayPins();

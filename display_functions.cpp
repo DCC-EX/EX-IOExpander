@@ -96,8 +96,25 @@ void displayPins() {
           break;
         }
         case MODE_PWM: {
-          USB_SERIAL.print(F("PWM Output Pin:"));
-          USB_SERIAL.println(pinLabel);
+          uint8_t dPinByte = pin / 8;
+          uint8_t dPinBit = pin - dPinByte * 8;
+          USB_SERIAL.print(F("PWM Output Pin|Servo|State:"));
+          USB_SERIAL.print(pinLabel);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.print(exioPins[pin].servoIndex);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.println(bitRead(digitalPinStates[dPinByte], dPinBit));
+          break;
+        }
+        case MODE_PWM_LED: {
+          uint8_t dPinByte = pin / 8;
+          uint8_t dPinBit = pin - dPinByte * 8;
+          USB_SERIAL.print(F("LED Output Pin|Servo|State:"));
+          USB_SERIAL.print(pinLabel);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.print(exioPins[pin].servoIndex);
+          USB_SERIAL.print(F("|"));
+          USB_SERIAL.println(bitRead(digitalPinStates[dPinByte], dPinBit));
           break;
         }
         default:
@@ -208,21 +225,18 @@ void startupDisplay() {
   }
   USB_SERIAL.print(F("Available at I2C address 0x"));
   USB_SERIAL.println(i2cAddress, HEX);
-  #if defined(HAS_SERVO_LIB)
+#if defined(HAS_SERVO_LIB)
   USB_SERIAL.print(F("Servo library support for up to "));
   USB_SERIAL.print(MAX_SERVOS);
   USB_SERIAL.println(F(" servos"));
-#endif
-#if defined(HAS_DIMMER_LIB)
-  USB_SERIAL.print(F("Dimmer library support for up to "));
-  USB_SERIAL.print(MAX_DIMMERS);
-  USB_SERIAL.println(F(" LEDs"));
-#endif
-#if !defined(HAS_SERVO_LIB)
+#else
   USB_SERIAL.print(F("Use hardware PWM pins for up to "));
   USB_SERIAL.print(numPWMPins);
   USB_SERIAL.println(F(" servos/LEDs"));
 #endif
+  USB_SERIAL.print(F("SuperPin support to dim up to "));
+  USB_SERIAL.print(MAX_SUPERPINS);
+  USB_SERIAL.println(F(" LEDs"));
 #if defined(DISABLE_I2C_PULLUPS) && defined(I2C_SDA) && defined(I2C_SCL)
   USB_SERIAL.print(F("Disabling I2C pullups on pins SDA|SCL: "));
   USB_SERIAL.print(I2C_SDA);

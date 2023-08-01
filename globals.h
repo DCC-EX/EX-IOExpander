@@ -23,6 +23,11 @@
 #include <Arduino.h>
 #include "defines.h"
 
+#if defined(HAS_SERVO_LIB)
+#include "Servo.h"
+#endif
+#include "SuperPin.h"
+
 extern pinDefinition pinMap[TOTAL_PINS];
 extern pinName pinNameMap[TOTAL_PINS];
 extern pinConfig exioPins[TOTAL_PINS];
@@ -46,5 +51,9 @@ extern bool inputTesting;
 extern bool outputTesting;
 extern bool pullupTesting;
 extern ServoData** servoDataArray;
+#if defined(HAS_SERVO_LIB)
+extern Servo servoMap[MAX_SERVOS];
+#endif
+extern SuperPin superPinMap[MAX_SUPERPINS];
 
 #endif

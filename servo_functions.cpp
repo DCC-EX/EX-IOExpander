@@ -21,6 +21,13 @@
 #include "globals.h"
 #include "servo_functions.h"
 #include "pin_io_functions.h"
+#if defined(HAS_SERVO_LIB)
+#include "Servo.h"
+uint8_t nextServoObject = 0;
+#endif
+#include "SuperPin.h"
+uint8_t nextSuperPinObject = 0;
+const uint8_t superPinMax = 255;
 
 const unsigned int refreshInterval = 50;
 unsigned long lastRefresh = 0;
@@ -58,7 +65,8 @@ void updatePosition(uint8_t pin) {
     bitSet(digitalPinStates[pinByte], pinBit);
     // Animation in progress, reposition servo
     s->stepNumber++;
-    if ((s->currentProfile & ~SERVO_NOPOWEROFF) == SERVO_BOUNCE) {
+    bool useSuperPin = s->currentProfile & USE_SUPERPIN;
+    if ((s->currentProfile & ~USE_SUPERPIN) == SERVO_BOUNCE) {
       // Retrieve step positions from array in flash
       uint8_t profileValue = bounceProfile[s->stepNumber];
       s->currentPosition = map(profileValue, 0, 100, s->fromPosition, s->toPosition);
@@ -67,7 +75,8 @@ void updatePosition(uint8_t pin) {
       s->currentPosition = map(s->stepNumber, 0, s->numSteps, s->fromPosition, s->toPosition);
     }
     // Send servo command
-    writePWM(pin, s->currentPosition);
+    bitSet(digitalPinStates[pinByte], pinBit);
+    writeServo(pin, s->currentPosition, useSuperPin);
   } else if (s->stepNumber < s->numSteps + _catchupSteps) {
     bitSet(digitalPinStates[pinByte], pinBit);
     // We've finished animation, wait a little to allow servo to catch up
@@ -77,4 +86,53 @@ void updatePosition(uint8_t pin) {
     bitClear(digitalPinStates[pinByte], pinBit);
     s->numSteps = 0;  // Done now.
   }
+}
+
+bool configureServo(uint8_t pin, bool useSuperPin) {
+  if (exioPins[pin].servoIndex == 255) {
+    if (useSuperPin && nextSuperPinObject < MAX_SUPERPINS && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+      exioPins[pin].servoIndex = nextSuperPinObject;
+      nextSuperPinObject++;
+#if defined(HAS_SERVO_LIB)
+    } else if (nextServoObject < MAX_SERVOS && bitRead(pinMap[pin].capability, DIGITAL_OUTPUT)) {
+      exioPins[pin].servoIndex = nextServoObject;
+      nextServoObject++;
+#endif
+    } else {
+      return false;
+    }
+  }
+#if defined(HAS_SERVO_LIB)
+  if (!useSuperPin && !servoMap[exioPins[pin].servoIndex].attached()) {
+    servoMap[exioPins[pin].servoIndex].attach(pinMap[pin].physicalPin);
+  }
+#endif
+  return true;
+}
+
+void writeServo(uint8_t pin, uint16_t value, bool useSuperPin) {
+  bool useServoLib = false;
+#if defined(HAS_SERVO_LIB)
+  useServoLib = true;
+#endif
+  if (useServoLib && exioPins[pin].mode == MODE_PWM) {
+#if defined(HAS_SERVO_LIB)
+    servoMap[exioPins[pin].servoIndex].writeMicroseconds(value);
+#endif
+  } else if (useSuperPin && exioPins[pin].mode == MODE_PWM_LED) {
+    setSuperPin(pin, value);
+  } else {
+    if (value >= 0 && value <= 255) {
+      analogWrite(pinMap[pin].physicalPin, value);
+    }
+  }
+}
+
+void setSuperPin(uint8_t pin, uint16_t value) {
+  uint8_t physicalPin = pinMap[pin].physicalPin;
+  if (value > superPinMax) {
+    value = superPinMax;
+  }
+  uint8_t off = superPinMax - value;
+  SuperPin::setPattern(physicalPin, value, off);
 }

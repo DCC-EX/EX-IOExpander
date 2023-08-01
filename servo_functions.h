@@ -28,8 +28,15 @@ extern const unsigned int refreshInterval;
 extern unsigned long lastRefresh;
 const uint8_t bounceProfile[30] = 
   {0,2,3,7,13,33,50,83,100,83,75,70,65,60,60,65,74,84,100,83,75,70,70,72,75,80,87,92,97,100};
+#if defined(HAS_SERVO_LIB)
+extern uint8_t nextServoObject;
+#endif
+extern uint8_t nextSuperPinObject;
 
 void processServos();
 void updatePosition(uint8_t pin);
+bool configureServo(uint8_t pin, bool useSuperPin);
+void writeServo(uint8_t pin, uint16_t value, bool useSuperPin);
+void setSuperPin(uint8_t pin, uint16_t value);
 
 #endif
