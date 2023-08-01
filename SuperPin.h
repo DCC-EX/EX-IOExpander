@@ -24,19 +24,20 @@
 #include "defines.h"
 
 class SuperPin  {
-    public:
-      static void setPattern(byte pinId, byte _onCount, byte _offCount);
-      static void set(byte pinId, bool high);
-      static void loop();
-      
-    private:
-      SuperPin(byte _pinid);
-      void setPattern(byte _onCount, byte _offCount);
-      void tick();
-      static SuperPin* volatile firstPin;
-      SuperPin* volatile next;
-      volatile byte pinId, onCount, offCount, runningCount;
-      volatile bool pinState;
+  public:
+    static void setPattern(byte pinId, byte _onCount, byte _offCount);
+    static void set(byte pinId, bool high);
+    static void loop();
+    
+  private:
+    SuperPin(byte _pinid);
+    void setPattern(byte _onCount, byte _offCount);
+    void tick();
+    static SuperPin* volatile firstPin;
+    SuperPin* volatile next;
+    volatile byte pinId, onCount, offCount, runningCount;
+    volatile bool pinState;
+    static void fastDigitalWrite(uint8_t pin, bool state);
 };
 
 #endif

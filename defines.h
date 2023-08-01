@@ -34,6 +34,7 @@
 #define HAS_SERVO_LIB
 #define MAX_SUPERPINS 16
 #define HAS_EEPROM
+#define USE_FAST_WRITES
 //  Arduino Uno
 #elif defined(ARDUINO_AVR_UNO)
 #define BOARD_TYPE F("Uno")
@@ -41,6 +42,7 @@
 #define HAS_SERVO_LIB
 #define MAX_SUPERPINS 16
 #define HAS_EEPROM
+#define USE_FAST_WRITES
 //  Arduino Mega2560
 #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
 #define BOARD_TYPE F("Mega")
@@ -48,6 +50,7 @@
 #define HAS_SERVO_LIB
 #define MAX_SUPERPINS 62
 #define HAS_EEPROM
+#define USE_FAST_WRITES
 #elif defined(ARDUINO_NUCLEO_F411RE)
 #define BOARD_TYPE F("Nucleo-F411RE")
 #define TOTAL_PINS 40
