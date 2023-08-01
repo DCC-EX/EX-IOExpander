@@ -1,7 +1,7 @@
 #if defined(ARDUINO_ARCH_MBED)
 
 #include <Arduino.h>
-#include <Servo.h>
+#include "../../Servo.h"
 #include <mbed.h>
 
 #if defined __has_include

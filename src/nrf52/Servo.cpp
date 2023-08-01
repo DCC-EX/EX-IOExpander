@@ -19,7 +19,7 @@
 #if defined(ARDUINO_ARCH_NRF52)
 
 #include <Arduino.h>
-#include <Servo.h>
+#include "../../Servo.h"
 
 
 static servo_t servos[MAX_SERVOS];                          // static array of servo structures

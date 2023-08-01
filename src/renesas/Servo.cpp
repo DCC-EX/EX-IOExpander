@@ -23,7 +23,7 @@
 #if defined(ARDUINO_ARCH_RENESAS)
 
 #include "Arduino.h"
-#include "Servo.h"
+#include "../../Servo.h"
 #include "ServoTimers.h"
 #include "math.h"
 #include "FspTimer.h"

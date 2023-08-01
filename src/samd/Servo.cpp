@@ -1,10 +1,28 @@
-#if defined(ARDUINO_ARCH_MEGAAVR)
+/*
+  Copyright (c) 2015 Arduino LLC. All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+*/
+
+#if defined(ARDUINO_ARCH_SAMD)
 
 #include <Arduino.h>
-#include <Servo.h>
+#include "../../Servo.h"
 
-#define usToTicks(_us)    ((clockCyclesPerMicrosecond() / 16 * _us) / 4)                 // converts microseconds to tick
-#define ticksToUs(_ticks) (((unsigned) _ticks * 16) / (clockCyclesPerMicrosecond() / 4))   // converts from ticks back to microseconds
+#define usToTicks(_us)    ((clockCyclesPerMicrosecond() * _us) / 16)                 // converts microseconds to tick
+#define ticksToUs(_ticks) (((unsigned) _ticks * 16) / clockCyclesPerMicrosecond())   // converts from ticks back to microseconds
 
 #define TRIM_DURATION  5                                   // compensation ticks to trim adjust for digitalWrite delays
 
@@ -23,14 +41,27 @@ static volatile int8_t currentServoIndex[_Nbr_16timers];   // index for the serv
 #define SERVO_MIN() (MIN_PULSE_WIDTH - this->min * 4)   // minimum value in us for this servo
 #define SERVO_MAX() (MAX_PULSE_WIDTH - this->max * 4)   // maximum value in us for this servo
 
-#undef REFRESH_INTERVAL
-#define REFRESH_INTERVAL 16000
+#define WAIT_TC16_REGS_SYNC(x) while(x->COUNT16.STATUS.bit.SYNCBUSY);
 
-void ServoHandler(int timer)
+/************ static functions common to all instances ***********************/
+
+void Servo_Handler(timer16_Sequence_t timer, Tc *pTc, uint8_t channel, uint8_t intFlag);
+#if defined (_useTimer1)
+void HANDLER_FOR_TIMER1(void) {
+    Servo_Handler(_timer1, TC_FOR_TIMER1, CHANNEL_FOR_TIMER1, INTFLAG_BIT_FOR_TIMER_1);
+}
+#endif
+#if defined (_useTimer2)
+void HANDLER_FOR_TIMER2(void) {
+    Servo_Handler(_timer2, TC_FOR_TIMER2, CHANNEL_FOR_TIMER2, INTFLAG_BIT_FOR_TIMER_2);
+}
+#endif
+
+void Servo_Handler(timer16_Sequence_t timer, Tc *tc, uint8_t channel, uint8_t intFlag)
 {
     if (currentServoIndex[timer] < 0) {
-        // Write compare register
-        _timer->CCMP = 0;
+        tc->COUNT16.COUNT.reg = (uint16_t) 0;
+        WAIT_TC16_REGS_SYNC(tc)
     } else {
         if (SERVO_INDEX(timer, currentServoIndex[timer]) < ServoCount && SERVO(timer, currentServoIndex[timer]).Pin.isActive == true) {
             digitalWrite(SERVO(timer, currentServoIndex[timer]).Pin.nbr, LOW);   // pulse this channel low if activated
@@ -46,58 +77,110 @@ void ServoHandler(int timer)
         }
 
         // Get the counter value
-        uint16_t tcCounterValue =  0; //_timer->CCMP;
-        _timer->CCMP = (uint16_t) (tcCounterValue + SERVO(timer, currentServoIndex[timer]).ticks);
+        uint16_t tcCounterValue = tc->COUNT16.COUNT.reg;
+        WAIT_TC16_REGS_SYNC(tc)
+
+        tc->COUNT16.CC[channel].reg = (uint16_t) (tcCounterValue + SERVO(timer, currentServoIndex[timer]).ticks);
+        WAIT_TC16_REGS_SYNC(tc)
     }
     else {
         // finished all channels so wait for the refresh period to expire before starting over
 
         // Get the counter value
-        uint16_t tcCounterValue = _timer->CCMP;
+        uint16_t tcCounterValue = tc->COUNT16.COUNT.reg;
+        WAIT_TC16_REGS_SYNC(tc)
 
         if (tcCounterValue + 4UL < usToTicks(REFRESH_INTERVAL)) {   // allow a few ticks to ensure the next OCR1A not missed
-            _timer->CCMP = (uint16_t) usToTicks(REFRESH_INTERVAL);
+            tc->COUNT16.CC[channel].reg = (uint16_t) usToTicks(REFRESH_INTERVAL);
         }
         else {
-            _timer->CCMP = (uint16_t) (tcCounterValue + 4UL);   // at least REFRESH_INTERVAL has elapsed
+            tc->COUNT16.CC[channel].reg = (uint16_t) (tcCounterValue + 4UL);   // at least REFRESH_INTERVAL has elapsed
         }
+        WAIT_TC16_REGS_SYNC(tc)
 
         currentServoIndex[timer] = -1;   // this will get incremented at the end of the refresh period to start again at the first channel
     }
 
-    /* Clear flag */
-    _timer->INTFLAGS = TCB_CAPT_bm;
+    // Clear the interrupt
+    tc->COUNT16.INTFLAG.reg = intFlag;
 }
 
-#if defined USE_TIMERB0
-ISR(TCB0_INT_vect)
-#elif defined USE_TIMERB1
-ISR(TCB1_INT_vect)
-#elif defined USE_TIMERB2
-ISR(TCB2_INT_vect)
-#endif
+static inline void resetTC (Tc* TCx)
 {
-  ServoHandler(0);
+    // Disable TCx
+    TCx->COUNT16.CTRLA.reg &= ~TC_CTRLA_ENABLE;
+    WAIT_TC16_REGS_SYNC(TCx)
+
+    // Reset TCx
+    TCx->COUNT16.CTRLA.reg = TC_CTRLA_SWRST;
+    WAIT_TC16_REGS_SYNC(TCx)
+    while (TCx->COUNT16.CTRLA.bit.SWRST);
+}
+
+static void _initISR(Tc *tc, uint8_t channel, uint32_t id, IRQn_Type irqn, uint8_t gcmForTimer, uint8_t intEnableBit)
+{
+    // Enable GCLK for timer 1 (timer counter input clock)
+    GCLK->CLKCTRL.reg = (uint16_t) (GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID(gcmForTimer));
+    while (GCLK->STATUS.bit.SYNCBUSY);
+
+    // Reset the timer
+    // TODO this is not the right thing to do if more than one channel per timer is used by the Servo library
+    resetTC(tc);
+
+    // Set timer counter mode to 16 bits
+    tc->COUNT16.CTRLA.reg |= TC_CTRLA_MODE_COUNT16;
+
+    // Set timer counter mode as normal PWM
+    tc->COUNT16.CTRLA.reg |= TC_CTRLA_WAVEGEN_NPWM;
+
+    // Set the prescaler factor to GCLK_TC/16.  At nominal 48 MHz GCLK_TC this is 3000 ticks per millisecond
+    tc->COUNT16.CTRLA.reg |= TC_CTRLA_PRESCALER_DIV16;
+
+    // Count up
+    tc->COUNT16.CTRLBCLR.bit.DIR = 1;
+    WAIT_TC16_REGS_SYNC(tc)
+
+    // First interrupt request after 1 ms
+    tc->COUNT16.CC[channel].reg = (uint16_t) usToTicks(1000UL);
+    WAIT_TC16_REGS_SYNC(tc)
+
+    // Configure interrupt request
+    // TODO this should be changed if more than one channel per timer is used by the Servo library
+    NVIC_DisableIRQ(irqn);
+    NVIC_ClearPendingIRQ(irqn);
+    NVIC_SetPriority(irqn, 0);
+    NVIC_EnableIRQ(irqn);
+
+    // Enable the match channel interrupt request
+    tc->COUNT16.INTENSET.reg = intEnableBit;
+
+    // Enable the timer and start it
+    tc->COUNT16.CTRLA.reg |= TC_CTRLA_ENABLE;
+    WAIT_TC16_REGS_SYNC(tc)
 }
 
 static void initISR(timer16_Sequence_t timer)
 {
-  //TCA0.SINGLE.CTRLA = (TCA_SINGLE_CLKSEL_DIV16_gc) | (TCA_SINGLE_ENABLE_bm);
-
-  _timer->CTRLA = TCB_CLKSEL_CLKTCA_gc;
-  // Timer to Periodic interrupt mode
-  // This write will also disable any active PWM outputs
-  _timer->CTRLB = TCB_CNTMODE_INT_gc;
-  // Enable interrupt
-  _timer->INTCTRL = TCB_CAPTEI_bm;
-  // Enable timer
-  _timer->CTRLA |= TCB_ENABLE_bm;
+#if defined (_useTimer1)
+    if (timer == _timer1)
+        _initISR(TC_FOR_TIMER1, CHANNEL_FOR_TIMER1, ID_TC_FOR_TIMER1, IRQn_FOR_TIMER1, GCM_FOR_TIMER_1, INTENSET_BIT_FOR_TIMER_1);
+#endif
+#if defined (_useTimer2)
+    if (timer == _timer2)
+        _initISR(TC_FOR_TIMER2, CHANNEL_FOR_TIMER2, ID_TC_FOR_TIMER2, IRQn_FOR_TIMER2, GCM_FOR_TIMER_2, INTENSET_BIT_FOR_TIMER_2);
+#endif
 }
 
 static void finISR(timer16_Sequence_t timer)
 {
-  // Disable interrupt
-  _timer->INTCTRL = 0;
+#if defined (_useTimer1)
+    // Disable the match channel interrupt request
+    TC_FOR_TIMER1->COUNT16.INTENCLR.reg = INTENCLR_BIT_FOR_TIMER_1;
+#endif
+#if defined (_useTimer2)
+    // Disable the match channel interrupt request
+    TC_FOR_TIMER2->COUNT16.INTENCLR.reg = INTENCLR_BIT_FOR_TIMER_2;
+#endif
 }
 
 static boolean isTimerActive(timer16_Sequence_t timer)
@@ -211,4 +294,4 @@ bool Servo::attached()
   return servos[this->servoIndex].Pin.isActive;
 }
 
-#endif
+#endif // ARDUINO_ARCH_SAMD
