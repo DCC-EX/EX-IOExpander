@@ -25,7 +25,7 @@
 #include "display_functions.h"
 
 bool newSerialData = false;   // Flag for new serial data being received
-const byte numSerialChars = 10;   // Max number of chars for serial input
+const byte numSerialChars = 20;   // Max number of chars for serial input
 char serialInputChars[numSerialChars];  // Char array for serial input
 
 /*
@@ -63,10 +63,20 @@ void processSerialInput() {
     char activity = strtokIndex[0];    // activity is our first parameter
     strtokIndex = strtok(NULL," ");       // space is null, separator
     unsigned long parameter;
+    uint8_t vpin, profile;
+    uint16_t value;
     if (activity == 'W') {
       parameter = strtol(strtokIndex, NULL, 16); // last parameter is the address in hex
     } else if (activity == 'T') {
       parameter = strtokIndex[0];
+      if (parameter == 'S') {
+        strtokIndex = strtok(NULL," ");
+        vpin = strtoul(strtokIndex, NULL, 10); // get Vpin, this needs to be disconnected from CS
+        strtokIndex = strtok(NULL, " ");
+        value = strtoul(strtokIndex, NULL, 10); // get value of the angle or dimming
+        strtokIndex = strtok(NULL, " ");
+        profile = strtoul(strtokIndex, NULL, 10);  // get the profile
+      }
     } else {
       parameter = strtol(strtokIndex, NULL, 10);
     }
@@ -89,6 +99,8 @@ void processSerialInput() {
           setOutputTesting();
         } else if (parameter == 'P') {
           setPullupTesting();
+        } else if (parameter == 'S') {
+          testServo(vpin, value, profile);
         } else {
           serialCaseT();
         }

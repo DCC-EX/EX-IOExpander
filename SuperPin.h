@@ -1,5 +1,5 @@
 /*
- *  © 2023, Peter Cole. All rights reserved.
+ *  © 2023, Chris Harlow and Peter Cole. All rights reserved.
  *  
  *  This file is part of EX-IOExpander.
  *
@@ -17,19 +17,27 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PIN_IO_FUNCTIONS_H
-#define PIN_IO_FUNCTIONS_H
+#ifndef SUPERPIN_H
+#define SUPERPIN_H
 
 #include <Arduino.h>
-#include "globals.h"
+#include "defines.h"
 
-void setupPinDetails();
-void initialisePins();
-bool enableDigitalInput(uint8_t pin, bool pullup);
-bool writeDigitalOutput(uint8_t pin, bool state);
-bool enableAnalogue(uint8_t pin);
-bool writeAnalogue(uint8_t pin, uint16_t value, uint8_t profile=0, uint16_t duration=0);
-void processInputs();
-bool processOutputTest(bool testState);
+class SuperPin  {
+  public:
+    static void setPattern(byte pinId, byte _onCount, byte _offCount);
+    static void set(byte pinId, bool high);
+    static void loop();
+    
+  private:
+    SuperPin(byte _pinid);
+    void setPattern(byte _onCount, byte _offCount);
+    void tick();
+    static SuperPin* volatile firstPin;
+    SuperPin* volatile next;
+    volatile byte pinId, onCount, offCount, runningCount;
+    volatile bool pinState;
+    static void fastDigitalWrite(uint8_t pin, bool state);
+};
 
 #endif

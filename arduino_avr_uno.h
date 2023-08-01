@@ -37,4 +37,22 @@ pinName pinNameMap[TOTAL_PINS] = {
   {A0,"A0"},{A1,"A1"},{A2,"A2"},{A3,"A3"},
 };
 
+// Servo support here
+Servo servo1;
+Servo servo2;
+Servo servo3;
+Servo servo4;
+Servo servo5;
+Servo servo6;
+Servo servo7;
+Servo servo8;
+Servo servo9;
+Servo servo10;
+Servo servo11;
+Servo servo12;
+
+Servo servoMap[MAX_SERVOS] = {
+  servo1, servo2, servo3, servo4, servo5, servo6, servo7, servo8, servo9, servo10, servo11, servo12,
+};
+
 #endif

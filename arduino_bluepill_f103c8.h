@@ -29,8 +29,8 @@ pinDefinition pinMap[TOTAL_PINS] = {
   {PB9,DIO},{PB8,DIO},{PB5,DIOP},{PB4,DIOP},{PB3,DIOP},{PA15,DIOP},
   {PA10,DIOP},{PA9,DIOP},{PA8,DIOP},{PB15,DIOP},{PB14,DIOP},{PB13,DIOP},{PB12,DIO},
 };
-#define I2C_SDA PB9
-#define I2C_SCL PB8
+#define I2C_SDA PB7
+#define I2C_SCL PB6
 
 pinName pinNameMap[TOTAL_PINS] = {
   {PC13,"PC13"},{PC14,"PC14"},{PC15,"PC15"},{PA0,"PA0"},{PA1,"PA1"},{PA2,"PA2"},{PA3,"PA3"},{PA4,"PA4"},
